@@ -21,7 +21,7 @@ import { firstLine, taskSignature } from "../world";
 let lastRecover = 0;
 function recoverTasks(ctx: Ctx) {
   for (const u of ctx.world.units.values()) {
-    if ((u.task && !/^You are (a unit|an agent) in C&C/.test(u.task)) || u.simulated || u.role !== "mothership" || !u.transcriptPath) continue;
+    if ((u.task && !/^(You are (a unit|an agent) in C&C|↻)/.test(u.task)) || u.simulated || u.role !== "mothership" || !u.transcriptPath) continue;
     const p = firstPrompt(u.transcriptPath) ?? readTail(u.transcriptPath, 400)?.lastPrompt; if (!p) continue;
     const task = firstLine(p); if (!task) continue;
     u.task = task.slice(0, 140); u.taskSig = taskSignature(task); u.siteLabel = task.slice(0, 36);
