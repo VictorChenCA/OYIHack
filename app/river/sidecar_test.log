@@ -1,0 +1,12 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+{"listening": "http://127.0.0.1:7788", "model": "Qwen/Qwen3.5-9B", "checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s020-inf", "serving": "trained", "warmup_ms": 24780}
+[sidecar] "GET /health HTTP/1.1" 200 -
+[sidecar] "POST /classify HTTP/1.1" 200 -
+[sidecar] "POST /classify?engine=fast HTTP/1.1" 200 -
+[sidecar] "GET /models HTTP/1.1" 200 -
+[sidecar] "POST /classify HTTP/1.1" 200 -
+[sidecar] "POST /classify HTTP/1.1" 200 -
+[sidecar] "POST /classify HTTP/1.1" 200 -
+[sidecar] "POST /classify HTTP/1.1" 200 -
+[sidecar] "POST /classify?engine=base HTTP/1.1" 200 -
+[sidecar] "POST /classify?engine=base HTTP/1.1" 200 -

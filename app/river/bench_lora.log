@@ -1,0 +1,6 @@
+{"path": "session.sample(checkpoint)", "p50_ms": 3905, "p95_ms": 4518, "all": [3812, 3865, 3875, 3893, 3916, 3965, 4066, 4518]}
+{"create_model_s": 12.0}
+{"path": "model.sample (in-memory LoRA)", "p50_ms": 4034, "p95_ms": 4392, "all": [2826, 3846, 3967, 4034, 4034, 4051, 4124, 4392]}
+{"path": "client.sample (base)", "p50_ms": 2513, "p95_ms": 2661, "all": [2196, 2202, 2401, 2504, 2522, 2595, 2616, 2661]}
+
+[exited with code 0]

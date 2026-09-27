@@ -1,0 +1,8 @@
+{
+  "kind": 1.0,
+  "quadrant": 1.0,
+  "human_only": 1.15,
+  "department": 1.0,
+  "tier": 1.0,
+  "_checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf"
+}

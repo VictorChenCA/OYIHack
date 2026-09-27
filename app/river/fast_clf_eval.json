@@ -1,0 +1,21 @@
+{
+  "val": {
+    "kind": 1.0,
+    "quadrant": 0.9833,
+    "human_only": 0.9833,
+    "department": 0.9083,
+    "tier": 0.8833,
+    "mean": 0.9517
+  },
+  "test_unseen": {
+    "kind": 0.8962,
+    "quadrant": 0.7885,
+    "human_only": 0.8077,
+    "department": 0.6115,
+    "tier": 0.6269,
+    "mean": 0.7462
+  },
+  "fit_s": 0.9,
+  "latency_ms_10_items": 1.0,
+  "model_bytes": 1154505
+}
