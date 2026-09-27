@@ -1,0 +1,37 @@
+{
+  "base": "deepseek-ai/DeepSeek-V4-Flash-0731",
+  "name": "sentinel-dsv4flash",
+  "best": {
+    "step": 40,
+    "inference": "river://92b6361c-a442-4258-97e5-871094b763d1/sampler_weights/sentinel-dsv4flash-s040-inf",
+    "training": "river://92b6361c-a442-4258-97e5-871094b763d1/weights/sentinel-dsv4flash-s040-train",
+    "val_acc": 0.8983333333333334,
+    "val_per_field": {
+      "kind": 1.0,
+      "quadrant": 0.9333333333333333,
+      "human_only": 0.9416666666666667,
+      "department": 0.9666666666666667,
+      "tier": 0.65
+    }
+  },
+  "checkpoints": [
+    {
+      "step": 40,
+      "inference": "river://92b6361c-a442-4258-97e5-871094b763d1/sampler_weights/sentinel-dsv4flash-s040-inf",
+      "training": "river://92b6361c-a442-4258-97e5-871094b763d1/weights/sentinel-dsv4flash-s040-train",
+      "val_acc": 0.8983333333333334,
+      "val_per_field": {
+        "kind": 1.0,
+        "quadrant": 0.9333333333333333,
+        "human_only": 0.9416666666666667,
+        "department": 0.9666666666666667,
+        "tier": 0.65
+      }
+    }
+  ],
+  "data": "/Users/victor/Documents/GitHub/OYIHack-river/app/river/data/train.jsonl",
+  "examples": 4400,
+  "lr": 0.0002,
+  "rank": 16,
+  "batch": 32
+}

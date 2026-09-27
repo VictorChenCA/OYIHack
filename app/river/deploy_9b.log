@@ -1,0 +1,11 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+Traceback (most recent call last):
+  File "/Users/victor/Documents/GitHub/OYIHack-river/app/river/deploy.py", line 28, in <module>
+    d = c.create_deployment(checkpoint=a.checkpoint, unified_replicas=a.replicas,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/victor/Documents/GitHub/OYIHack/.venv-river/lib/python3.12/site-packages/river_client/client.py", line 5001, in create_deployment
+    raw = self._deployments_request(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/victor/Documents/GitHub/OYIHack/.venv-river/lib/python3.12/site-packages/river_client/client.py", line 4914, in _deployments_request
+    raise _http_error(error.code, raw_body, context) from None
+river_client.types.RiverError: unsupported_topology: no approved unified specification for base model Qwen/Qwen3.5-9B

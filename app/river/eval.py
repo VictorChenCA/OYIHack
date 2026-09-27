@@ -14,7 +14,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import river_client as river
+import river_client.client as _rc
 import sentinel as S
+
+_rc._SAMPLE_POLL_INTERVAL_SECS = 0.05  # the client polls sample results every 1.0 s by default: ~0.8 s of pure waiting
 
 PRICE_PROMPT, PRICE_COMPLETION = 0.30, 0.80  # $/M tokens, low end of River's published range (smallest model)
 

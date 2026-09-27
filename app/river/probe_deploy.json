@@ -1,0 +1,50 @@
+[
+  {
+    "base": "Qwen/Qwen3.5-9B",
+    "checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf",
+    "errors": [
+      "{'unified_replicas': 1}: unsupported_topology: no approved unified specification for base model Qwen/Qwen3.5-9B",
+      "{'prefill_replicas': 1, 'decode_replicas': 1}: unsupported_topology: no approved prefill_decode specification for base model Qwen/Qwen3.5-9B"
+    ]
+  },
+  {
+    "base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+    "checkpoint": "river://b787dc50-ed9c-4333-ab14-8606e982526a/sampler_weights/probe-NVIDIA-Nemotron-3.5-Ligh-1790548877",
+    "errors": [
+      "{'unified_replicas': 1}: unsupported_topology: no approved unified specification for base model nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+      "{'prefill_replicas': 1, 'decode_replicas': 1}: unsupported_topology: no approved prefill_decode specification for base model nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4"
+    ]
+  },
+  {
+    "base": "Qwen/Qwen3.6-35B-A3B-FP8",
+    "checkpoint": "river://fdcaf0e8-32c3-45b7-b45d-02009b837342/sampler_weights/probe-Qwen3.6-35B-A3B-FP8-1790548871",
+    "errors": [
+      "{'unified_replicas': 1}: unsupported_topology: no approved unified specification for base model Qwen/Qwen3.6-35B-A3B-FP8",
+      "{'prefill_replicas': 1, 'decode_replicas': 1}: unsupported_topology: no approved prefill_decode specification for base model Qwen/Qwen3.6-35B-A3B-FP8"
+    ]
+  },
+  {
+    "base": "zai-org/GLM-5.3-Flash",
+    "checkpoint": "river://033519cf-caaf-42dc-8c6c-c7cca1213e11/sampler_weights/probe-GLM-5.3-Flash-1790548873",
+    "errors": [
+      "{'unified_replicas': 1}: forbidden: deployment_access_denied: this team is not enabled for dedicated deployments of this model",
+      "{'prefill_replicas': 1, 'decode_replicas': 1}: forbidden: deployment_access_denied: this team is not enabled for dedicated deployments of this model"
+    ]
+  },
+  {
+    "base": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "checkpoint": "river://bd0961a6-ef4a-4d6d-9530-ff04b527dfd9/sampler_weights/probe-DeepSeek-V4-Flash-0731-1790548872",
+    "errors": [
+      "{'unified_replicas': 1}: unsupported_topology: no approved unified specification for base model deepseek-ai/DeepSeek-V4-Flash-0731",
+      "{'prefill_replicas': 1, 'decode_replicas': 1}: unsupported_topology: no approved prefill_decode specification for base model deepseek-ai/DeepSeek-V4-Flash-0731"
+    ]
+  },
+  {
+    "base": "Qwen/Qwen3.8-27B-FP8",
+    "checkpoint": "river://fec1873d-c1ba-4adc-8126-7ceb9f31200b/sampler_weights/probe-Qwen3.8-27B-FP8-1790548867",
+    "errors": [
+      "{'unified_replicas': 1}: unsupported_topology: no approved unified specification for base model Qwen/Qwen3.8-27B-FP8",
+      "{'prefill_replicas': 1, 'decode_replicas': 1}: unsupported_topology: no approved prefill_decode specification for base model Qwen/Qwen3.8-27B-FP8"
+    ]
+  }
+]

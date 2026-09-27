@@ -1,0 +1,29 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+{"event": "start", "base": "Qwen/Qwen3.6-35B-A3B-FP8", "rows": 880, "examples": 4400, "val_rows": 120, "steps": 80, "batch": 32, "lr": 0.0002, "rank": 16, "name": "sentinel-qwen36a3b"}
+{"step": 1, "loss": 0.2660999894142151, "elapsed_s": 39.1}
+{"step": 2, "loss": 0.28209519386291504, "elapsed_s": 51.3}
+{"step": 3, "loss": 0.13115137815475464, "elapsed_s": 63.3}
+{"step": 4, "loss": 0.13471533358097076, "elapsed_s": 75.6}
+{"step": 5, "loss": 0.17323218286037445, "elapsed_s": 87.8}
+{"step": 6, "loss": 0.18398703634738922, "elapsed_s": 109.5}
+{"step": 7, "loss": 0.12448951601982117, "elapsed_s": 121.6}
+{"step": 8, "loss": 0.1408197283744812, "elapsed_s": 133.5}
+{"step": 9, "loss": 0.10649411380290985, "elapsed_s": 146.1}
+{"step": 10, "loss": 0.21695883572101593, "elapsed_s": 174.2}
+{"step": 11, "loss": 0.13354647159576416, "elapsed_s": 197.9}
+{"step": 12, "loss": 0.1059572771191597, "elapsed_s": 210.0}
+{"step": 13, "loss": 0.09815014153718948, "elapsed_s": 221.9}
+{"step": 14, "loss": 0.08700250089168549, "elapsed_s": 233.6}
+{"step": 15, "loss": 0.09615745395421982, "elapsed_s": 245.9}
+{"step": 16, "loss": 0.08264689147472382, "elapsed_s": 271.8}
+{"step": 17, "loss": 0.053108975291252136, "elapsed_s": 284.1}
+{"step": 18, "loss": 0.06094225123524666, "elapsed_s": 297.0}
+{"step": 19, "loss": 0.03301693871617317, "elapsed_s": 309.3}
+{"step": 20, "loss": 0.08724118024110794, "elapsed_s": 321.1}
+{"step": 21, "loss": 0.05102093517780304, "elapsed_s": 343.6}
+{"step": 22, "loss": 0.0571860708296299, "elapsed_s": 355.4}
+{"step": 23, "loss": 0.11762415617704391, "elapsed_s": 367.6}
+{"step": 24, "loss": 0.076134093105793, "elapsed_s": 379.3}
+{"step": 25, "loss": 0.05710386484861374, "elapsed_s": 391.4}
+{"step": 26, "loss": 0.11208309978246689, "elapsed_s": 415.8}
+{"step": 27, "loss": 0.05914812907576561, "elapsed_s": 428.0}
