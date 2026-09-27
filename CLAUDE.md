@@ -17,7 +17,11 @@ Side quest criteria per sponsor: `kb/EVENT.md#prizes`.
 3. Sponsors: River AI, GBrain, Memorable, QM, Superset, UFO. Cheat sheets are in `kb/sponsors/`.
 
 ## MCP servers (project scope, `.mcp.json`)
-- `gbrain`: shared memory (`recall`, `remember`, `entity`, `synthesize`, `forget`, `context_pack`, `delta`). Facts saved here are visible to every agent on this brain.
+- `gbrain`: ONE shared HTTP server at `http://127.0.0.1:3131/mcp` for every session and Superset agent. It needs
+  `GBRAIN_TOKEN` in the environment (it's in `.env`; `.mcp.json` reads `${GBRAIN_TOKEN}`). Full tool set: `search`/`query`/`get_page`
+  over the whole KB + sponsor repos (1,640 pages), plus memory (`remember`, `recall`, `put_page`, `think`, …).
+  **Don't run `gbrain serve`, `import`, `sync` or other CLI writes yourself**: the server holds PGLite's single-writer
+  lock. Use the MCP tools. If it's down (`curl 127.0.0.1:3131/health`), ask the human to restart it (see `kb/sponsors/gbrain.md`).
 - `memorable`: read-only procedure recall (`memorable_recall`, `memorable_show`, …). Recording happens via CLI hooks, not MCP.
 - `superset`: tasks, workspaces, launching parallel agents, terminals, automations (OAuth).
 

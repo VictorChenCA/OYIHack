@@ -1,14 +1,18 @@
 {
   "mcpServers": {
     "gbrain": {
-      "type": "stdio",
-      "command": "${HOME}/.bun/bin/gbrain",
-      "args": ["serve", "--surface", "verbs"]
+      "type": "http",
+      "url": "http://127.0.0.1:3131/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GBRAIN_TOKEN}"
+      }
     },
     "memorable": {
       "type": "stdio",
       "command": "memorable",
-      "args": ["mcp"]
+      "args": [
+        "mcp"
+      ]
     },
     "superset": {
       "type": "http",

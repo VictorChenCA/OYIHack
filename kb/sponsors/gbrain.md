@@ -64,6 +64,17 @@ Mirrored at `kb/raw/gbrain-hackathon.md`.
   **Fix for multi-session or swarm use:** run ONE `gbrain serve --http` daemon and point every client at it over
   HTTP. On PGLite, mint a token BEFORE starting serve (`gbrain auth create local-agents --scopes read,write`).
   Alternatives: the hosted gbrain.io workspace, or `gbrain migrate --to supabase`.
+- **Our setup (Sep 27, 14:05): one shared `gbrain serve --http --port 3131` on loopback.** `.mcp.json` points every
+  Claude session and Superset worktree at `http://127.0.0.1:3131/mcp` with `Authorization: Bearer ${GBRAIN_TOKEN}`.
+  The token (`oyihack-agents`, full access, from `gbrain auth create`) lives only in the gitignored `.env`, so Claude and
+  Superset must be launched with it exported: `set -a; . ./.env; set +a`. Without it, gbrain fails with 401 invalid_token.
+  Revoke after the event: `gbrain auth revoke oyihack-agents`. The server runs as a background task of one Claude session
+  (launchd persistence was blocked), so it stops with that session. Restart it from a terminal:
+  `cd ~/.gbrain && nohup ~/.bun/bin/gbrain serve --http --port 3131 >> ~/.gbrain/serve-http.log 2>&1 &`.
+  Log: `~/.gbrain/serve-http.log`. Admin UI: http://localhost:3131/admin.
+  While it runs, CLI writes (`gbrain import`/`remember`/`sync`) block on the lock, so use MCP tools. Memorable's
+  `init gbrain` backend writes through the CLI and would block too, so use Memorable's local store (`memorable init`).
+  Codex agents don't read `.mcp.json`: `gbrain connect http://127.0.0.1:3131/mcp --token "$GBRAIN_TOKEN" --agent codex --install`.
 - **`gbrain import` refuses any path containing a `skills/` segment** ("Import cannot publish skill paths. Use the
   shared skill publisher"). It also skips dot-directories (`.claude/`, `.codex/`). To import skill docs as plain
   pages, rename those segments in a staging copy (`skills` → `skill-docs`, `.claude` → `dot-claude`).
