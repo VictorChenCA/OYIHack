@@ -3,12 +3,12 @@ import type { Tier, EnemyKind, Quadrant } from "../../shared/types";
 import { TIER_COLOR, QUAD_COLOR, GOLD } from "./util";
 
 /** ONE blocker visual language: shape + color = type (Eisenhower quadrant) only. Gold ring = needs a person.
- *  Do now = diamond, Schedule = square, Delegate = triangle, Drop = circle. The kind is text, never a sprite. */
+ *  Matches the map: Do now = solid hexagon, Schedule = diamond, Delegate = triangle, Drop = small open circle. */
 const QUAD_SHAPE: Record<Quadrant, string> = {
-  do_now: `<path d="M32 12 L52 32 L32 52 L12 32 Z"/>`,
-  schedule: `<rect x="17" y="17" width="30" height="30" rx="3"/>`,
+  do_now: `<path d="M32 11 L50 21.5 L50 42.5 L32 53 L14 42.5 L14 21.5 Z"/>`,
+  schedule: `<path d="M32 11 L53 32 L32 53 L11 32 Z"/>`,
   delegate: `<path d="M32 13 L52 49 L12 49 Z"/>`,
-  drop: `<circle cx="32" cy="32" r="15"/>`,
+  drop: `<circle cx="32" cy="32" r="10" fill="none" stroke="currentColor" stroke-width="4"/>`,
 };
 export function blockerGlyph(q: Quadrant, humanOnly: boolean, size = 22) {
   const c = QUAD_COLOR[q] ?? QUAD_COLOR.drop;

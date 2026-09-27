@@ -12,6 +12,9 @@ interface Pulse { node: SNode | null; t0: number; kind: "read" | "write" }
 const h = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, html?: string) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 const escHtml = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 
+/** Set true to open the full-screen memory graph on the next memory mode (UI "Graph" toggle). */
+export const memGraph = { want: false };
+
 export function createMemory(root: HTMLElement, store: Store) {
   if (!document.getElementById("mem-style")) { const st = document.createElement("style"); st.id = "mem-style"; st.textContent = CSS; document.head.appendChild(st); }
   root.classList.add("mem-root");
@@ -454,13 +457,13 @@ export function createMemory(root: HTMLElement, store: Store) {
   results.addEventListener("click", (e) => { const a = (e.target as HTMLElement).closest("a[data-slug]") as HTMLAnchorElement | null; if (a) { e.preventDefault(); gotoSlug(a.dataset.slug!); } });
 
   // ── open / close ──────────────────────────────────────────────────────
-  back.addEventListener("click", () => store.setMode({ kind: "system" }));
+  back.addEventListener("click", () => { memGraph.want = false; store.setMode({ kind: "system" }); });
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     if (!visible) return;
     if (e.key === "Escape") {
       if (document.activeElement === search) return;
       e.preventDefault();
-      if (drawer.classList.contains("open")) closeDrawer(); else store.setMode({ kind: "system" });
+      if (drawer.classList.contains("open")) closeDrawer(); else { memGraph.want = false; store.setMode({ kind: "system" }); }
     } else if (e.key === "/" && document.activeElement !== search) { e.preventDefault(); search.focus(); search.select(); }
   });
 
@@ -492,10 +495,11 @@ export function createMemory(root: HTMLElement, store: Store) {
   // periodic refresh while open (server caches 30s)
   setInterval(() => { if (visible && !store.fixture) load(); }, 30000);
   (window as any).__mem = { cam, sim, fitView, get autoFit() { return autoFit; }, get camTarget() { return camTarget; }, get W() { return W; }, get H() { return H; } }; // debug handle
-  store.on("mode", (m) => (m.kind === "memory" ? show() : hide()));
-  if (store.mode.kind === "memory") show(); else root.hidden = true;
+  // The full-screen graph is opt-in (the "Graph" toggle in the memory review panel); the default is the compact review.
+  store.on("mode", (m) => (m.kind === "memory" && memGraph.want ? show() : hide()));
+  if (store.mode.kind === "memory" && memGraph.want) show(); else root.hidden = true;
   // dev convenience: ?memory opens the explorer directly
-  if (new URLSearchParams(location.search).has("memory")) setTimeout(() => store.setMode({ kind: "memory" }), 0);
+  if (new URLSearchParams(location.search).has("memory")) { memGraph.want = true; setTimeout(() => store.setMode({ kind: "memory" }), 0); }
 }
 
 function ago(iso: string) {

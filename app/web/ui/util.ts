@@ -48,7 +48,7 @@ export function ago(ts: number, now = Date.now()) { const d = now - ts; return d
 export function clock(ts: number) { const d = new Date(ts); return d.toTimeString().slice(0, 5); }
 
 export const TIER_COLOR: Record<Tier, string> = { haiku: "#5CF2B0", sonnet: "#4FD1FF", opus: "#7C9CFF", fable: "#FF7AD9", river: "#40E0D0", unknown: "#8A96A8" };
-export const QUAD_COLOR: Record<Quadrant, string> = { do_now: "#FF4D4D", schedule: "#FFB020", delegate: "#A774FF", drop: "#8A8F98" };
+export const QUAD_COLOR: Record<Quadrant, string> = { do_now: "#FF5A5A", schedule: "#FFB547", delegate: "#A78BFA", drop: "#7C8594" };
 export const QUAD_LABEL: Record<Quadrant, string> = { do_now: "Do now", schedule: "Schedule", delegate: "Delegate", drop: "Drop" };
 export const GOLD = "#FFD24A";
 export const KIND_LABEL: Record<EnemyKind, string> = { credential: "Credential", account: "Account", approval: "Approval", rate_limit: "Rate limit", billing: "Billing", missing_info: "Missing info", dependency: "Dependency", failure: "Failure" };

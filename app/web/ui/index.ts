@@ -8,6 +8,7 @@ import { createSide } from "./side";
 import { createTooltip, createTopBar, createToasts } from "./hud";
 import { applyFixtureOverrides, createOrders, createFilter, createViewTabs, createGroups } from "./command";
 import { setModalHost } from "./modal";
+import { memGraph } from "../memory";
 
 const DRAWER_KEY = "cc.drawer.open";
 
@@ -44,6 +45,10 @@ export function createUI(root: HTMLElement, store: Store) {
   createToasts(root, store);
   createTooltip(root, store);
   // Mode flag for CSS (memory explorer owns the screen: only top bar + console stay).
-  const setMode = () => { root.dataset.mode = store.mode.kind; };
+  // Company memory opens as a compact review in the bottom bar (focus = sun), not the full-screen graph.
+  const setMode = () => {
+    if (store.mode.kind === "memory" && !memGraph.want) { setTimeout(() => { if (store.mode.kind === "memory" && !memGraph.want) { store.setFocus({ kind: "sun", id: "sun" }); store.setMode({ kind: "system" }); } }, 0); return; }
+    root.dataset.mode = store.mode.kind;
+  };
   setMode(); store.on("mode", setMode);
 }
