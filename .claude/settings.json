@@ -8,6 +8,232 @@
             "command": "if [ -x \"/Users/victor/.memorable/bin/memorable\" ]; then \"/Users/victor/.memorable/bin/memorable\" hook user-prompt --environment 'c8241748-81a9-4dd3-b4aa-60d456355a4a'; else printf '{}\\n'; fi"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "http",
+            "url": "http://localhost:7777/hook",
+            "timeout": 3,
+            "headers": {
+              "X-SS-Workspace": "$SUPERSET_WORKSPACE_ID",
+              "X-SS-Terminal": "$SUPERSET_TERMINAL_ID"
+            },
+            "allowedEnvVars": [
+              "SUPERSET_WORKSPACE_ID",
+              "SUPERSET_TERMINAL_ID"
+            ]
+          }
+        ]
       }
     ]
   },

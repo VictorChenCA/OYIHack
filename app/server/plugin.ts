@@ -32,6 +32,7 @@ export interface WorldApi {
   autonomy: Autonomy;
   stances: Record<number, Stance>;
   projects: Project[];
+  extraAdvice: import("../shared/types").Advice[];       // S3: LLM strategy advice merged into state.advice
   log(text: string, extra?: Partial<FeedItem>): void;
   snapshot(): WorldState;
   // mutators used by plugins

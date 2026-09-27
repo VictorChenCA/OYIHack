@@ -5,3 +5,7 @@ node_modules/
 .DS_Store
 .venv-river/
 kb/ingest-stage/
+.claude/worktrees/
+.claude/settings.local.json
+app/node_modules/
+app/data/
