@@ -52,7 +52,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   const pulses: Pulse[] = [];
   const seenEv = new Set<string>(); let primed = false;
   const hiddenGroups = new Set<string>();
-  let W = 0, H = 0, dpr = 1; let openedAt = 0; let autoFit = false; let autoFitAt = 0;
+  let W = 0, H = 0, dpr = 1; let openedAt = 0; let autoFit = false; let autoFitAt = 0; let autoFitN = 0;
   let refetchTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── graph loading ──────────────────────────────────────────────────────
@@ -199,7 +199,7 @@ export function createMemory(root: HTMLElement, store: Store) {
       if (Math.abs(camTarget.s - cam.s) < 0.002 && Math.abs(camTarget.x - cam.x) < 0.5 && Math.abs(camTarget.y - cam.y) < 0.5) camTarget = null;
     }
     if (!hover && !dragNode && !selected && !panning) cam.rot += 0.00035; // slow orbit
-    if (autoFit && t - autoFitAt > 250) { autoFitAt = t; if (t - openedAt > 8000) autoFit = false; else fitView(); }
+    if (autoFit && t - autoFitAt > 250) { autoFitAt = t; if (++autoFitN > 32) autoFit = false; else fitView(); } // ~8s of visible frames
     draw(t);
   }
 
@@ -469,8 +469,8 @@ export function createMemory(root: HTMLElement, store: Store) {
     resize(); flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
     if (store.state) primeEvents(store.state.knowledge?.recent ?? []);
     const wasEmpty = !graph;
-    load().then(() => { if (wasEmpty) { cam.s = 0.25; openedAt = performance.now(); autoFit = true; } });
-    if (graph) fitView();
+    load().then(() => { if (wasEmpty && graph) { const n = sim.nodes.length; for (let i = 0; i < (n < 600 ? 220 : n < 1200 ? 60 : 25); i++) sim.step(); cam.s = 0.3; autoFit = true; autoFitN = 0; autoFitAt = 0; fitView(); } });
+    if (graph) { autoFit = true; autoFitN = 24; fitView(); }
     renderStats(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
     if (store.fixture && !fakeTimer) fakeTimer = setInterval(() => {
       if (!sim.nodes.length) return;

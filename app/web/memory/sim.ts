@@ -61,7 +61,7 @@ export class Sim {
       const sn: SNode = {
         id: n.id, n, deg: d, r: Math.min(13, 2.4 + Math.sqrt(d) * 1.5) + (n.type === "folder" ? 0.5 : 0),
         group, depth, ax, ay, color: n.planetId ? PLANET_COLORS[n.planetId] : hasPlanets ? refColor(parts[0]) : refColor(parts.slice(0, 2).join("/"), 34),
-        x: prev?.x ?? ax + (hash(n.id + "x") - 0.5) * 160, y: prev?.y ?? ay + (hash(n.id + "y") - 0.5) * 160,
+        x: prev?.x ?? ax + (hash(n.id + "x") - 0.5) * 60, y: prev?.y ?? ay + (hash(n.id + "y") - 0.5) * 60,
         vx: 0, vy: 0,
       };
       this.byId.set(n.id, sn);
