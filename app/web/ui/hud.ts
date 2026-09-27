@@ -63,8 +63,11 @@ export function createTopBar(root: HTMLElement, store: Store) {
     if (m.kind === "memory") crumbs.push(`<span class="crumb on">Company memory</span>`);
     const names = (atGalaxy || m.kind === "home") ? `<nav class="tb-planets" aria-label="Teams">${s.planets.filter((p) => !store.isHidden("planet", p.id)).map((p) => `<button class="pl-link" data-act="planet" data-id="${esc(p.id)}" title="${esc(p.summary ?? p.name)}">${esc(p.name)}</button>`).join(`<span class="mid">·</span>`)}</nav>` : "";
     left.set(`<button class="brand" data-act="home" title="All companies">C<span>&amp;</span>C</button><nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(DOT)}</nav>${names}`);
-    right.set(s.simulated ? `<span class="badge sim" title="Some of this world is simulated">Simulated</span>` : "");
+    const ro = document.body.classList.contains("readonly") ? `<span class="ro-badge" title="You're viewing a shared link: actions are disabled">View only</span>` : "";
+    const cleared = s.enemies.filter((e) => e.defeatedAt && s.now - e.defeatedAt < 86400000).length;
+    right.set(`${cleared ? `<span class="dim small num" title="Blockers and to-dos cleared in the last 24h">${cleared} cleared today</span>` : ""}${ro}${s.simulated ? `<span class="badge sim" title="Some of this world is simulated">Simulated</span>` : ""}`);
   }
+  window.addEventListener("cc-session", () => render());
   delegate(top, {
     home: () => { store.setFocus(null); store.setMode({ kind: "home" }); },
     galaxy: () => { store.setFocus(null); store.setMode({ kind: "system" }); },
