@@ -241,32 +241,33 @@ export class World implements WorldApi {
   // ---------- enemies ----------
   /** A blocker sits just beyond the frontier of the team it concerns (the Sentinel's department call, else the blocked
    *  agents' teams). Shared by several teams → between them. Same cause → same spot. */
-  /** Blockers and to-dos form a tidy column straight out from the team they concern (beyond where its agents fly):
-   *  urgent (do now) closest, then schedule, delegate, drop. Shared by several teams → between them. */
-  private columnSlot = new Map<string, number>();
+  /** Blockers and to-dos fan out beyond the team they block (its own team, not the classifier's guess): rings by urgency
+   *  (do now closest, then schedule, delegate, drop), each ring spread across a 45° arc so nothing overlaps. */
+  private slots = new Map<string, { ring: number; off: number }>();
   private enemyTeamAngle(e: Enemy): number {
-    const dept = e.classification && e.classification.department.p >= 0.5 ? [normDept(e.classification.department.label)] : [];
-    const teams = [...new Set([...dept, ...e.planetIds])].map((id) => this.planet(id as DeptId));
-    const c = teams.length ? teams.reduce((a, p) => add(a, p.pos), { x: 0, y: 0 }) : { x: 1, y: 0 };
-    return Math.atan2(c.y, c.x);
+    const t = this.planet((e.planetIds[0] ?? "engineering") as DeptId);
+    return Math.atan2(t.pos.y, t.pos.x);
   }
   private enemyPos(e: Enemy): Vec {
-    const slot = this.columnSlot.get(e.id) ?? 0;
-    const a = this.enemyTeamAngle(e) + (slot % 2 ? 1 : -1) * (slot ? 0.035 : 0);
-    return polar(TEAM_R + 90 + 2.15 * UNIT + slot * 52, a);
+    const sl = this.slots.get(e.id) ?? { ring: 0, off: 0 };
+    return polar(TEAM_R + 90 + 2.15 * UNIT + sl.ring * 78, this.enemyTeamAngle(e) + sl.off);
   }
-  /** Recompute each team's column order (called every tick). */
   private layoutColumns() {
     const rank: Record<Quadrant, number> = { do_now: 0, schedule: 1, delegate: 2, drop: 3 };
     const groups = new Map<string, Enemy[]>();
     for (const e of this.enemies.values()) {
       if (e.resolved || e.defeatedAt) continue;
-      const k = Math.round(this.enemyTeamAngle(e) * 100).toString();
+      const k = String(e.planetIds[0] ?? "engineering");
       (groups.get(k) ?? groups.set(k, []).get(k)!).push(e);
     }
+    const ARC = Math.PI / 4, PER_RING = 6;
     for (const list of groups.values()) {
       list.sort((x, y) => rank[x.quadrant] - rank[y.quadrant] || Number(y.humanOnly) - Number(x.humanOnly) || (x.due ?? x.createdAt) - (y.due ?? y.createdAt));
-      list.forEach((e, i) => this.columnSlot.set(e.id, i));
+      // fill rings in urgency order; each ring holds up to PER_RING spread across the 45° arc
+      for (let r = 0; r * PER_RING < list.length; r++) {
+        const row = list.slice(r * PER_RING, (r + 1) * PER_RING);
+        row.forEach((e, i) => this.slots.set(e.id, { ring: r, off: -ARC / 2 + ((i + 0.5) * ARC) / row.length }));
+      }
     }
   }
   block(u: Unit, t: NonNullable<ReturnType<typeof ruleTriage>>) {
@@ -384,6 +385,15 @@ export class World implements WorldApi {
       const dirTo = (d: number) => add(home, polar(d, bearing));
       // dotted line = expected length of the task (ETA) or the frontier (2 units) if it's never been done
       u.finishDist = (u.etaMs ? distUnits(u.etaMs / 1000) : 2) * scale;
+      if (u.role === "subagent" && parent) {
+        const sibs = [...this.units.values()].filter((x) => x.parentId === parent.id);
+        const k = sibs.indexOf(u), n = Math.max(1, sibs.length);
+        const out = Math.atan2(parent.pos.y, parent.pos.x);
+        const want = add(parent.pos, polar(34 + (k % 3) * 13, out + ((k + 0.5) / n - 0.5) * 2.4));
+        u.target = want; u.pos = lerp(u.pos, want, 0.05);
+        if (u.status === "done") { u.endedAt ??= u.lastEventAt; continue; }
+        u.progress = 0; continue;
+      }
       if (u.attacking && this.enemies.get(u.attacking)) {
         const e = this.enemies.get(u.attacking)!; u.target = e.pos;
         u.pos = lerp(u.pos, lerp(u.pos, e.pos, 0.85), 0.01); // slow approach
