@@ -300,7 +300,7 @@ export function createScene(app: Application, store: Store) {
     }
 
     // asteroid belt + mines
-    const mines = s.mines.filter((m) => !m.hidden && !store.isHidden("mine", m.id));
+    const mines = (s.mines ?? []).filter((m) => !m.hidden && !store.isHidden("mine", m.id));
     const bR = s.mines.length ? s.mines.reduce((a, m) => a + Math.hypot(m.pos.x, m.pos.y), 0) / s.mines.length : R * 0.27;
     if (Math.abs(bR - beltR) > 5) { beltR = bR; buildBelt(bR); }
     L.belt.rotation += dt * 0.004;
@@ -344,7 +344,7 @@ export function createScene(app: Application, store: Store) {
     L.factories.visible = store.layerOn("factories");
     const seenF = new Set<string>();
     const ov = L.overlay; ov.clear();
-    for (const f of s.factories) {
+    for (const f of s.factories ?? []) {
       if (f.hidden || store.isHidden("factory", f.id, { planetId: f.planetId })) continue;
       seenF.add(f.id);
       let v = factoryViews.get(f.id);
@@ -352,7 +352,7 @@ export function createScene(app: Application, store: Store) {
       setSize(v.s, 34 * ui); v.s.position.set(f.pos.x, f.pos.y); v.s.rotation += dt * 0.08;
       const da = dimAlpha(f.planetId);
       v.s.alpha = (f.paused ? 0.35 : 1) * da;
-      v.name.text = f.label + (f.paused ? " · paused" : ""); v.name.scale.set(ui); v.name.position.set(f.pos.x, f.pos.y + 30 * ui);
+      v.name.text = f.label + (f.paused ? " · paused" : ""); v.name.scale.set(ui); v.name.position.set(f.pos.x, f.pos.y - 32 * ui);
       v.name.visible = L.factories.visible && store.layerOn("labels"); v.name.alpha = da;
       if (L.factories.visible) {
         const frac = Math.max(0, Math.min(1, 1 - (f.nextRunAt - s.now) / Math.max(1, f.cadenceMs)));
@@ -566,7 +566,7 @@ export function createScene(app: Application, store: Store) {
     }
 
     // active view: highlights + pings
-    const view = s.views.find((v) => v.id === s.activeViewId);
+    const view = (s.views ?? []).find((v) => v.id === s.activeViewId);
     if (view) {
       const where = (id: string): { x: number; y: number; r: number } | null => {
         const u = disp.get(id); if (u) return { ...u, r: 30 * ui };
