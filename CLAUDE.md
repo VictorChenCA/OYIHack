@@ -8,6 +8,11 @@
    Don't re-litigate them; follow the fallbacks column if something fails.
 3. Sponsors: River AI, GBrain, Memorable, QM, Superset, UFO. Cheat sheets are in `kb/sponsors/`.
 
+## MCP servers (project scope, `.mcp.json`)
+- `gbrain`: shared memory (`recall`, `remember`, `entity`, `synthesize`, `forget`, `context_pack`, `delta`). Facts saved here are visible to every agent on this brain.
+- `memorable`: read-only procedure recall (`memorable_recall`, `memorable_show`, …). Recording happens via CLI hooks, not MCP.
+- `superset`: tasks, workspaces, launching parallel agents, terminals, automations (OAuth).
+
 ## Rules for agents
 - Speed > polish. Thinnest end-to-end path first; every change should leave the demo runnable.
 - Integrate via MCP/CLI before writing SDK code. Reuse built-in integrations (gbrain↔memorable,

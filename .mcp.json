@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "gbrain": {
+      "type": "stdio",
+      "command": "${HOME}/.bun/bin/gbrain",
+      "args": ["serve", "--surface", "verbs"]
+    },
+    "memorable": {
+      "type": "stdio",
+      "command": "memorable",
+      "args": ["mcp"]
+    },
+    "superset": {
+      "type": "http",
+      "url": "https://api.superset.sh/mcp"
+    }
+  }
+}
