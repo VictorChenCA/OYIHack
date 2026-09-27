@@ -10,7 +10,7 @@ const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", marketing
 const TIER_TEX: Record<string, TexName> = { haiku: "ship_A", sonnet: "ship_B", opus: "ship_E", fable: "ship_H", river: "meteor_squareLarge", unknown: "ship_B" };
 const PLANET_R = 70, SUN_R = 95;
 /** Credit belt: one small asteroid ≈ one credit chunk, clustered per mine in a tight arc south of the sun. */
-const BELT_R = 290, BELT_W = 80, ROCKS_PER_BUDGET = 40, CLUSTER_SPACING = 0.5;
+const BELT_R = 290, BELT_W = 80, ROCKS_PER_BUDGET = 40, CLUSTER_SPACING = 0.62;
 const shortTxt = (t: string | undefined, n: number) => { const x = (t ?? "").replace(/\s+/g, " ").trim(); return x.length > n ? x.slice(0, n - 1) + "…" : x; };
 function fmtDur(ms: number) { const m = Math.max(0, Math.round(ms / 60000)); return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`; }
 
@@ -351,7 +351,7 @@ export function createScene(app: Application, store: Store) {
       while (v.rocks.length < n) { const i = v.rocks.length; const r = sprite(hash(m.id + ":t" + i) < 0.5 ? "meteor_small" : "meteor_detailedSmall"); r.rotation = hash(m.id + ":o" + i) * 6.28; L.mines.addChild(r); v.rocks.push(r); }
       while (v.rocks.length > n) v.rocks.pop()!.destroy();
       const c = minePos.get(m.id)!;
-      const base = 11 * Math.max(1, ui);
+      const base = 14 * Math.max(1, ui);
       v.rocks.forEach((r, i) => {
         const h1 = hash(m.id + ":a" + i), h1b = hash(m.id + ":b" + i), h2 = hash(m.id + ":r" + i), h3 = hash(m.id + ":s" + i), h4 = hash(m.id + ":w" + i);
         const ang = c.a + ((h1 + h1b) / 2 - 0.5) * CLUSTER_SPACING * 0.95 + time * 0.003;
@@ -366,7 +366,7 @@ export function createScene(app: Application, store: Store) {
       const nm = shortMine(m.label); const title = nm.charAt(0) + nm.slice(1).toLowerCase();
       const val = `${title} $${Math.round(m.remaining)}`; if (v.name.text !== val) v.name.text = val;
       v.name.tint = frac < 0.2 ? 0xff6b6b : col;
-      const lr = BELT_R + BELT_W / 2 + 16 * ui; v.name.scale.set(ui * 0.9); v.name.position.set(Math.cos(c.a) * lr, Math.sin(c.a) * lr);
+      const mi = ordered.indexOf(m), lr = BELT_R + BELT_W / 2 + (14 + (mi % 2) * 16) * ui; v.name.scale.set(ui * 0.85); v.name.position.set(Math.cos(c.a) * lr, Math.sin(c.a) * lr);
     }
     for (const [id, v] of mineViews) if (!seenMine.has(id)) { v.rocks.forEach((r) => r.destroy()); v.glow.destroy(); v.name.destroy(); mineViews.delete(id); }
 
