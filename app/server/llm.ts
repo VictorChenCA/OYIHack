@@ -44,10 +44,9 @@ export async function claude(prompt: string, opts: LlmOpts = {}): Promise<string
     ];
     if (opts.system) args.push("--system-prompt", opts.system);
     stats.calls++;
-    const proc = Bun.spawn(args, {
-      cwd: tmpdir(), stdin: new TextEncoder().encode(prompt), stdout: "pipe", stderr: "pipe",
-      env: { ...process.env, CLAUDE_CODE_ENTRYPOINT: "cc-brains", CC_BRAINS: "1" },
-    });
+    const env: Record<string, string | undefined> = { ...process.env, CC_BRAINS: "1" };
+    delete env.ANTHROPIC_API_KEY; // always the subscription (OAuth/keychain), never a stray API key
+    const proc = Bun.spawn(args, { cwd: tmpdir(), stdin: new TextEncoder().encode(prompt), stdout: "pipe", stderr: "pipe", env });
     const timeout = opts.timeoutMs ?? 45_000;
     const timer = setTimeout(() => { try { proc.kill(); } catch {} }, timeout);
     const [out, err] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
