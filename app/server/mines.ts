@@ -22,14 +22,21 @@ function riverSpend(ctx: Ctx): number {
   return ctx.world.research.runs.reduce((s, r) => s + (r.costUsd ?? 0), 0);
 }
 
+const firstCost = new Map<string, number>(); // cost when first observed (pre-existing spend is not "burn")
+
 export function updateMines(ctx: Ctx, now = Date.now()) {
-  for (const u of ctx.world.units.values()) if (!u.simulated && u.costUsd > (seenCost.get(u.id) ?? 0)) seenCost.set(u.id, u.costUsd);
-  let spent = 0; for (const v of seenCost.values()) spent += v;
-  samples.push({ t: now, spent });
+  for (const u of ctx.world.units.values()) {
+    if (u.simulated || !(u.costUsd > 0)) continue;
+    if (!firstCost.has(u.id)) firstCost.set(u.id, u.costUsd);
+    if (u.costUsd > (seenCost.get(u.id) ?? 0)) seenCost.set(u.id, u.costUsd);
+  }
+  let spent = 0, burned = 0;
+  for (const [id, v] of seenCost) { spent += v; burned += v - (firstCost.get(id) ?? v); }
+  samples.push({ t: now, spent: burned });
   while (samples.length > 2 && now - samples[1].t > 15 * 60_000) samples.shift();
   const first = samples[0];
   const dt = now - first.t;
-  const burn = dt > 20_000 ? ((spent - first.spent) / dt) * 86_400_000 : 0;
+  const burn = dt > 20_000 ? ((burned - first.spent) / dt) * 86_400_000 : 0;
   for (const m of ctx.world.mines) {
     if (m.id === "claude") {
       m.remaining = Math.max(0, Math.round((m.total - spent) * 100) / 100);

@@ -45,7 +45,7 @@ let ready: { ok: boolean; why: string; at: number } | undefined;
 export async function supersetReady(force = false): Promise<{ ok: boolean; why: string }> {
   if (!force && ready && Date.now() - ready.at < (ready.ok ? 120_000 : 15_000)) return ready;
   const r = await ss(["auth", "whoami"], 10_000);
-  const why = r.ok ? "" : (r.err.split("\n")[0] || "superset CLI unavailable").replace(/sk_live_\S+/g, "sk_live_***");
+  const why = r.ok ? "" : (r.err.split("\n")[0] || "superset CLI unavailable").replace(/^Error:\s*/, "").replace(/sk_live_\S+/g, "sk_live_***");
   ready = { ok: r.ok, why, at: Date.now() };
   return ready;
 }
