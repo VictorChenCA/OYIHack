@@ -2,7 +2,7 @@
 import type { Store, Target } from "../store";
 import type { DeptId, WorldState } from "../../shared/types";
 import { el, esc, live, delegate, usd, dur, TIER_COLOR, QUAD_LABEL, KIND_LABEL } from "./util";
-import { blockerGlyph } from "./glyphs";
+import { tierSvg, blockerSvg } from "../shapes";
 
 export function createTooltip(root: HTMLElement, store: Store) {
   const tip = el("div", "tip glass"); tip.setAttribute("role", "tooltip"); tip.hidden = true; root.appendChild(tip);
@@ -25,19 +25,20 @@ export function createTooltip(root: HTMLElement, store: Store) {
     if (t.kind === "unit") {
       const u = store.unit(t.id); if (!u || store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId })) return "";
       const col = s.projects.find((p) => p.id === u.projectId)?.color ?? TIER_COLOR[u.tier];
-      return line(u.label, u.summary ?? u.task ?? "", col);
+      const st = u.status === "attacking" || u.status === "acting" ? "working" : u.status;
+      return `<div class="tt-h">${tierSvg(u.tier, col, u.role === "mothership" ? 9 : 6)}<b>${esc(u.label)}</b><span class="dim small">${esc(st)}</span></div>${(u.summary ?? u.task) ? `<div class="tt-l">${esc(u.summary ?? u.task ?? "")}</div>` : ""}`;
     }
     if (t.kind === "enemy") {
       const e = store.enemy(t.id); if (!e || store.isHidden("enemy", e.id)) return "";
       const n = e.blocked.length;
-      return `<div class="tt-h">${blockerGlyph(e.quadrant, e.humanOnly, 14)}<b>${esc(e.title)}</b></div><div class="tt-l">${esc(QUAD_LABEL[e.quadrant])} · ${esc(KIND_LABEL[e.kind] ?? e.kind)} · blocking ${n} agent${n === 1 ? "" : "s"}${e.humanOnly ? " · needs a person" : ""}</div>${e.reason ? `<div class="tt-l dim">${esc(e.reason)}</div>` : ""}`;
+      return `<div class="tt-h">${blockerSvg(e.quadrant, e.humanOnly, 7)}<b>${esc(e.title)}</b></div><div class="tt-l">${esc(QUAD_LABEL[e.quadrant])} · ${esc(KIND_LABEL[e.kind] ?? e.kind)} · blocking ${n} agent${n === 1 ? "" : "s"}${e.humanOnly ? " · needs a person" : ""}</div>${e.reason ? `<div class="tt-l dim">${esc(e.reason)}</div>` : ""}`;
     }
     if (t.kind === "planet") {
       const p = s.planets.find((x) => x.id === t.id); if (!p || store.isHidden("planet", p.id)) return "";
       return line(p.name, p.summary ?? "", p.color);
     }
-    if (t.kind === "factory") { const f = s.factories.find((x) => x.id === t.id); return f ? line(f.label, f.paused ? "paused" : `runs every ${dur(f.cadenceMs)}`) : ""; }
-    if (t.kind === "mine") { const m = s.mines.find((x) => x.id === t.id); return m ? line(m.label, `${usd(m.remaining)} left`, m.color) : ""; }
+    if (t.kind === "factory") { const f = s.factories.find((x) => x.id === t.id); return f ? line(f.label, `Recurring job · ${(f as { schedule?: string }).schedule ?? "every " + dur(f.cadenceMs)}${f.paused ? " · paused" : ""}`) : ""; }
+    if (t.kind === "mine") { const m = s.mines.find((x) => x.id === t.id); return m ? line(m.label, `Credits · ${usd(m.remaining)} left`, m.color) : ""; }
     if (t.kind === "research") return line("Research", "trains the blocker classifier");
     if (t.kind === "sun") return line("Company memory", "click to open", "#FFD166");
     return "";

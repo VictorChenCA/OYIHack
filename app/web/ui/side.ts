@@ -3,6 +3,7 @@ import type { Store, Target } from "../store";
 import type { DeptId, Enemy, EnemyKind, Factory, Mine, Planet, Quadrant, RankEntry, Tier, Unit, WorldState } from "../../shared/types";
 import { el, esc, live, delegate, kfmt, usd, dur, ago, bar, sparkline, scoreColor, TIER_COLOR, QUAD_COLOR, QUAD_LABEL, KIND_LABEL, GOLD, STATUS_COLOR, MODE_LABEL } from "./util";
 import { tierGlyph, blockerGlyph, QUAD_WHY } from "./glyphs";
+import { tierSvg, blockerSvg } from "../shapes";
 
 const KINDS: EnemyKind[] = ["credential", "account", "approval", "rate_limit", "billing", "missing_info", "dependency", "failure"];
 const QUADS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
@@ -125,17 +126,23 @@ export function createSide(root: HTMLElement, store: Store) {
 
   // ── Planet ──
   function planetHtml(s: WorldState, p: Planet) {
-    const c = p.cycle; const left = c.endAt - s.now;
-    const span = Math.max(1, c.endAt - c.startAt); const frac = Math.max(0, Math.min(1, (s.now - c.startAt) / span));
-    const DAY = 864e5;
-    const when = left <= 0 ? "ended" : c.kind === "sprint" && span >= 2 * DAY ? `day ${Math.min(Math.ceil(span / DAY), Math.floor((s.now - c.startAt) / DAY) + 1)} of ${Math.round(span / DAY)}` : `${dur(left)} left`;
     const ships = s.units.filter((u) => u.planetId === p.id && u.role === "mothership" && u.status !== "dead" && !hiddenUnit(u));
     const enemies = s.enemies.filter((e) => !e.resolved && e.planetIds.includes(p.id) && !hiddenEnemy(e));
-    return `<header class="s-head" style="--c:${p.color}"><div class="s-titles"><h2><i class="dot" style="background:${p.color};color:${p.color}"></i>${esc(p.name)}</h2></div></header>
+    const jobs = s.factories.filter((f) => f.planetId === p.id);
+    const mem = [...(s.knowledge?.recent ?? [])].filter((m) => m.kind === "write" && m.text && (m as { planetId?: string }).planetId === p.id).slice(-4).reverse();
+    const shipRow = (u: Unit) => {
+      const col = s.projects.find((x) => x.id === u.projectId)?.color ?? p.color;
+      const el = Math.max(0, s.now - u.startedAt);
+      const st = u.status === "attacking" || u.status === "acting" ? "working" : u.status;
+      return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="ms"><span class="ic">${tierSvg(u.tier, col, 8)}</span><b>${esc(u.label)}</b><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(st)}</span><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="num dim small">${dur(el)}${u.etaMs != null ? " / " + dur(u.etaMs) : ""}</span></li>`;
+    };
+    return `<header class="s-head" style="--c:${p.color}"><div class="s-titles"><h2><i class="dot" style="background:${p.color};color:${p.color}"></i>${esc(p.name)}</h2></div>
+        <button class="btn sm ghost" data-act="spawn-ms" data-id="${esc(p.id)}" style="margin-left:auto">+ Mothership</button></header>
       ${p.summary ? `<p class="s-reason">${esc(p.summary)}</p>` : ""}
-      <section class="cycle"><div class="cy-row"><span class="dim">${esc(c.label)}</span><span class="num">${esc(when)}</span></div>${bar(frac, p.color, "bar thin")}</section>
-      <section><h3>Agents</h3><ul class="ulist">${ships.map((u) => unitRow(u)).join("") || `<li class="dim">No agents yet. Start one below.</li>`}</ul></section>
-      ${enemies.length ? `<section><h3>Blockers</h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0">${blockerGlyph(e.quadrant, e.humanOnly, 14)}<b>${esc(e.title)}</b><span class="dim small">${esc(QUAD_LABEL[e.quadrant])}</span></li>`).join("")}</ul></section>` : ""}`;
+      <section><h3>Motherships <span class="num dim">${ships.length}</span></h3><ul class="ulist">${ships.map(shipRow).join("") || `<li class="dim">No agents yet. Start one with + Mothership.</li>`}</ul></section>
+      <section><h3>Blockers <span class="num dim">${enemies.length}</span></h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0">${blockerSvg(e.quadrant, e.humanOnly, 7)}<b>${esc(e.title)}</b><span class="dim small">${esc(QUAD_LABEL[e.quadrant])}</span></li>`).join("") || `<li class="dim">None.</li>`}</ul></section>
+      <section><h3>Recurring jobs <span class="num dim">${jobs.length}</span></h3><ul class="ulist">${jobs.map((f) => `<li class="plain" data-act="focus-factory" data-id="${esc(f.id)}" tabindex="0"><b>${esc(f.label)}</b><span class="dim small">${esc((f as { schedule?: string }).schedule ?? "every " + dur(f.cadenceMs))}</span><span class="num dim small">${f.paused ? "paused" : "next in " + dur(Math.max(0, f.nextRunAt - s.now))}</span></li>`).join("") || `<li class="dim">None scheduled.</li>`}</ul></section>
+      ${mem.length ? `<section><h3>Recent memory</h3><ul class="ulist">${mem.map((m) => `<li class="plain"><span class="trunc">${esc(m.text!)}</span><span class="num dim small">${ago(m.at, s.now)}</span></li>`).join("")}</ul></section>` : ""}`;
   }
 
   function factoryHtml(s: WorldState, f: Factory) {
@@ -221,6 +228,7 @@ export function createSide(root: HTMLElement, store: Store) {
       const members = (store.state?.units ?? []).filter((u) => u.groups.includes(g)).map((u) => u.id);
       store.command({ type: "group", group: g, unitIds: [...new Set([...members, t.dataset.id!])] });
     },
+    "spawn-ms": (t) => { const ta = document.querySelector<HTMLTextAreaElement>(".c-input textarea"); if (ta) { ta.value = ""; ta.placeholder = `Start a mothership in ${deptName(store.state!, t.dataset.id!)}…  (Enter to start)`; ta.focus(); } },
     "enter-planet": (t) => store.setMode({ kind: "planet", planetId: t.dataset.id as DeptId }),
     "enter-memory": () => store.setMode({ kind: "memory" }),
     "select-planet": (t) => { const s = store.state; if (s) store.select(s.units.filter((u) => u.planetId === t.dataset.id && !hiddenUnit(u) && u.status !== "dead").map((u) => u.id)); },
