@@ -11,7 +11,7 @@
     "tokenEnv": "GBRAIN_TOKEN"
   },
   "sentinelUrl": "http://127.0.0.1:7788",
-  "supersetProjectId": "",
+  "supersetProjectId": "d59e7656-db7a-4943-b6e7-2c4b86af1cfc",
   "mines": [
     {
       "id": "claude",

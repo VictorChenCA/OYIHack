@@ -50,9 +50,9 @@ const PLANETS: { planetId: DeptId; projectId: string; name: string; prompt: stri
       tail("Product Design", "company/product-design/"),
   },
   {
-    planetId: "arts", projectId: "brand", name: "art-brand",
-    prompt: "Create the C&C logo (SVG), a palette (JSON + preview SVG) and an OG image SVG in company/arts/." +
-      tail("Arts", "company/arts/"),
+    planetId: "marketing", projectId: "brand", name: "mkt-brand",
+    prompt: "Create the C&C logo (SVG), a palette (JSON + preview SVG) and an OG image SVG in company/marketing/brand/." +
+      tail("Marketing", "company/marketing/brand/"),
   },
 ];
 
