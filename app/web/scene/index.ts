@@ -65,9 +65,23 @@ export function createScene(app: Application, store: Store) {
   let lastWriteAt = 0;
   let frame = 0;
 
+  let PF: typeof import("pixi-filters") | null = null;
+  const shocks: { f: Filter & { time: number }; t: number }[] = [];
+  /** ShockwaveFilter ~0.8s at a world point. Disabled: nesting it over the bloom pass clipped the world in Pixi 8.21,
+   *  so resolves / memory writes use additive ring sprites (spawnFx) instead. Flip SHOCKWAVE to retry. */
+  const SHOCKWAVE = false;
+  function shock(wx: number, wy: number) {
+    if (!SHOCKWAVE || !PF || shocks.length >= 3) return;
+    try {
+      const p = cam.toScreen(wx, wy);
+      const f = new PF.ShockwaveFilter({ center: { x: p.x, y: p.y }, amplitude: 14, wavelength: 90, speed: 520, brightness: 1.15, radius: 480 } as any) as unknown as Filter & { time: number };
+      shocks.push({ f, t: 0 }); root.filters = shocks.map((x) => x.f);
+    } catch { PF = null; }
+  }
   let bloom: Filter | null = null, glowSel: Filter | null = null, glowGold: Filter | null = null, glowGem: Filter | null = null;
   import("pixi-filters").then((pf) => {
     try {
+      PF = pf;
       bloom = new pf.AdvancedBloomFilter({ threshold: 0.6, bloomScale: 0.55, brightness: 1.0, blur: 5, quality: 4 });
       glowSel = new pf.GlowFilter({ distance: 12, outerStrength: 2.2, innerStrength: 0, color: 0xc8f4ff, quality: 0.2 });
       glowGold = new pf.GlowFilter({ distance: 10, outerStrength: 1.6, innerStrength: 0, color: GOLD, quality: 0.2 });
@@ -215,7 +229,7 @@ export function createScene(app: Application, store: Store) {
     const writes = s.knowledge?.recent?.filter((m) => m.kind === "write") ?? [];
     for (const w of writes) if (w.at > lastWriteAt) {
       if (lastWriteAt > 0) {
-        sun.flash = 1; spawnFx("circle_02", 0, 0, 0xffd27a, SUN_R * 2, SUN_R * 9, 1.2, 0.8);
+        sun.flash = 1; spawnFx("circle_02", 0, 0, 0xffd27a, SUN_R * 2, SUN_R * 9, 1.2, 0.8); shock(0, 0);
         const pl = s.planets.find((p) => p.id === w.planetId); if (pl) spawnFx("circle_02", pl.pos.x, pl.pos.y, 0xffe2a0, PLANET_R * 1.5, PLANET_R * 4, 0.9, 0.7);
       }
       lastWriteAt = Math.max(lastWriteAt, w.at);
@@ -435,7 +449,7 @@ export function createScene(app: Application, store: Store) {
     }
     for (const [id, v] of enemyViews) if (v.seen !== frame) {
       const stillThere = s.enemies.some((e) => e.id === id);
-      if (!stillThere || v.last.resolved) { spawnFx("circle_02", v.x, v.y, 0xffffff, 40, 520, 0.8, 1); spawnFx("light_01", v.x, v.y, QUAD_COLOR[v.last.quadrant] ?? 0xffffff, 60, 260, 0.6, 0.9); }
+      if (!stillThere || v.last.resolved) { shock(v.x, v.y); spawnFx("circle_02", v.x, v.y, 0xffffff, 40, 520, 0.8, 1); spawnFx("light_01", v.x, v.y, QUAD_COLOR[v.last.quadrant] ?? 0xffffff, 60, 260, 0.6, 0.9); }
       v.c.destroy({ children: true }); enemyViews.delete(id);
     }
 
@@ -573,6 +587,11 @@ export function createScene(app: Application, store: Store) {
       if (w) { const r = w.r * 1.2; for (let k = 0; k < 4; k++) arc(ov, w.x, w.y, r, time * 0.8 + (k * Math.PI) / 2, time * 0.8 + (k * Math.PI) / 2 + 0.9); ov.stroke({ width: 2 * ui, color: 0xe8f6ff, alpha: 0.85 }); }
     }
 
+    // shockwaves
+    if (shocks.length) {
+      for (let i = shocks.length - 1; i >= 0; i--) { shocks[i].t += dt; shocks[i].f.time = shocks[i].t; if (shocks[i].t > 0.8) shocks.splice(i, 1); }
+      root.filters = shocks.length ? shocks.map((x) => x.f) : null;
+    }
     // fx
     for (let i = fxs.length - 1; i >= 0; i--) {
       const f = fxs[i]; f.t += dt / f.dur;
@@ -629,7 +648,7 @@ export function createScene(app: Application, store: Store) {
     else if (m.kind === "memory") cam.flyTo(0, 0, cam.fitScale(420));
   }
   store.on("mode", flyToMode);
-  (window as any).__scene = { cam, pick, store }; // debug handle
+  (window as any).__scene = { cam, pick, store, shock }; // debug handle
 
   // ---------- input ----------
   const cv = app.canvas as HTMLCanvasElement;
