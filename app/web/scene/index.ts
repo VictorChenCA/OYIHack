@@ -144,7 +144,7 @@ export function createScene(app: Application, store: Store) {
     research.glow = sprite("circle_05", { tint: 0x40e0d0, add: true, size: 230, alpha: 0.18 });
     research.gem = new Graphics();
     {
-      const g = research.gem, H = 44, W = 30, Y = -H * 0.28, I = W * 0.42;
+      const g = research.gem, H = 54, W = 36, Y = -H * 0.28, I = W * 0.42;
       const f = (pts: number[], color: number, alpha = 1) => g.poly(pts).fill({ color, alpha });
       f([0, -H, -W, Y, -I, Y], 0xbffff4, 0.95);           // crown, left
       f([0, -H, -I, Y, I, Y], 0xeafffc, 0.98);            // table
@@ -154,8 +154,8 @@ export function createScene(app: Application, store: Store) {
       f([I, Y, W, Y, 0, H], 0x2aa99f, 0.95);              // pavilion, right
       g.poly([0, -H, W, Y, 0, H, -W, Y]).stroke({ width: 1.6, color: 0xd8fffa, alpha: 0.85, join: "round" });
       g.moveTo(-W, Y).lineTo(W, Y).stroke({ width: 1, color: 0xffffff, alpha: 0.5 });
-      g.circle(0, 0, 66).stroke({ width: 1.2, color: 0x7fe9df, alpha: 0.4 });
-      for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.PI / 4; g.circle(Math.cos(a) * 66, Math.sin(a) * 66, 2.4).fill({ color: 0xbffff4, alpha: 0.8 }); }
+      g.circle(0, 0, 78).stroke({ width: 1.2, color: 0x7fe9df, alpha: 0.4 });
+      for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.PI / 4; g.circle(Math.cos(a) * 78, Math.sin(a) * 78, 2.6).fill({ color: 0xbffff4, alpha: 0.8 }); }
     }
     research.name = setPrio(label("RESEARCH", 13, 0x9fffef), 2);
     L.research.addChild(research.glow, research.gem);
@@ -407,7 +407,7 @@ export function createScene(app: Application, store: Store) {
     L.research.position.set(rpos.x, rpos.y);
     research.glow.alpha = running ? 0.34 : 0.16;
     research.gem.filters = running && glowGem ? [glowGem] : null;
-    research.name.position.set(rpos.x, rpos.y + 66 + 14 * ui); research.name.scale.set(ui);
+    research.name.position.set(rpos.x, rpos.y + 78 + 14 * ui); research.name.scale.set(ui);
 
     // factories
     L.factories.visible = store.layerOn("factories");
@@ -805,7 +805,7 @@ export function createScene(app: Application, store: Store) {
     if (best) return best;
     if (store.layerOn("factories")) for (const f of s.factories) if (!f.hidden && !store.isHidden("factory", f.id, { planetId: f.planetId }) && (!pm || f.planetId === pm)) { const mp = moonPos.get(f.id); if (mp) consider({ kind: "factory", id: f.id }, mp.x, mp.y, 16 * cam.ui); }
     if (store.layerOn("mines")) for (const m of s.mines) { const c = minePos.get(m.id); if (c && mineViews.has(m.id)) consider({ kind: "mine", id: m.id }, c.x, c.y, 70); }
-    if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 60);
+    if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 70);
     if (best) return best;
     consider({ kind: "sun", id: "sun" }, 0, 0, SUN_R * (pm ? 0.55 : 1.1));
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * planetK() * 1.1);
