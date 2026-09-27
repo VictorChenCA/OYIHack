@@ -22,7 +22,7 @@ export function digest(ctx: Ctx, maxUnits = 40): string {
   const units = s.units.filter((u) => u.status !== "dead").slice(0, maxUnits).map((u) =>
     `- ${u.id} ${u.label} planet=${u.planetId} project=${u.projectId} tier=${u.tier} status=${u.status}${u.groups.length ? ` groups=${u.groups.join("/")}` : ""}${u.blockedBy ? ` blockedBy=${u.blockedBy}` : ""}${u.attacking ? ` attacking=${u.attacking}` : ""}${u.summary ? ` summary="${clip(u.summary, 140)}"` : u.task ? ` task="${clip(u.task, 100)}"` : ""}`).join("\n");
   const enemies = s.enemies.filter((e) => !e.resolved).map((e) =>
-    `- ${e.id} "${e.title}" kind=${e.kind} quadrant=${e.quadrant}${e.humanOnly ? " GOLD(human-only)" : ""} blocked=${e.blocked.length} [${e.blocked.join(",")}] attackers=${e.attackers.length} depts=${e.planetIds.join(",")}`).join("\n");
+    `- ${e.id} "${e.title}" kind=${e.kind} quadrant=${e.quadrant}${e.humanOnly ? " NEEDS-A-PERSON" : ""} blocked=${e.blocked.length} [${e.blocked.join(",")}] attackers=${e.attackers.length} depts=${e.planetIds.join(",")}`).join("\n");
   const factories = s.factories.map((f) => `- ${f.id} "${f.label}" planet=${f.planetId} ${f.paused ? "paused" : "running"} runs=${f.runs}`).join("\n");
   const mines = s.mines.map((m) => `${m.label}: $${m.remaining.toFixed(0)} of $${m.total} left (${Math.round((100 * m.remaining) / (m.total || 1))}%)`).join("; ");
   const projects = s.projects.map((p) => `${p.id}(${p.planetId})`).join(", ");
@@ -35,7 +35,7 @@ Enemies (blockers):
 ${enemies || "(none)"}
 Factories:
 ${factories || "(none)"}
-Mines: ${mines}`;
+Credits: ${mines}`;
 }
 
 const ALLOWED = new Set(["add_view", "set_view", "filter", "spawn", "prompt", "attack", "deploy_for_enemy", "group", "stance", "autonomy", "build_factory", "factory_run"]);
@@ -84,8 +84,8 @@ export async function runCommander(text: string, ctx: Ctx): Promise<void> {
   if (busy) { ctx.broadcast({ type: "commander", text: "Still working on the previous order…" }); return; }
   busy = true;
   try {
-    const prompt = `You are the commander AI of "C&C", an RTS-style command center where a founder manages Claude Code agent swarms.
-Planets are departments, units are agents, enemies are blockers (GOLD = human-only, never send agents to those), factories are recurring agent jobs, mines are credit budgets.
+    const prompt = `You are the command bar of "C&C", a tool a founder uses to run a company of Claude Code agents. It is NOT a game.
+Vocabulary for your reply: teams (Engineering, Product, Design, Marketing, Operations), agents, blockers (NEEDS-A-PERSON ones need the founder — never send agents to those), recurring jobs, credits. Never say planets, units, enemies, gold, mines, or ships. Answer questions about what is going on in 1–3 plain sentences grounded ONLY in the world state; take actions only when asked.
 
 WORLD STATE:
 ${digest(ctx)}
@@ -100,8 +100,8 @@ Prefer the fewest actions that achieve the order. If nothing should be done, ret
 FOUNDER'S ORDER: ${text}
 
 Reply with ONLY strict JSON: {"reply":"<=40 words, confident RTS-officer voice","actions":[<Command objects>]}`;
-    let j: any = await claudeJson(prompt, { model: "sonnet", timeoutMs: 75_000, noCache: true, urgent: true });
-    if (!j) j = await claudeJson(prompt, { model: "haiku", timeoutMs: 40_000, noCache: true, urgent: true });
+    let j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 40_000, noCache: true, urgent: true });
+    if (!j) j = await claudeJson(prompt, { model: "sonnet", timeoutMs: 75_000, noCache: true, urgent: true });
     if (!j) { ctx.broadcast({ type: "commander", text: "Commander offline (LLM call failed). Try again." }); return; }
     const done: string[] = [], skipped: string[] = [];
     for (const raw of (Array.isArray(j.actions) ? j.actions : []).slice(0, 12)) {
@@ -145,7 +145,7 @@ export async function refreshAdvice(ctx: Ctx): Promise<void> {
 WORLD STATE:
 ${digest(ctx, 30)}
 
-Give at most 3 strategic RTS-style one-line suggestions (<=10 words each), e.g. "Marketing idle: expand to TikTok", "Build a factory for PR triage", "Scout the frontier: no one on new work". Prioritize what unblocks the most or grows the company. Base every suggestion strictly on facts in WORLD STATE; never invent problems (e.g. only mention credits if a mine is below 20%). Do not repeat blockers the founder must clear personally (GOLD); those are already shown.
+Give at most 3 one-line suggestions for the founder (<=10 words each), e.g. "Marketing idle: expand to TikTok", "Make PR triage a recurring job", "Nobody is exploring new work". Use: teams, agents, blockers, recurring jobs, credits (never planets/units/enemies/gold/mines). Prioritize what unblocks the most or grows the company. Base every suggestion strictly on facts in WORLD STATE; never invent problems (e.g. only mention credits if a budget is below 20%). Do not repeat blockers that need a person; those are already shown.
 Reply ONLY strict JSON: {"suggestions":[{"text":"...","priority":2-6}]}`;
     const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 90_000, noCache: true });
     const list = Array.isArray(j?.suggestions) ? j.suggestions : [];

@@ -36,9 +36,9 @@ export function overviewTick(ctx: Ctx) {
   const real = [...w.units.values()].some((u) => !u.simulated && u.status !== "dead");
   if (!real) { last = Date.now(); w.overview = computed(ctx); for (const p of w.planets) p.summary = computedPlanet(ctx, p.id); return; }
   inFlight = true; last = Date.now();
-  const prompt = `You write the status line of an ops console for a founder running a company of AI agents. Use ONLY facts in the world state below; no invented problems. Plain words: say "agents" and "blockers".
-Return strict JSON: {"overview": "<=28 words: what the company is doing right now and what needs the founder", "planets": {"engineering": "<=14 words", "product_design": "...", "arts": "...", "marketing": "..."}}
-Departments with no agents: "No agents yet".
+  const prompt = `You write the status line of an ops console for a founder running a company of AI agents. Use ONLY facts in the world state below; no invented problems. Plain words: teams, agents, blockers, credits. Never say planets, units, enemies, gold, mines. It is a founder tool, not a game.
+Return strict JSON: {"overview": "<=28 words: what the company is doing right now and what needs the founder", "planets": {"engineering": "<=14 words", "product": "...", "design": "...", "marketing": "...", "operations": "..."}}
+Teams with no agents: "No agents yet".
 
 WORLD STATE:
 ${digest(ctx, 30)}`;

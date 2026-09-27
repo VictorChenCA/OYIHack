@@ -8,9 +8,10 @@ const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 
 const WORK: Record<string, string[]> = {
   engineering: ["Triage GBrain PR #1412 and write a verdict", "Fix the failing world reducer test", "Add the Superset spawn route", "Review GBrain PR #1398 for risk"],
+  product: ["Write the spec for team views", "Prioritize the launch backlog", "Summarize user interviews"],
+  design: ["Design the C&C landing page hero", "Create the C&C logo in SVG", "Make the OG image"],
   marketing: ["Draft the C&C launch thread for X", "Write a 30s TikTok script for launch", "Draft the Show HN post", "Build a list of 20 YC founders who post about agents"],
-  product_design: ["Design the C&C landing page hero", "Storyboard the 90s demo video", "Spec the onboarding flow"],
-  arts: ["Create the C&C logo in SVG", "Pick the brand palette", "Make the OG image"],
+  operations: ["Compile the Daily Sync from commits and email", "Reconcile this week's spend", "Prepare the hiring pipeline report"],
 };
 const TOOLS = ["Read", "Grep", "Bash", "Edit", "WebFetch", "mcp__gbrain-cloud__search", "mcp__gbrain-cloud__remember", "mcp__gbrain-cloud__put_page"];
 const BLOCKERS = [
@@ -35,7 +36,7 @@ async function agent(i: number) {
     for (let s = 0; s < steps; s++) {
       const who = subIds.length && Math.random() < 0.6 ? { agent_id: pick(subIds) } : {};
       const tool = pick(TOOLS);
-      await post({ hook_event_name: "PreToolUse", session_id: sid, cwd, tool_name: tool, tool_input: { command: tool === "Bash" ? "bun test" : "…", slug: `company/${planet.replace("_", "-")}/note-${s}` }, ...who });
+      await post({ hook_event_name: "PreToolUse", session_id: sid, cwd, tool_name: tool, tool_input: { command: tool === "Bash" ? "bun test" : "…", slug: `company/${planet}/note-${s}`, fact: `Noted step ${s} for ${planet}` }, ...who });
       await sleep(700 + Math.random() * 2200);
       await post({ hook_event_name: Math.random() < 0.08 ? "PostToolUseFailure" : "PostToolUse", session_id: sid, cwd, tool_name: tool, ...who });
       if (!blocked && Math.random() < 0.1) {
