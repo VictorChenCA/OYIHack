@@ -226,6 +226,10 @@ export function createSide(root: HTMLElement, store: Store) {
     promote: (t) => store.command({ type: "research_promote", modelId: t.dataset.id! }),
     retrain: () => store.command({ type: "research_retrain" }),
   });
+  panel.addEventListener("keydown", (e) => {
+    const t = e.target as HTMLElement;
+    if ((e.key === "Enter" || e.key === " ") && t.tagName === "LI" && t.dataset.act) { e.preventDefault(); t.click(); }
+  });
   panel.addEventListener("change", (e) => {
     const t = e.target as HTMLSelectElement;
     if (t.dataset.act === "engine") { store.command({ type: "research_engine", engine: t.value as WorldState["research"]["engine"] }); t.blur(); }

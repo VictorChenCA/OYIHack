@@ -18,7 +18,9 @@ export function createTooltip(root: HTMLElement, store: Store) {
     if (x + w > innerWidth - 8) x = cur.x - w - 12; if (y + h > innerHeight - 8) y = cur.y - h - 12;
     tip.style.transform = `translate(${Math.max(4, x)}px, ${Math.max(4, y)}px)`;
   }
+  const LAYER_OF: Partial<Record<Target["kind"], Parameters<Store["layerOn"]>[0]>> = { unit: "units", enemy: "enemies", factory: "factories", mine: "mines", research: "research" };
   function content(s: WorldState, t: Target): string {
+    const layer = LAYER_OF[t.kind]; if (layer && !store.layerOn(layer)) return "";
     if (t.kind === "unit") {
       const u = store.unit(t.id); if (!u || store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId })) return "";
       const ctx = u.contextWindow ? Math.round((u.contextUsed / u.contextWindow) * 100) : 0;
