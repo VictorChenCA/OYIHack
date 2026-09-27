@@ -1,5 +1,7 @@
 # Memorable: procedural memory for agents (YC)
 
+**Side quest prize:** "Most Memorable: the most interesting/innovative use case of Memorable." All tracks are in `kb/EVENT.md#prizes`.
+
 **What it is:** it watches an agent's successful runs as tool-call traces and extracts a
 **deterministic procedure** (ordered steps, pre/postconditions, verify command). The extraction is
 model-free. On the next similar task, it injects that procedure (about 50–100 tokens) as reference

@@ -1,6 +1,9 @@
 # OYIHack: Own Your Intelligence Hackathon (YC, Sep 27 2026)
 
-**Hacking 13:15 → 17:00 hard deadline.** Optimize for a working demo, not completeness.
+**Hacking 13:30 → 17:00 hard deadline.** Optimize for a working demo, not completeness.
+Submission (https://docs.google.com/forms/d/e/1FAIpQLSdiU5L7PhlkD7HQQouQKPSlm7WrobkdJuvSZLoi6O7jXRWKiQ/viewform, opens 16:00) needs a **public** GitHub URL, a **public** demo video,
+team name/emails/description, and side quest checkboxes (you can pick several). Grand prize: $5k, a 1:1 with Garry, and a YC interview.
+Side quest criteria per sponsor: `kb/EVENT.md#prizes`.
 
 ## Before you do anything
 1. Read `kb/INDEX.md`. The local KB has every sponsor's docs and source. **Grep `kb/` before any web search.**

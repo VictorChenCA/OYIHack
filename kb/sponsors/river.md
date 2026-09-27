@@ -1,5 +1,7 @@
 # River AI: "your own frontier AI lab, in one API"
 
+**Side quest prize:** "Best use of a custom model/agent (trained using River API)." (The demo has to use a model you trained with River.) All tracks are in `kb/EVENT.md#prizes`.
+
 **What it is:** a Python client (`river-client`) for **SFT, RL (GRPO/ScaleRL), and distillation**
 of open-weight models on River's GPUs, with LoRA adapters. You own and can download the weights.
 Serving goes through OpenAI-compatible dedicated deployments. No local GPU needed.
@@ -9,7 +11,43 @@ Serving goes through OpenAI-compatible dedicated deployments. No local GPU neede
   `python-api.md` (106KB) is the full reference.
 - Support: Discord https://discord.gg/YjK48AuA8n · support@river.ai
 - **Pricing:** token-based. Prompt $0.30–5.14/M, completion $0.80–12.84/M, training $1.00–15.41/M.
-  **No free tier, so ask the sponsor for hackathon credits.**
+  No free tier, but **free hackathon credits are at the River AI booth. Unused credits expire at the end of the day.**
+
+## Hackathon brief (river.ai/own-your-intelligence-hackathon, mirrored at `kb/raw/river/hackathon/page.md`)
+"**The best showcase of using a custom model wins.**" River judges on three things, so build the demo around them:
+1. **Demo the experience:** what it is and who it's for.
+2. **Explain what the model learned:** show the training examples or the reward signal.
+3. **Show why it helps:** **compare base vs. trained on unseen tasks** (a held-out eval or side-by-side).
+
+**Kickoff case study ("Personal AI"):** a LoRA trained on your own messages with River SFT, so replies
+sound like you. Its UI: a text box, a Rewrite button, think/temp 0.7/max tok 512. Prompt
+`[given text]: Hello, should I try SFT or RL training?\n[rewritten text]:` came back from the trained
+adapter as `yo should i try sft or rl training`.
+
+**Official example `style_chat.py`** (`kb/raw/river/hackathon/`; tests need no key):
+`uv run --no-project style_chat.py`. It's a chat on base `Qwen/Qwen3.8-27B-FP8` that trains online. The base
+model rewrites each of your messages into neutral prose, and the pair (neutral → your original) is an SFT
+example. Every 8 messages it runs 1 `train_step` (LoRA rank 16, lr 1e-4), then hot-loads the new adapter,
+which rewrites the assistant's replies into your style. It saves `messages/pairs/steps.jsonl` under
+`style-chat-runs/<id>`, and `--resume` continues a run. It pins `river-client==0.10.0` via uv inline
+deps; `.venv-river` has 0.12.0.
+API calls it uses (a known-good pattern to copy):
+```python
+client.chat_complete(messages, base_model=M, max_tokens=..., temperature=0,
+                     chat_template_kwargs={"enable_thinking": False})   # base model, no session
+model = session.create_model(base_model=M, lora=river.LoraConfig(rank=16))
+model.load_weights(ckpt, load_optimizer=True)                          # resume a training checkpoint
+from river_client.renderers import get_renderer, TrainOnWhat
+ex = get_renderer(M, thinking=False).build_training_example(msgs + [{"role": "assistant", "content": target}],
+                                                          train_on=..., train_on_eos=True, max_length=None)
+fb, opt = model.train_step([ex.to_dict()], lr=1e-4, loss_fn="cross_entropy")   # don't auto-retry
+model.save_weights(name + "-train", mode="training", ttl=timedelta(days=30))   # resumable
+inf = model.save_weights(name + "-inf", mode="inference")                     # inf.path = river://...
+model.chat_complete(msgs, max_tokens=..., temperature=0.3,
+                    chat_template_kwargs={"enable_thinking": False})         # sample the LoRA
+```
+`result.response_json` is an OpenAI-style chat completion (`choices[0].message.content`).
+`get_renderer(...).build_training_example` saves hand-building `input_ids/target_tokens/weights`.
 
 ## Quickstart
 ```bash

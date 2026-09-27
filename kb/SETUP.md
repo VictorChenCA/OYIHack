@@ -1,4 +1,4 @@
-# Setup checklist (do during lunch, 12:00–13:15)
+# Setup checklist (do during lunch, 12:00–13:30)
 
 ## Already done on this machine (Sep 27, ~11:50)
 - [x] Bun 1.4.2 (`bun upgrade`; GBrain needs ≥ 1.3.11)

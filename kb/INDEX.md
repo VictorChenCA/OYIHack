@@ -7,6 +7,7 @@
 | Install/login checklist + smoke tests | `kb/SETUP.md` |
 | Sponsor cheat sheets | `kb/sponsors/{gbrain,memorable,qm,superset,river,ufo}.md` |
 | River full docs (md) | `kb/raw/river/*.md` (`python-api.md` = full reference) |
+| River hackathon page + official example (`style_chat.py`) | `kb/raw/river/hackathon/` |
 | Superset full docs | `kb/raw/superset-llms-full.txt` (grep `Source: https://docs.superset.sh/<page>`) |
 | Memorable docs (CLI, API, integrations) | `kb/raw/memorable-*.md` |
 | UFO docs | `kb/raw/ufo-docs*.md`, installer `kb/raw/ufo-install.sh` |

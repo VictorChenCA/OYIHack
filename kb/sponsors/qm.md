@@ -1,5 +1,7 @@
 # QM (Y Combinator): multiplayer agent harness for work
 
+**Side quest prize:** "Fork QM and make it do something new! Push the harness in any direction." (It must be a real fork of `yc-software/qm`.) All tracks are in `kb/EVENT.md#prizes`.
+
 **What it is:** a self-hosted, **multiplayer** agent harness for startups, used from Slack and the web.
 - Every person and every room (channel, group DM, project) gets an isolated **scope**. Each scope has
   its own memory, files, keychain view, permissions, crons, web apps, skills, and a **durable sandbox

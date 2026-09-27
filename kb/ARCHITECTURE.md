@@ -1,10 +1,10 @@
-# Architecture decisions: optimized for a 3h45m build (13:15 → 17:00)
+# Architecture decisions: optimized for a 3h30m build (13:30 → 17:00)
 
 ## TL;DR
 1. **Don't build an agent harness. Extend one.** QM or UFO is the runtime, and Claude Code is the dev loop.
 2. **Integrate through MCP and CLI first, SDKs second.** GBrain, Memorable, and Superset all take one command each.
 3. **GBrain = PGLite, keyless, local.** No Postgres, no Docker, no API keys.
-4. **River is the only real schedule risk** (credits, training latency). Start its job before 14:00 or cut it.
+4. **River is the only real schedule risk** (training latency; credits are free at the River booth). Start its job before 14:00 or cut it.
 5. **Every hour must end in a demoable state.** Record a backup video at 16:30.
 
 ## Stack decisions
@@ -15,7 +15,7 @@
 | D3 | Memory (procedures) | Memorable CLI (`init gbrain` or `init qm`), or raw `POST /v1/extract` from custom loops | Already wired into gbrain and QM; free 1,000/mo | Local store `memorable init` |
 | D4 | Glue language | **TypeScript/Bun** for glue and QM work; **Python only for River** (Python-only SDK) and UFO extensions | Match each sponsor's native SDK; no bindings | Shell out to CLIs |
 | D5 | Integration transport | MCP (stdio local, HTTP remote) > CLI subprocess > HTTP API > SDK | MCP gets agent tool use for free, with no UI code | — |
-| D6 | Model training | River SFT LoRA on `Qwen/Qwen3.5-9B` (or whatever `get_capabilities()` lists), about 15–50 steps, **sample via `session.sample(checkpoint=…)`** | Deployments need a team key; sampling a checkpoint needs nothing extra | Base-model `client.sample()`, or skip River |
+| D6 | Model training | River SFT LoRA on `Qwen/Qwen3.5-9B` (or whatever `get_capabilities()` lists), about 15–50 steps, **sample via `session.sample(checkpoint=…)`** | Deployments need a team key; sampling a checkpoint needs nothing extra | Fork the official `kb/raw/river/hackathon/style_chat.py` (a working SFT loop); base-model `client.sample()`; or skip River |
 | D7 | Dev workflow | **Superset**: 2–4 parallel worktrees (one per slice); race agents on risky pieces | Parallelism is the only way to buy time; it also counts as sponsor usage | Plain `git worktree` + multiple Claude Code tabs |
 | D8 | UI | Reuse the harness UI (QM web/Slack, UFO web/terminal, Superset Pages). Custom UI only if it IS the idea | UI is the biggest time sink | One static HTML page |
 | D9 | Hosting | **Localhost demo** on your laptop | Deploys eat 30+ min | `gbrain mcp expose --funnel` if a cloud agent must reach you |
@@ -69,12 +69,12 @@ credits come through at kickoff) on top.
 ## Timeline
 | Time | Goal | Exit criterion |
 |---|---|---|
-| 12:00–13:15 | Lunch + **setup** (`kb/SETUP.md`), get keys/credits, pick idea, and write the answers in `kb/EVENT.md` | Every sponsor CLI prints its version, and you're logged in |
-| 13:15–14:00 | Thinnest end-to-end path; kick off the River job if using it | One request flows through every component |
+| 12:00–13:30 | Lunch + **setup** (`kb/SETUP.md`), get keys/credits, pick idea, and write the answers in `kb/EVENT.md` | Every sponsor CLI prints its version, and you're logged in |
+| 13:30–14:00 | Thinnest end-to-end path; kick off the River job if using it | One request flows through every component |
 | 14:00–15:30 | Core feature; Superset parallel slices | Idea 1 demoable |
 | 15:30–16:15 | Wow layer (idea 2/3) | Or cut it; don't sink time |
 | 16:15–16:30 | Freeze; README + architecture diagram | — |
-| 16:30–16:50 | **Record a backup demo video**, submit | Submitted before 16:55 |
+| 16:30–16:50 | **Record the demo video** (required), make repo + video links public, submit (form opens 16:00) | Submitted before 16:55 |
 
 ## Known footguns
 - `npm i gbrain` installs the WRONG package. Use `bun install -g github:garrytan/gbrain`.
