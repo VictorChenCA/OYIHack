@@ -231,6 +231,12 @@ export function createScene(app: Application, store: Store) {
   const dimAlpha = (_planetId?: string) => 1; // planet view removes (not dims) other planets' things
   const projectColor = (s: WorldState, id: string) => hex(s.projects.find((p) => p.id === id)?.color, 0x9fe8ff);
   const unitHidden = (u: Unit) => u.hidden || u.status === "dead" || store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId });
+  /** Cleared blockers drift into the background just beyond the frontier (same bearing from the sun). */
+  const clearedPos = (s: WorldState, e: Enemy) => {
+    const d = Math.hypot(e.pos.x, e.pos.y), want = (s.systemRadius || 1600) * 1.12;
+    if (d >= want || d < 1) return e.pos;
+    return { x: (e.pos.x / d) * want, y: (e.pos.y / d) * want };
+  };
   const enemyHidden = (e: Enemy) => e.hidden || store.isHidden("enemy", e.id) || (e.planetIds.length > 0 && e.planetIds.every((p) => store.isHidden("planet", p)));
   /** Motherships ~3x subagents: the hierarchy should read at a glance. */
   /** Blocker radius: grows with how many agents it blocks; DROP (neither urgent nor important) stays small. */
@@ -503,7 +509,7 @@ export function createScene(app: Application, store: Store) {
       const hcol = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
       drawHull(v.hull, u, size / 2, hcol, ui);
       v.hull.position.set(v.x, v.y); v.hull.rotation = v.rot;
-      v.hull.alpha = (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * k;
+      v.hull.alpha = (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * (u.historical ? 0.85 : 1) * k;
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
       const uHot = focused || sel0.has(u.id) || (store.hover?.kind === "unit" && store.hover.id === u.id);
       if (store.layerOn("labels") && (uHot || (cam.scale > 0.9 && u.role !== "subagent"))) {
@@ -522,8 +528,11 @@ export function createScene(app: Application, store: Store) {
     const enemyPos = new Map<string, { x: number; y: number; r: number }>();
     for (const e of s.enemies) {
       if (!showEnemies || enemyHidden(e) || !enemyInPm(e)) continue;
-      const v = enemyView(e); v.seen = frame; v.last = e;
-      v.x += (e.pos.x - v.x) * lerpK; v.y += (e.pos.y - v.y) * lerpK;
+      const v = enemyView(e); v.seen = frame;
+      if (e.defeatedAt && !v.last.defeatedAt && time - v.born > 1) spawnFx("circle_02", v.x, v.y, 0x5cf2b0, 40, 160, 0.8, 0.5); // just cleared: one quiet ring
+      v.last = e;
+      const ex = e.defeatedAt ? clearedPos(s, e) : e.pos;
+      v.x += (ex.x - v.x) * lerpK; v.y += (ex.y - v.y) * lerpK;
       const qc = QUAD_COLOR[e.quadrant] ?? QUAD_COLOR.do_now;
       const r = blockerR(e, ui);
       enemyPos.set(e.id, { x: v.x, y: v.y, r });
@@ -531,9 +540,10 @@ export function createScene(app: Application, store: Store) {
       // the only motion: a slow, subtle breathe on DO NOW (urgent + important)
       const k = 1;
       drawBlocker(v.g, e.quadrant, r * k, qc, ui);
-      if (e.humanOnly) v.g.circle(0, 0, r * 1.45).stroke({ width: 1.5 * ui, color: GOLD, alpha: 0.9 });
+      if (e.humanOnly && !e.defeatedAt) v.g.circle(0, 0, r * 1.45).stroke({ width: 1.5 * ui, color: GOLD, alpha: 0.9 });
       v.c.alpha = enemyEmph(e) * Math.min(1, Math.max(0, (time - v.born) / 0.5));
       if (e.resolved) v.c.alpha *= 0.4;
+      if (e.defeatedAt) v.c.alpha = Math.min(v.c.alpha, isHot("enemy", e.id) ? 0.4 : 0.15); // cleared: a faint ghost in the background
       const tt = e.title;
       if (v.title.text !== tt) v.title.text = tt;
       v.title.tint = 0xe8eef6; v.title.alpha = v.c.alpha;
@@ -613,9 +623,9 @@ export function createScene(app: Application, store: Store) {
     if (store.layerOn("tethers")) {
       // blocked unit → enemy
       for (const e of s.enemies) {
-        const ep = enemyPos.get(e.id); if (!ep) continue;
+        const ep = enemyPos.get(e.id); if (!ep || e.defeatedAt) continue; // cleared blockers have no tethers
         const qc = QUAD_COLOR[e.quadrant] ?? QUAD_COLOR.do_now;
-        const hot = (hov?.kind === "enemy" && hov.id === e.id) || (store.focus?.kind === "enemy" && store.focus.id === e.id);
+        const hot =(hov?.kind === "enemy" && hov.id === e.id) || (store.focus?.kind === "enemy" && store.focus.id === e.id);
         let said = false; // the reason is shown once per blocker, not on every tether
         for (const id of e.blocked) {
           const a = disp.get(id); if (!a) continue;
@@ -820,7 +830,7 @@ export function createScene(app: Application, store: Store) {
     const away = Math.atan2(p.pos.y, p.pos.x), pr = PLANET_R * planetK();
     pts.push({ x: p.pos.x + Math.cos(away) * pr * 2.6, y: p.pos.y + Math.sin(away) * pr * 2.6 });
     // blockers sit just beyond this team's frontier: keep them in frame; only a very far one merely pulls the frame toward it
-    for (const e of s.enemies) if (!e.hidden && (e.planetIds.includes(pid) || e.blocked.some((id) => ids.has(id)))) {
+    for (const e of s.enemies) if (!e.hidden && !e.defeatedAt && (e.planetIds.includes(pid) || e.blocked.some((id) => ids.has(id)))) {
       const d = Math.hypot(e.pos.x - p.pos.x, e.pos.y - p.pos.y), k = d > 1800 ? 0.5 : 1;
       pts.push({ x: p.pos.x + (e.pos.x - p.pos.x) * k, y: p.pos.y + (e.pos.y - p.pos.y) * k });
     }
@@ -841,7 +851,7 @@ export function createScene(app: Application, store: Store) {
     let x0 = -SUN_R * 2, y0 = -SUN_R * 2, x1 = SUN_R * 2, y1 = SUN_R * 2;
     const add = (x: number, y: number, r: number) => { x0 = Math.min(x0, x - r); y0 = Math.min(y0, y - r); x1 = Math.max(x1, x + r); y1 = Math.max(y1, y + r); };
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id)) add(p.pos.x, p.pos.y, PLANET_R * 1.8);
-    for (const e of s.enemies) if (!enemyHidden(e)) add(e.pos.x, e.pos.y, 110); // glyph + its hover title stay clear of the bars
+    for (const e of s.enemies) if (!enemyHidden(e) && !e.defeatedAt) add(e.pos.x, e.pos.y, 110); // glyph + its hover title stay clear of the bars
     for (const u of s.units) if (!unitHidden(u) && u.role === "mothership") add(u.target.x, u.target.y, 60);
     return fitBox(x0, y0, x1, y1, 30);
   }

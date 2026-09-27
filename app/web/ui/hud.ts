@@ -1,7 +1,7 @@
 // Hover tooltip, top bar, toasts.
 import type { Store, Target } from "../store";
 import type { DeptId, WorldState } from "../../shared/types";
-import { el, esc, live, delegate, usd, dur, TIER_COLOR, QUAD_LABEL, KIND_LABEL } from "./util";
+import { el, esc, live, delegate, usd, dur, ago, TIER_COLOR, QUAD_LABEL, KIND_LABEL } from "./util";
 import { tierSvg, blockerSvg } from "../shapes";
 
 export function createTooltip(root: HTMLElement, store: Store) {
@@ -31,6 +31,9 @@ export function createTooltip(root: HTMLElement, store: Store) {
     if (t.kind === "enemy") {
       const e = store.enemy(t.id); if (!e || store.isHidden("enemy", e.id)) return "";
       const n = e.blocked.length;
+      if (e.defeatedAt) return `<div class="tt-h">${blockerSvg(e.quadrant, false, 7)}<b>${esc(e.title)}</b></div><div class="tt-l">Cleared ${esc(ago(e.defeatedAt, s.now))}${e.kind === "todo" ? " · to-do" : ""}${e.owner ? ` · ${esc(e.owner)}` : ""}</div>`;
+      const todo = e.kind === "todo" ? `<div class="tt-l">To-do${e.owner ? ` · ${esc(e.owner)}` : ""}${e.due != null ? ` · ${e.due >= s.now ? "due in " + esc(dur(e.due - s.now)) : "overdue " + esc(dur(s.now - e.due))}` : ""}</div>` : "";
+      if (todo) return `<div class="tt-h">${blockerSvg(e.quadrant, e.humanOnly, 7)}<b>${esc(e.title)}</b></div>${todo}${e.source ? `<div class="tt-l dim">${esc(e.source)}</div>` : ""}`;
       return `<div class="tt-h">${blockerSvg(e.quadrant, e.humanOnly, 7)}<b>${esc(e.title)}</b></div><div class="tt-l">${esc(QUAD_LABEL[e.quadrant])} · ${esc(KIND_LABEL[e.kind] ?? e.kind)} · blocking ${n} agent${n === 1 ? "" : "s"}${e.humanOnly ? " · needs a person" : ""}</div>${e.reason ? `<div class="tt-l dim">${esc(e.reason)}</div>` : ""}`;
     }
     if (t.kind === "planet") {

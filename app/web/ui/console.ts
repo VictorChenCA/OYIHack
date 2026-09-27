@@ -159,10 +159,12 @@ export function createConsole(root: HTMLElement, store: Store) {
   function renderCommander(s: WorldState) {
     const vis = s.units.filter((u) => u.status !== "dead" && !store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId }));
     const working = vis.filter((u) => u.status === "working" || u.status === "acting" || u.status === "attacking").length;
-    const ens = s.enemies.filter((e) => !e.resolved && !store.isHidden("enemy", e.id));
+    const ens = s.enemies.filter((e) => !e.resolved && !e.defeatedAt && !store.isHidden("enemy", e.id));
     const human = ens.filter((e) => e.humanOnly);
+    const todos = ens.filter((e) => e.kind === "todo").length;
+    const cleared = s.enemies.filter((e) => e.defeatedAt && s.now - e.defeatedAt < 86400000).length;
     const teams = s.planets.filter((p) => !store.isHidden("planet", p.id));
-    const computed = `${working} agents working · ${ens.length} blocker${ens.length === 1 ? "" : "s"}${human.length ? ` · ${human.length} need${human.length === 1 ? "s" : ""} you` : ""}`;
+    const computed = `${working} agents working · ${ens.length - todos} blocker${ens.length - todos === 1 ? "" : "s"}${todos ? ` · ${todos} to-do${todos === 1 ? "" : "s"}` : ""}${human.length ? ` · ${human.length} need${human.length === 1 ? "s" : ""} you` : ""}${cleared ? ` · ${cleared} cleared today` : ""}`;
     left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Company</b></div>`);
     head.set(`<div class="ov"><span class="ov-ai">${esc(s.overview ?? computed)}</span></div>`);
     now.set(viewChip(s) + `<div class="depts">${teams.map((p) => `<button class="dept" data-act="focus-planet" data-id="${esc(p.id)}"><i class="dot" style="background:${p.color};color:${p.color}"></i><b>${esc(p.name)}</b><span class="trunc">${esc(p.summary ?? "")}</span></button>`).join("")}</div>`);
