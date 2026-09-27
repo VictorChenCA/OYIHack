@@ -149,9 +149,48 @@ function contentOf(p: any): string {
   return String(c);
 }
 
+// ── live pulses (SPEC §3.6): hosted brains have no /admin/events, so poll list_pages updated_desc every 3s.
+// New/updated pages → world.memoryEvent (sun pulse + node flash) and are patched into the cached graph at once.
+const lastSeen = new Map<string, string>(); // brain → max updated_at seen
+let polling = false;
+async function pollChanges(ctx: Ctx) {
+  if (polling) return; polling = true;
+  try {
+    const { product, dev } = endpoints(ctx);
+    const brains: ["product" | "dev", GBrainEndpoint][] = [["product", product]];
+    if (cache.get("auto")?.brain === "dev") brains.push(["dev", dev]);
+    for (const [name, ep] of brains) {
+      let recent: PageRow[] = [];
+      try { recent = rows(await gbrainCall(ep, "list_pages", { limit: 10, sort: "updated_desc" }, 5000)); } catch { continue; }
+      const prev = lastSeen.get(name);
+      const max = recent.reduce((m, p) => (String(p.updated_at ?? "") > m ? String(p.updated_at) : m), prev ?? "");
+      lastSeen.set(name, max);
+      if (prev === undefined) continue; // first poll only primes the cursor
+      const fresh = recent.filter((p) => String(p.updated_at ?? "") > prev).reverse();
+      for (const p of fresh) {
+        const at = Date.parse(p.updated_at ?? "") || Date.now();
+        try { ctx.world?.memoryEvent({ at, op: "put_page", kind: "write", slug: p.slug, planetId: planetOf(p.slug) }); } catch {}
+        for (const [key, c] of cache) {
+          if (c.brain !== name) continue;
+          if (!c.graph.nodes.some((n) => n.id === p.slug)) {
+            const g = buildGraph([p]);
+            const ids = new Set(c.graph.nodes.map((n) => n.id));
+            for (const n of g.nodes) if (!ids.has(n.id)) c.graph.nodes.push(n);
+            for (const e of g.edges) c.graph.edges.push(e);
+            cache.set(key, c);
+          }
+        }
+      }
+    }
+  } finally { polling = false; }
+}
+
 const plugin: Plugin = {
   name: "memory",
-  init(ctx) { graphCached(ctx).catch((e) => console.warn("[memory] prewarm failed:", (e as Error).message)); },
+  init(ctx) {
+    graphCached(ctx).catch((e) => console.warn("[memory] prewarm failed:", (e as Error).message));
+    setInterval(() => { pollChanges(ctx).catch(() => {}); }, 3000);
+  },
   routes: {
     "GET /api/memory/graph": async (_req, url, ctx) => {
       const b = url.searchParams.get("brain");

@@ -361,7 +361,8 @@ export function createMemory(root: HTMLElement, store: Store) {
   // ── drawer ─────────────────────────────────────────────────────────────
   let pageReq = 0;
   async function openNode(n: SNode) {
-    selected = n; drawer.classList.add("open"); focusNode(n, false);
+    const inGraph = sim.byId.get(n.id) === n;
+    selected = inGraph ? n : null; drawer.classList.add("open"); if (inGraph) focusNode(n, false);
     const dept = n.n.planetId ? PLANET_NAMES[n.n.planetId] : "Reference";
     dHead.innerHTML = `<div class="dk"><i style="--c:${n.color}"></i>${dept}${n.n.type ? " · " + escHtml(n.n.type) : ""}</div>
       <div class="dt">${escHtml(n.n.title)}</div><div class="ds">${escHtml(n.n.slug)}</div>
@@ -394,7 +395,12 @@ export function createMemory(root: HTMLElement, store: Store) {
     autoFit = false;
     const n = sim.byId.get(slug) ?? sim.nodes.find((x) => x.id.endsWith("/" + slug) || x.id.endsWith(slug));
     if (n) { hiddenGroups.delete(n.n.planetId ?? "ref"); drawer.classList.add("open"); focusNode(n); openNode(n); }
-    else store.toast(`Page not in graph: ${slug}`, "warn");
+    else { // not in the graph (e.g. a search hit beyond the node cap): still open the page
+      const title = hits.find((x) => x.slug === slug)?.title ?? slug.split("/").pop() ?? slug;
+      const planetId = /^company\/(engineering|marketing|arts|product-design)\//.exec(slug)?.[1]?.replace("-", "_") as DeptId | undefined;
+      const pseudo = { id: slug, n: { id: slug, slug, title, planetId, type: "note" }, x: 0, y: 0, vx: 0, vy: 0, deg: 0, r: 3, group: "", depth: 0, ax: 0, ay: 0, color: planetId ? PLANET_COLORS[planetId] : "#8A96A8" } as SNode;
+      openNode(pseudo);
+    }
   }
 
   // ── search ─────────────────────────────────────────────────────────────
