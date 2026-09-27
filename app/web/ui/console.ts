@@ -1,8 +1,8 @@
 // Bottom console (SPEC §7): agent mode, commander mode, squad (multi-select) mode.
 import type { Store } from "../store";
-import type { HistoryItem, Unit, UnitDetail, WorldState } from "../../shared/types";
-import { el, esc, live, delegate, kfmt, usd, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL } from "./util";
-import { tierGlyph, CC_EMBLEM } from "./glyphs";
+import type { DeptId, HistoryItem, Unit, UnitDetail, WorldState } from "../../shared/types";
+import { el, esc, live, delegate, usd, dur, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL, GOLD } from "./util";
+import { tierGlyph, kindGlyph, CC_EMBLEM } from "./glyphs";
 import { openModal } from "./modal";
 
 type ChatLine = { role: "me" | "cmdr"; text: string; at: number };
@@ -19,6 +19,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     <div class="c-body">
       <div class="c-now"></div>
       <div class="c-log" tabindex="-1"></div>
+      <div class="c-side"></div>
     </div>
     <form class="c-input" autocomplete="off">
       <span class="c-prompt">&gt;</span>
@@ -38,7 +39,8 @@ export function createConsole(root: HTMLElement, store: Store) {
   const hint = form.querySelector<HTMLElement>(".c-send-hint")!;
   const pop = wrap.querySelector<HTMLElement>(".ctx-pop")!;
 
-  const chat: ChatLine[] = [{ role: "cmdr", text: "Commander online. Ask me to spawn, prompt, attack, group, build factories or change the view.", at: Date.now() }]; let thinking = false;
+  const sideHost = wrap.querySelector<HTMLElement>(".c-side")!;
+  const chat: ChatLine[] = []; let thinking = false;
   let detail: UnitDetail | null = null; let detailFor = ""; let detailTimer: ReturnType<typeof setInterval> | null = null;
   let rows: Row[] = [];
   let lastMode = "";
@@ -50,7 +52,12 @@ export function createConsole(root: HTMLElement, store: Store) {
   };
   const squad = (): Unit[] => store.selection.length > 1 ? store.selection.map((id) => store.unit(id)).filter((u): u is Unit => !!u) : [];
 
-  function modeKey() { const s = squad(); if (s.length > 1) return "squad"; return consoleUnitId() ? "agent:" + consoleUnitId() : "commander"; }
+  function modeKey() {
+    const s = squad(); if (s.length > 1) return "squad";
+    if (consoleUnitId()) return "agent:" + consoleUnitId();
+    const f = store.focus; if (f && f.kind !== "unit") return `side:${f.kind}:${f.id}`;
+    return "commander";
+  }
 
   async function loadDetail(id: string, first = false) {
     const d = await store.api<UnitDetail>(`/api/unit/${encodeURIComponent(id)}`);
@@ -72,7 +79,8 @@ export function createConsole(root: HTMLElement, store: Store) {
       detailFor = id; loadDetail(id, true);
       detailTimer = setInterval(() => { if (!document.hidden) loadDetail(id); }, 4000);
     } else detailFor = "";
-    ta.placeholder = k === "commander" ? "Order the commander…  (Enter to send · Shift+Enter newline)" : k === "squad" ? `Broadcast to ${store.selection.length} selected units…` : "Prompt this agent…  (Enter to send · Esc back to commander)";
+    const pl = store.focus?.kind === "planet" ? store.state?.planets.find((p) => p.id === store.focus!.id) : undefined;
+    ta.placeholder = k === "commander" ? "Ask the commander anything…  (Enter to send)" : k === "squad" ? `Message ${store.selection.length} selected agents…` : k.startsWith("side:planet") ? `Start a new agent in ${pl?.name ?? "this department"}…  (Enter to spawn)` : k.startsWith("side:") ? "Ask the commander…  (Esc to go back)" : "Prompt this agent…  (Enter to send · Esc to go back)";
     render(); renderLog(true);
   }
 
@@ -82,55 +90,72 @@ export function createConsole(root: HTMLElement, store: Store) {
     if (k === "squad") return renderSquad(s);
     const id = consoleUnitId(); const u = id ? store.unit(id) : undefined;
     if (u) return renderAgent(s, u);
+    if (k.startsWith("side:")) return renderSide(s);
     renderCommander(s);
   }
 
   function renderAgent(s: WorldState, u: Unit) {
     const frac = u.contextWindow ? Math.min(1, u.contextUsed / u.contextWindow) : 0;
-    const ringCol = frac > 0.8 ? "#FF4D4D" : frac > 0.55 ? "#FFB020" : "#4FD1FF";
-    const R = 58, C = 2 * Math.PI * R;
-    left.set(`<div class="ctx" tabindex="0" aria-label="Context window ${Math.round(frac * 100)} percent used">
-      <svg viewBox="0 0 150 150" class="ctx-ring"><circle cx="75" cy="75" r="${R}" class="ctx-track"/>
-        <circle cx="75" cy="75" r="${R}" class="ctx-val" stroke="${ringCol}" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 75 75)"/>
-        ${Array.from({ length: 40 }, (_, i) => { const a = (i / 40) * Math.PI * 2; const r1 = 68, r2 = i % 5 ? 70 : 72; return `<line x1="${75 + Math.cos(a) * r1}" y1="${75 + Math.sin(a) * r1}" x2="${75 + Math.cos(a) * r2}" y2="${75 + Math.sin(a) * r2}" class="ctx-tick"/>`; }).join("")}
-      </svg>
-      <div class="ctx-core">${tierGlyph(u.tier, 38)}<b class="num">${Math.round(frac * 100)}%</b><small class="num">${kfmt(u.contextUsed)} / ${kfmt(u.contextWindow)}</small></div>
-    </div>`);
-    const proj = s.projects.find((p) => p.id === u.projectId); const planet = s.planets.find((p) => p.id === u.planetId);
+    const proj = s.projects.find((p) => p.id === u.projectId); const col = proj?.color ?? TIER_COLOR[u.tier];
+    const R = 44, C = 2 * Math.PI * R;
     const parent = u.parentId ? store.unit(u.parentId) : undefined;
     const mismatch = parent && parent.permissionMode !== u.permissionMode;
-    head.set(`<div class="c-name"><span class="c-title">${esc(u.label)}</span>
-        <span class="badge tier" style="--c:${TIER_COLOR[u.tier]}">${esc(u.tier)}${u.model ? ` · <span class="dim">${esc(u.model)}</span>` : ""}</span>
-        <span class="badge mode${mismatch ? " warn" : ""}" title="${mismatch ? `Differs from mothership (${esc(parent!.permissionMode)})` : "Permission mode"}">${mismatch ? "⚠ " : ""}${esc(MODE_LABEL[u.permissionMode])}</span>
-        ${proj ? `<span class="chip"><i class="dot" style="background:${proj.color}"></i>${esc(proj.name)}</span>` : ""}
-        ${planet ? `<span class="chip dim">${esc(planet.name)}</span>` : ""}
-        <span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span>
-        ${u.role !== "mothership" ? `<span class="chip dim">${esc(u.role)}${u.agentType ? " · " + esc(u.agentType) : ""}</span>` : ""}
-      </div>
-      <div class="c-stats num"><span title="Tokens">${kfmt(u.tokens.input + u.tokens.output + u.tokens.cacheRead + u.tokens.cacheWrite)} tok</span><span title="Cost">${usd(u.costUsd)}</span><span title="Tool calls">${u.toolCount} tools</span>${u.failCount ? `<span class="bad">${u.failCount} fail</span>` : ""}</div>`);
-    now.set(`<div class="now-row"><span class="lbl">Currently</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
-      ${u.task ? `<div class="now-task"><span class="lbl">Task</span><span>${esc(u.task)}</span></div>` : ""}`);
+    left.set(`<div class="ag" style="--c:${col}"><div class="ctx" tabindex="0" aria-label="Context window ${Math.round(frac * 100)} percent used">
+      <svg viewBox="0 0 110 110" class="ctx-ring"><circle cx="55" cy="55" r="${R}" class="ctx-track"/>
+        <circle cx="55" cy="55" r="${R}" class="ctx-val" stroke="${col}" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>
+      <div class="ag-core">${tierGlyph(u.tier, 30)}<small class="num">${Math.round(frac * 100)}%</small></div></div>
+      <div class="ag-model">${esc(modelName(u))}</div><div class="ag-mode${mismatch ? " warn" : ""}" title="Permission mode${mismatch ? " (differs from mothership)" : ""}">${esc(MODE_LABEL[u.permissionMode])}</div></div>`);
+    const kids = u.role === "mothership" ? s.units.filter((x) => x.parentId === u.id && x.status !== "dead") : [];
+    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(statusWord(u))}</span>
+        ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}</div>
+      <div class="c-stats num"><span title="Cost">${usd(u.costUsd)}</span><span title="Tool calls">${u.toolCount} tools</span></div>`);
+    const eta = u.charted && u.etaMs != null ? `ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : "first time — ETA unknown";
+    const blk = u.blockedBy ? store.enemy(u.blockedBy) : undefined;
+    now.set(`<div class="now-row"><span class="lbl">Doing</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : u.task ? `<span class="now-sum">${esc(u.task)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
+      <div class="now-row"><span class="lbl">Going to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
+      ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}">${tierGlyph(k.tier, 11)}${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
     hint.textContent = `→ ${u.label}`;
+  }
+
+  function renderSide(s: WorldState) {
+    const f = store.focus!;
+    let icon = ""; let col = "#8A96A8"; let sub = "";
+    if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); col = p?.color ?? col; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "department"; }
+    else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : "#FF6B6B"; icon = e ? kindGlyph(e.kind, col, 40) : ""; sub = e?.humanOnly ? "needs you" : "blocker"; }
+    else if (f.kind === "mine") { const m = s.mines.find((x) => x.id === f.id); col = m?.color ?? col; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "credits"; }
+    else if (f.kind === "research") { col = "#40E0D0"; icon = tierGlyph("river", 40); sub = "research"; }
+    else if (f.kind === "sun") { col = "#FFD166"; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "memory"; }
+    else if (f.kind === "factory") { col = "#B8F34A"; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "factory"; }
+    left.set(`<div class="ag side-ic" style="--c:${col}"><div class="ag-ic">${icon}</div><div class="ag-model">${esc(sub)}</div><button class="btn sm ghost" data-act="back">← Overview</button></div>`);
+    head.set(""); now.set("");
+    hint.textContent = f.kind === "planet" ? "→ new agent" : "→ commander";
   }
 
   function renderSquad(s: WorldState) {
     const us = squad();
     const tiers = new Map<string, number>(); us.forEach((u) => tiers.set(u.tier, (tiers.get(u.tier) ?? 0) + 1));
-    left.set(`<div class="squad-core"><b class="num">${us.length}</b><span>units selected</span><div class="squad-tiers">${[...tiers].map(([t, n]) => `<span>${tierGlyph(t as Unit["tier"], 18)}<i class="num">${n}</i></span>`).join("")}</div></div>`);
-    head.set(`<div class="c-name"><span class="c-title">Squad</span><span class="badge">${us.length} units</span>
+    left.set(`<div class="squad-core"><b class="num">${us.length}</b><span>agents selected</span><div class="squad-tiers">${[...tiers].map(([t, n]) => `<span>${tierGlyph(t as Unit["tier"], 18)}<i class="num">${n}</i></span>`).join("")}</div></div>`);
+    head.set(`<div class="c-name"><span class="c-title">Squad</span>
       <span class="chip dim">${usd(us.reduce((a, u) => a + u.costUsd, 0))} spent</span></div>
       <div class="c-stats"><button class="btn ghost" data-act="clear-sel">Clear selection</button></div>`);
-    now.set(`<div class="now-row"><span class="lbl">Broadcast</span><span class="dim">Your prompt goes to every selected unit.</span></div>`);
+    now.set(`<div class="now-row"><span class="lbl">Broadcast</span><span class="dim">Your prompt goes to every selected agent.</span></div>`);
     log.set(`<ul class="squad-list">${us.map((u) => `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0">${tierGlyph(u.tier, 16)}<b>${esc(u.label)}</b><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span></li>`).join("")}</ul>`);
-    hint.textContent = `→ ${us.length} units`;
+    hint.textContent = `→ ${us.length} agents`;
     void s;
   }
 
   function renderCommander(s: WorldState) {
-    left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Commander</b><span class="dim">${esc(s.autonomy)} autonomy</span></div>`);
-    head.set(`<div class="c-name"><span class="c-title">Commander</span><span class="badge">${esc(s.company)}</span><span class="chip dim">${s.units.length} units · ${s.enemies.length} enemies</span></div>
-      <div class="c-hints">${HINTS.map((h) => `<button class="hint" data-act="hint" data-text="${esc(h)}">${esc(h)}</button>`).join("")}</div>`);
-    now.set("");
+    const vis = s.units.filter((u) => u.status !== "dead" && !store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId }));
+    const working = vis.filter((u) => u.status === "working" || u.status === "acting" || u.status === "attacking").length;
+    const ens = s.enemies.filter((e) => !e.resolved && !store.isHidden("enemy", e.id));
+    const human = ens.filter((e) => e.humanOnly);
+    const depts = s.planets.filter((p) => !store.isHidden("planet", p.id));
+    const computed = `${working} agents working across ${depts.filter((p) => vis.some((u) => u.planetId === p.id)).length} departments · ${ens.length} blocker${ens.length === 1 ? "" : "s"}${human.length ? ` · ${human.length} need${human.length === 1 ? "s" : ""} you` : ""}`;
+    left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Company</b><span class="dim num">${vis.length} agents</span></div>`);
+    head.set(`<div class="ov">${s.overview ? `<span class="ov-ai">${esc(s.overview)}</span><span class="ov-sub num">${esc(computed)}</span>` : `<span class="ov-ai">${esc(computed)}</span>`}</div>`);
+    now.set(`<div class="depts">${depts.map((p) => { const n = vis.filter((u) => u.planetId === p.id).length; const b = ens.filter((e) => e.planetIds.includes(p.id)).length;
+      return `<button class="dept" data-act="focus-planet" data-id="${esc(p.id)}"><b style="color:${p.color}">${esc(p.name)}</b><span class="trunc">${esc(p.summary ?? `${n} agent${n === 1 ? "" : "s"}${b ? ` · ${b} blocker${b === 1 ? "" : "s"}` : ""}`)}</span></button>`; }).join("")}</div>
+      ${ens.length ? `<div class="now-row needs"><span class="lbl">${human.length ? "Needs you" : "Blockers"}</span>${(human.length ? human : ens).slice(0, 4).map((e) => `<button class="chip${e.humanOnly ? " gold" : ""}" data-act="focus-enemy" data-id="${esc(e.id)}">${esc(e.title)}</button>`).join("")}</div>` : ""}`);
     hint.textContent = "→ commander";
   }
 
@@ -176,6 +201,11 @@ export function createConsole(root: HTMLElement, store: Store) {
       else if (!r.ok) { thinking = false; chat.push({ role: "cmdr", text: `⚠ ${r.message}`, at: Date.now() }); renderLog(true); }
     } else if (k === "squad") {
       await store.command({ type: "prompt", unitIds: [...store.selection], text });
+    } else if (k.startsWith("side:planet")) {
+      await store.command({ type: "spawn", planetId: store.focus!.id as DeptId, prompt: text });
+    } else if (k.startsWith("side:")) {
+      chat.push({ role: "me", text, at: Date.now() });
+      await store.command({ type: "commander", text });
     } else {
       const id = consoleUnitId(); if (!id) return;
       if (detail) { detail.history.push({ ts: Date.now(), role: "user", kind: "prompt", text }); rows = pair(detail.history); renderLog(true); }
@@ -191,12 +221,15 @@ export function createConsole(root: HTMLElement, store: Store) {
   });
   form.addEventListener("submit", (e) => { e.preventDefault(); send(); });
 
-  function toCommander() { ta.value = ""; autosize(); store.select([]); if (store.focus?.kind === "unit") store.setFocus(null); ta.blur(); }
+  function toCommander() { ta.value = ""; autosize(); store.select([]); store.setFocus(null); ta.blur(); }
 
   delegate(wrap, {
     hint: (t) => { ta.value = t.dataset.text ?? ""; ta.focus(); autosize(); },
     "clear-sel": () => store.select([]),
     "focus-unit": (t) => store.select([t.dataset.id!]),
+    "focus-enemy": (t) => store.setFocus({ kind: "enemy", id: t.dataset.id! }),
+    "focus-planet": (t) => store.setFocus({ kind: "planet", id: t.dataset.id as DeptId }),
+    back: () => toCommander(),
     "open-row": (t) => {
       const r = rows[Number(t.dataset.i)]; if (!r) return;
       const parts = [`<div class="m-meta"><span class="badge">${esc(r.item.kind)}</span>${r.item.toolName ? `<b>${esc(r.item.toolName)}</b>` : ""}<time class="num dim">${new Date(r.item.ts).toLocaleTimeString()}</time></div><pre>${esc(r.item.text)}</pre>`];
@@ -230,12 +263,18 @@ export function createConsole(root: HTMLElement, store: Store) {
     const free = t === document.body || t === document.documentElement || t.tagName === "CANVAS";
     if ((e.key === "Enter" || e.key === "/") && free && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ta.focus(); }
     else if (e.key === "Escape" && !document.querySelector(".modal")) {
-      if (store.focus && store.focus.kind !== "unit") store.setFocus(null); else toCommander();
+      toCommander();
     }
   });
 
-  return { focusInput: () => ta.focus() };
+  return { focusInput: () => ta.focus(), sideHost };
 }
+
+function modelName(u: Unit) {
+  const m = u.model ?? u.tier; const x = /(haiku|sonnet|opus|fable)[-\s]?(\d+(?:[.-]\d+)?)?/i.exec(m);
+  if (!x) return m; const n = x[1]!; return n[0]!.toUpperCase() + n.slice(1).toLowerCase() + (x[2] ? " " + x[2].replace("-", ".") : "");
+}
+function statusWord(u: Unit) { return u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status; }
 
 function oneLine(s: string, n: number) { const t = (s ?? "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; }
 
