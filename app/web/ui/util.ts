@@ -22,7 +22,7 @@ export function live(node: HTMLElement) {
       if (!force && (held || typing)) return;
       const st = node.scrollTop; node.innerHTML = html; node.scrollTop = st; last = html;
     },
-    reset() { last = ""; },
+    reset() { last = "\u0000"; },
   };
 }
 
