@@ -6,7 +6,7 @@ import { tierGlyph, kindGlyph } from "./glyphs";
 
 const KINDS: EnemyKind[] = ["credential", "account", "approval", "rate_limit", "billing", "missing_info", "dependency", "failure"];
 const QUADS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
-const DEPTS: DeptId[] = ["engineering", "marketing", "product_design", "arts"];
+const DEPTS: DeptId[] = ["engineering", "product_design", "marketing"];
 const TIERS: Tier[] = ["haiku", "sonnet", "opus", "fable", "river"];
 
 export function createSide(root: HTMLElement, store: Store) {
@@ -27,7 +27,7 @@ export function createSide(root: HTMLElement, store: Store) {
     let html = "";
     if (f.kind === "enemy") { const e = store.enemy(f.id); html = e && !hiddenEnemy(e) ? enemyHtml(s, e) : gone("Blocker"); }
     else if (f.kind === "unit") { const u = store.unit(f.id); html = u && !hiddenUnit(u) ? unitHtml(s, u) : gone("Agent"); }
-    else if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); html = p && !store.isHidden("planet", p.id) ? planetHtml(s, p) : gone("Department"); }
+    else if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); html = p && !store.isHidden("planet", p.id) ? planetHtml(s, p) : gone("Team"); }
     else if (f.kind === "factory") { const x = s.factories.find((q) => q.id === f.id); html = x && !store.isHidden("factory", x.id, { planetId: x.planetId }) ? factoryHtml(s, x) : gone("Factory"); }
     else if (f.kind === "mine") { const m = s.mines.find((q) => q.id === f.id); html = m && !store.isHidden("mine", m.id) ? mineHtml(s, m) : gone("Credits"); }
     else if (f.kind === "research") html = researchHtml(s);
@@ -55,21 +55,19 @@ export function createSide(root: HTMLElement, store: Store) {
           <div class="s-badges"><span class="st-word" style="--c:${col}">${e.humanOnly ? "needs you" : esc(QUAD_LABEL[e.quadrant].toLowerCase())}</span></div>
         </div></header>
       <p class="s-reason">${esc(e.reason)}</p>
-      <div class="s-kv num"><span><b>${e.blocked.length}</b> agents waiting</span><span><b>${e.attackers.length}</b> resolving</span><span>open <b>${dur(s.now - e.createdAt)}</b></span></div>
-      ${c ? `<section><h3>Classification <span class="badge src" style="--c:${c.source.startsWith("sentinel") ? "#40E0D0" : "#8A96A8"}">${esc(src)}${c.latencyMs != null ? ` · <span class="num">${c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms"}</span>` : ""}</span></h3>
-        ${conf("Kind", KIND_LABEL[c.kind.label] ?? c.kind.label, c.kind.p)}${conf("Quadrant", QUAD_LABEL[c.quadrant.label] ?? c.quadrant.label, c.quadrant.p)}${conf("Human", c.humanOnly.label ? "yes" : "no", c.humanOnly.p)}${conf("Dept", deptName(s, c.department.label), c.department.p)}${conf("Tier", c.tier.label, c.tier.p)}</section>` : ""}
+      ${c ? `<p class="dim small">Classified by ${esc(src)}${c.latencyMs != null ? ` in <span class="num">${c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms"}</span>` : ""} · ${esc(KIND_LABEL[c.kind.label] ?? c.kind.label)} · ${esc(deptName(s, c.department.label))}</p>` : ""}
       ${e.dependsOnUnit && store.unit(e.dependsOnUnit) ? `<button class="blocked-by dep" data-act="focus-unit" data-id="${esc(e.dependsOnUnit)}"><span class="lbl">Waiting on</span> ${esc(store.unit(e.dependsOnUnit)!.label)}</button>` : ""}
-      ${blocked.length ? `<section><h3>Waiting <span class="num dim">${blocked.length}</span></h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
+      ${blocked.length ? `<section><h3>Waiting</h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
       ${e.humanOnly ? `<section class="gold-sec"><h3>Human only</h3><p class="dim small">Agents can't do this step (phone, CAPTCHA, payment, legal, secrets). Put secrets in <span class="mono">.env</span>; C&amp;C only tells agents "unblocked".</p></section>`
-        : `<section><h3>Who can resolve it <span class="dim small">${ranks.local ? "local estimate" : "ranked by Sentinel + Haiku"}</span></h3>
-        <ul class="rank">${ranks.entries.map((r) => { const u = store.unit(r.unitId)!; return `<li style="--c:${scoreColor(r.score)}">
+        : `<section><h3>Who can resolve it</h3>
+        <ul class="rank">${ranks.entries.slice(0, 4).map((r) => { const u = store.unit(r.unitId)!; return `<li style="--c:${scoreColor(r.score)}">
           <label class="rk-check"><input type="checkbox" data-act="rk-check" data-id="${esc(u.id)}" ${checked.has(u.id) ? "checked" : ""} aria-label="Select ${esc(u.label)}"></label>
           <span class="rk-score num">${Math.round(r.score)}</span>
-          <div class="rk-main"><div class="rk-name">${tierGlyph(u.tier, 14)}<b data-act="focus-unit" data-id="${esc(u.id)}">${esc(u.label)}</b><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span></div><div class="rk-reason">${esc(r.reason)}</div></div>
+          <div class="rk-main"><div class="rk-name"><b data-act="focus-unit" data-id="${esc(u.id)}">${esc(u.label)}</b></div><div class="rk-reason">${esc(r.reason)}</div></div>
           <button class="btn sm" data-act="send" data-id="${esc(u.id)}" title="Shift-click to interrupt">Send</button></li>`; }).join("") || `<li class="dim pad">No free agents ranked yet.</li>`}
         </ul>
         <div class="rk-foot">${store.selection.length ? `<button class="btn" data-act="send-squad">Send squad (${store.selection.length})</button>` : ""}<button class="btn primary" data-act="send-sel" ${checked.size ? "" : "disabled"}>Send selected (${[...checked].filter((id) => store.unit(id)).length})</button></div>
-        <div class="deploy">${(["haiku", "sonnet", "opus", "fable"] as Tier[]).map((t) => `<button class="btn ghost deploy-btn" data-act="deploy" data-tier="${t}" style="--c:${TIER_COLOR[t]}">${tierGlyph(t, 14)} + Deploy new ${t[0]!.toUpperCase() + t.slice(1)}</button>`).join("")}</div>
+        <div class="deploy"><span class="dim small">Start a new agent</span>${(["haiku", "sonnet", "opus"] as Tier[]).map((t) => `<button class="btn sm ghost deploy-btn" data-act="deploy" data-tier="${t}" style="--c:${TIER_COLOR[t]}">${t[0]!.toUpperCase() + t.slice(1)}</button>`).join("")}</div>
       </section>`}`;
   }
 
@@ -82,7 +80,7 @@ export function createSide(root: HTMLElement, store: Store) {
     const entries = s.units.filter((u) => ok(u.id) && !e.blocked.includes(u.id) && u.role !== "sentinel").map((u) => {
       let sc = 40; const why: string[] = [];
       if (u.status === "idle" || u.status === "done") { sc += 25; why.push("free"); } else if (u.status === "blocked") { sc -= 25; why.push("blocked itself"); } else { sc -= 5; why.push("busy (queues)"); }
-      if (dept && u.planetId === dept) { sc += 18; why.push("same dept"); }
+      if (dept && u.planetId === dept) { sc += 18; why.push("same team"); }
       if (want && u.tier === want) { sc += 15; why.push(`${want} fits`); }
       if (u.veteran) { sc += 6; why.push("veteran"); }
       if (u.contextWindow && u.contextUsed / u.contextWindow > 0.8) { sc -= 12; why.push("context nearly full"); }
@@ -120,20 +118,17 @@ export function createSide(root: HTMLElement, store: Store) {
 
   // ── Planet ──
   function planetHtml(s: WorldState, p: Planet) {
-    const left = p.cycle.endAt - s.now;
-    const units = s.units.filter((u) => u.planetId === p.id && !hiddenUnit(u));
-    const enemies = s.enemies.filter((e) => e.planetIds.includes(p.id) && !hiddenEnemy(e));
-    const facs = s.factories.filter((f) => f.planetId === p.id);
-    const stage = ["Barren", "Outpost", "Colony", "Developed"][p.colonization];
-    return `<header class="s-head" style="--c:${p.color}"><div class="s-icon"><span class="planet-orb" style="--c:${p.color}"></span></div>
-      <div class="s-titles"><h2>${esc(p.name)}</h2><div class="s-badges"><span class="st-word" style="--c:${p.color}">${esc(stage.toLowerCase())}</span></div></div></header>
-      <p class="s-reason">${esc(p.summary ?? `${units.length} agents · ${enemies.length} blockers · ${p.knowledge} knowledge pages`)}</p>
-      <section><h3>${esc(p.cycle.label)}</h3>${bar(p.progress, p.color, "bar thick")}<div class="s-kv num"><span><b>${Math.round(p.progress * 100)}%</b> through</span><span><b>${left > 0 ? dur(left) : "ended"}</b> left</span><span>${(left / 864e5).toFixed(1)} days</span></div></section>
-      <div class="s-actions"><button class="btn primary" data-act="enter-planet" data-id="${p.id}">Zoom in</button>${units.length ? `<button class="btn" data-act="select-planet" data-id="${p.id}">Select ${units.length} agents</button>` : ""}</div>
-      <section><h3>Agents <span class="num dim">${units.length}</span></h3><ul class="ulist">${treeOrder(units).slice(0, 14).map((u) => unitRow(u)).join("") || `<li class="dim">No agents yet — start one below.</li>`}</ul></section>
-      ${enemies.length ? `<section><h3>Blockers <span class="num dim">${enemies.length}</span></h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0"><i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i><b>${esc(e.title)}</b><span class="dim trunc">${esc(e.reason)}</span></li>`).join("")}</ul></section>` : ""}
-      <section><h3>Knowledge &amp; factories</h3><dl class="stats num"><dt>Knowledge</dt><dd>${p.knowledge} pages</dd><dt>Memory traffic</dt><dd>${bar(p.memTraffic, "#FFD166")}</dd></dl>
-        <ul class="ulist">${facs.map((f) => `<li class="plain" data-act="focus-factory" data-id="${esc(f.id)}" tabindex="0"><i class="dot" style="background:#B8F34A"></i><b>${esc(f.label)}</b><span class="dim trunc">every ${dur(f.cadenceMs)}${f.paused ? " · paused" : ""}</span></li>`).join("") || `<li class="dim">No factories.</li>`}</ul></section>`;
+    const c = p.cycle; const left = c.endAt - s.now;
+    const span = Math.max(1, c.endAt - c.startAt); const frac = Math.max(0, Math.min(1, (s.now - c.startAt) / span));
+    const DAY = 864e5;
+    const when = left <= 0 ? "ended" : c.kind === "sprint" && span >= 2 * DAY ? `day ${Math.min(Math.ceil(span / DAY), Math.floor((s.now - c.startAt) / DAY) + 1)} of ${Math.round(span / DAY)}` : `${dur(left)} left`;
+    const ships = s.units.filter((u) => u.planetId === p.id && u.role === "mothership" && u.status !== "dead" && !hiddenUnit(u));
+    const enemies = s.enemies.filter((e) => !e.resolved && e.planetIds.includes(p.id) && !hiddenEnemy(e));
+    return `<header class="s-head" style="--c:${p.color}"><div class="s-titles"><h2><i class="dot" style="background:${p.color};color:${p.color}"></i>${esc(p.name)}</h2></div></header>
+      ${p.summary ? `<p class="s-reason">${esc(p.summary)}</p>` : ""}
+      <section class="cycle"><div class="cy-row"><span class="dim">${esc(c.label)}</span><span class="num">${esc(when)}</span></div>${bar(frac, p.color, "bar thin")}</section>
+      <section><h3>Agents</h3><ul class="ulist">${ships.map((u) => unitRow(u)).join("") || `<li class="dim">No agents yet. Start one below.</li>`}</ul></section>
+      ${enemies.length ? `<section><h3>Blockers</h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0"><i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i><b>${esc(e.title)}</b></li>`).join("")}</ul></section>` : ""}`;
   }
 
   function factoryHtml(s: WorldState, f: Factory) {
@@ -164,10 +159,11 @@ export function createSide(root: HTMLElement, store: Store) {
 
   function sunHtml(s: WorldState) {
     const k = s.knowledge;
-    return `<header class="s-head" style="--c:#FFD166"><div class="s-icon"><span class="planet-orb" style="--c:#FFD166"></span></div><div class="s-titles"><h2>Memory</h2><div class="s-badges"><span class="st-word" style="--c:#FFD166">GBrain + Memorable</span></div></div></header>
-      <dl class="stats num"><dt>Pages</dt><dd>${k.pages}</dd><dt>Facts</dt><dd>${k.facts}</dd><dt>Procedures</dt><dd>${k.procedures}</dd><dt>Activity</dt><dd>${bar(s.sunPulse, "#FFD166")}</dd></dl>
-      <section><h3>Recent</h3><ul class="ulist">${k.recent.slice(-8).reverse().map((m) => `<li><span class="badge" style="--c:${m.kind === "write" ? "#FFD166" : "#4FD1FF"}">${m.kind}</span> <span class="mono">${esc(m.op)}</span> <span class="dim trunc">${esc(m.slug ?? m.planetId ?? "")}</span> <span class="dim num">${ago(m.at, s.now)}</span></li>`).join("") || `<li class="dim">quiet</li>`}</ul></section>
-      <div class="s-actions"><button class="btn primary" data-act="enter-memory">Enter memory</button></div>`;
+    const last = [...k.recent].reverse().find((m) => m.kind === "write" && m.text);
+    return `<header class="s-head" style="--c:#FFD166"><div class="s-titles"><h2><i class="dot" style="background:#FFD166;color:#FFD166"></i>Company memory</h2></div></header>
+      <div class="s-kv num"><span><b>${k.pages}</b> pages</span><span><b>${k.facts}</b> facts</span><span><b>${k.procedures}</b> procedures</span></div>
+      ${last ? `<p class="s-reason"><span class="dim">Last added</span> ${esc(last.text!)} <span class="dim num">${ago(last.at, s.now)}</span></p>` : ""}
+      <div class="s-actions"><button class="btn primary" data-act="enter-memory">Open memory</button></div>`;
   }
 
   // ── Static forms (rendered once per focus target so typing survives ticks) ──
@@ -181,12 +177,12 @@ export function createSide(root: HTMLElement, store: Store) {
           <label>Kind<select name="kind">${opt(KINDS, c?.kind.label ?? e.kind, (v) => KIND_LABEL[v])}</select></label>
           <label>Quadrant<select name="quadrant">${opt(QUADS, c?.quadrant.label ?? e.quadrant, (v) => QUAD_LABEL[v])}</select></label>
           <label>Human only<select name="humanOnly">${opt(["yes", "no"], (c?.humanOnly.label ?? e.humanOnly) ? "yes" : "no")}</select></label>
-          <label>Department<select name="department">${opt(DEPTS, c?.department.label ?? e.planetIds[0], (v) => deptName(s, v))}</select></label>
+          <label>Team<select name="department">${opt(DEPTS, c?.department.label ?? e.planetIds[0], (v) => deptName(s, v))}</select></label>
           <label>Tier<select name="tier">${opt(TIERS, (c?.tier.label as Tier) ?? "sonnet")}</select></label>
         </div><button class="btn" data-act="correct" data-id="${esc(e.id)}">Submit correction → River dataset</button></details>`;
     }
     if (f.kind === "unit") return `<section><h3>Actions</h3><div class="s-actions"><button class="btn primary" data-act="prompt-unit">Prompt</button><label class="grp-add">Add to group <select class="grp-sel">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<option>${n}</option>`).join("")}</select></label><button class="btn" data-act="add-group" data-id="${esc(f.id)}">Add</button></div></section>`;
-    if (f.kind === "planet") return `<details class="correct"><summary>Build factory</summary><div class="fgrid">
+    if (f.kind === "planet" && false) return `<details class="correct"><summary>Build factory</summary><div class="fgrid">
         <input class="bf-label" placeholder="Label, e.g. Weekly changelog"><textarea class="bf-prompt" rows="3" placeholder="What each run asks an agent to do"></textarea>
         <label>Cadence <select class="bf-cad"><option value="3600000">hourly</option><option value="21600000">every 6h</option><option value="86400000" selected>daily</option><option value="604800000">weekly</option></select></label>
       </div><button class="btn primary" data-act="build-factory" data-id="${esc(f.id)}">Build factory</button></details>`;
@@ -243,7 +239,7 @@ export function createSide(root: HTMLElement, store: Store) {
 
   function unitRow(u: Unit) {
     const col = store.state?.projects.find((p) => p.id === u.projectId)?.color ?? TIER_COLOR[u.tier];
-    return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="${u.role === "mothership" ? "ms" : "sub"}"><i class="dot" style="background:${col}"></i>${tierGlyph(u.tier, u.role === "mothership" ? 14 : 11)}<b>${esc(u.label)}</b><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status)}</span></li>`;
+    return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="${u.role === "mothership" ? "ms" : "sub"}"><i class="dot" style="background:${col}"></i><b>${esc(u.label)}</b><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status)}</span></li>`;
   }
 
   store.on("state", render);
