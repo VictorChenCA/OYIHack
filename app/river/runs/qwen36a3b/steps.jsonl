@@ -76,3 +76,5 @@
 {"step": 76, "loss": 0.01241123303771019, "elapsed_s": 1203.7}
 {"step": 77, "loss": 0.033468037843704224, "elapsed_s": 1219.1}
 {"step": 78, "loss": 0.33031290769577026, "elapsed_s": 1231.3}
+{"step": 79, "loss": 0.013365508057177067, "elapsed_s": 1243.5}
+{"step": 80, "loss": 0.05021132901310921, "elapsed_s": 1258.1, "checkpoint": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s080-inf", "val_acc": 0.9483333333333335}

@@ -20,6 +20,7 @@
 | 15:44 | Found client-side latency: `session.sample`/`model.sample` poll results every **1.0 s** (`_SAMPLE_POLL_INTERVAL_SECS`). At 50 ms polling the 9B LoRA drops from p50 ~4.0 s to **3.2 s** (`bench_fast_9b.log`); base 2.5 s; 1 blocker 2.9 s. `session.sample(checkpoint=)` loads+unloads the LoRA server-side per call. Sidecar + eval now poll at 50 ms. |
 | 15:46 | Base-model latency floor per architecture (`bench_bases.json`, all 7 in parallel, so inflated): DeepSeek-V4-Flash 3.6 s, Nemotron-30B-A3B 3.8 s, Qwen3.5-9B 4.1 s, DeepSeek-V4.1-Flash 5.4 s, Qwen3.6-35B-A3B 6.3 s, Qwen3.8-27B 6.4 s, GLM-5.3-Flash 7.6 s. No architecture breaks the ~2.2 s shared-API floor. |
 | 15:57 | Variants (`variants.md`): trained-LoRA p50 on the shared API: **Qwen3.5-9B 3.2 s** (fastest; test acc 0.916), Nemotron-30B-A3B 3.4 s (0.863), DeepSeek-V4-Flash 5.4 s (val 0.980), GLM-5.3-Flash 7.3 s (test 0.939, the most accurate), Qwen3.6-35B-A3B slowest to train. Fast local fallback now 0.771 (char 4-grams). Keeping Qwen3.5-9B as the served Sentinel. |
+| 16:06 | Qwen3.6-35B-A3B finished: val 0.948, test_unseen 0.933. `fast_clf.ts`: TypeScript port of the fast fallback, exact parity with Python (265 rows x 5 fields, max |dp| 0), 0.1 ms per blocker, runs in Bun or the browser (no sidecar, no key). |
 
 ## Speed gate verdict
 River p50 is ~4 s for the trained LoRA (2.5 s base), over the 1.5 s gate and over `classify.ts`'s 3 s timeout. The hot path

@@ -33,6 +33,16 @@ same as ten), over the 1.5 s gate and over `classify.ts`'s 3 s timeout. So the s
 `?engine=auto&budget_ms=1500` (River if it answers in time, else the fast classifier) or `?engine=fast`. The River model stays the evaluated model,
 the Research Center model and the base/trained A/B.
 
+## No sidecar needed for the fast path: `fast_clf.ts`
+The fast fallback also runs in TypeScript from the same `fast_clf.json` (identical labels and probabilities to the
+Python model on all 265 test rows; ~0.1 ms per blocker). Import it in the Bun server or the browser, so a hosted
+build classifies instantly with no Python, no River key and no laptop:
+```ts
+import { classifyFast, classifyFastBatch } from "../river/fast_clf";
+classifyFast(text).kind            // {label, p, dist}
+classifyFastBatch(items)            // same shape as the sidecar's POST /classify
+```
+
 ## Research Center scripts
 ```bash
 # retrain with human corrections (rows {"text","fields":{...}}; partial fields OK); one JSON line per step on stdout
