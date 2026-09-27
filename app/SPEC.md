@@ -24,6 +24,19 @@ River, telemetry and GBrain, plus the requirements and feasibility critiques
 >   - Orders and Visibility in a tuck-in left drawer;
 >   - the bottom bar is fully contextual, with the company overview when nothing is selected, and an agent's model and permission mode under its icon.
 
+> - **Round 3 (15:40):** C&C is **a tool for founders, engineers and startup teams** to understand what's happening in the
+>   company and deploy AI agents to resolve what's needed. It is **not a game**: it borrows swarm management from RTS games and builds on
+>   the sponsors. It looks professional, with a darker, nearly plain background and only faint parallax.
+>   - **Four blocker types = the urgency/importance quadrants:**
+>     - Do now (urgent and important);
+>     - Schedule (important, not urgent);
+>     - Delegate (urgent, and an agent can take it);
+>     - Drop (neither).
+>   - Shape and color show the type only. Human-only blockers add a gold ring, and size = the number of blocked agents. Blockers that are
+>     functionally the same look the same, and the kind (credential, rate limit, …) is text, not a sprite.
+>   - Each blocker appears just beyond the frontier of the team it concerns. The UI explains the four types (a legend) and each blocker's type (why, and what to do).
+>   - The bottom bar is resizable vertically.
+
 ## 1. Pitch and vision
 - **You control as much as you want, as often as you want, and the system scales to the controller.** A beginner lets the
   assistant and autonomy do more; an expert micro-manages. When you fall behind, Assist mode offers more autonomy

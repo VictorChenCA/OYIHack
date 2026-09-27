@@ -46,18 +46,19 @@
 | Product Design | C&C site | "Build the C&C landing page (static HTML) and the demo storyboard → `company/design/`" | Amber: approval to publish |
 | Arts | Brand | "Create the C&C logo, palette and OG image (SVG) → `company/arts/`" | Violet: missing brand input |
 
-## 4. Demo script (1–2 min)
-1. **Solar system:** the GBrain sun, four planets mid-cycle (Engineering's orbit ends at 17:00), mines to the south. Pull back to show
-   the swarm that built C&C sitting on Engineering.
-2. **Colonization:** motherships deploy subagents. The beams brighten and the sun pulses as memory flows.
-3. **Gold enemy:** "GitHub token" grows as 5 units stall; tethers show the reasons, and the assistant says "resolve first". Resolve it,
-   and 5 units resume.
-4. **Sentinel:** a new enemy is scanned and classified in about 100ms (River, base vs trained on the card). Select it; units rank green→red. Send
-   the top two, and it explodes. Switch to Auto: non-gold enemies get cleared automatically.
-5. **Agent mode:** select a unit. The context circle, the AI summary and the history appear; type a follow-up.
-6. **Commander:** "show everything blocked on credentials" creates a highlight view tab.
-7. **Memory:** enter the sun to see the live graph of what the company learned today.
-8. **Close:** the galaxy of companies (SIMULATED). "One person, entire agentic companies."
+## 4. Demo script (1–2 min; final framing: a founder tool, not a game)
+1. **System view:** "This is my company. The sun is our memory (GBrain). Each team sits at a distance that reflects how much the company knows about its work."
+   Real agents launched through Superset are working across Engineering, Product Design and Marketing.
+2. **Known vs new work:** repeat work flies toward the sun on known routes with an ETA. First-time work flies out into the fog.
+3. **Memory:** an agent remembers something, and the sun pulses once with a caption of what was added. Click the sun to open memory.
+4. **Blockers:** the four types (do now, schedule, delegate, drop), shown in the legend. A gold "needs you" blocker, such as an X signup
+   needing a phone, sits at Marketing's frontier with tethers to the agents it's holding. The River-trained Sentinel classified it in about 4s
+   (Research Center: base 0.545 → trained 0.916 on unseen blockers). Resolve it, and the agents continue.
+5. **Delegate:** select a delegate blocker. Agents are ranked green→red by fit. Send the best one, or turn on Auto.
+6. **Team view and agent view:** click Marketing, then an agent. The bottom bar shows its model, permission mode, what it's doing, where it's
+   going and its history. Type a follow-up prompt, which goes to its Superset terminal.
+7. **Command:** "show everything blocked on credentials" builds a view.
+8. **Close:** "One person, a whole company of agents. Next: a system of companies."
 
 ## 5. Cut order (if behind)
 1. Galaxy → one closing slide.
