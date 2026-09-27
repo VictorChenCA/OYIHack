@@ -11,4 +11,6 @@ document.getElementById("stage")!.appendChild(app.canvas);
 createScene(app, store);
 createUI(document.getElementById("ui")!, store);
 createMemory(document.getElementById("memory")!, store);
+store.on("mode", (m) => { document.body.dataset.mode = m.kind; });
+document.body.dataset.mode = store.mode.kind;
 store.connect();

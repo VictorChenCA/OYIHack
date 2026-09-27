@@ -315,3 +315,7 @@ button.stat { cursor: pointer; }
 }
 @media (max-height: 840px) { :root { --console-h: 210px; } .c-now { padding: 5px 14px 4px; gap: 1px; } }
 @media (max-width: 1100px) { .tb-cycle { display: none; } .mine:nth-child(n+3) { display: none; } }
+
+/* integration: the memory explorer owns the screen in memory mode (keep toasts) */
+body[data-mode="memory"] #memory { z-index: 20; }
+body[data-mode="memory"] #ui > *:not([class*="toast"]) { display: none; }

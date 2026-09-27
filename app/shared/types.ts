@@ -262,7 +262,7 @@ export interface UnitDetail { unitId: string; history: HistoryItem[]; filesInCon
 
 export interface MemNode { id: string; slug: string; title: string; planetId?: DeptId; type?: string; updatedAt?: string }
 export interface MemEdge { from: string; to: string; kind: "link" | "structural" }
-export interface MemGraph { nodes: MemNode[]; edges: MemEdge[] }
+export interface MemGraph { nodes: MemNode[]; edges: MemEdge[]; brain?: "product" | "dev" | string }
 
 export type ServerMsg =
   | { type: "state"; state: WorldState }
