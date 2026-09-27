@@ -54,6 +54,22 @@ Mirrored at `kb/raw/gbrain-hackathon.md`.
   without `gbrain serve --http` + a tunnel. The local path below is still the fastest for single-laptop dev.
 - Notes are plain markdown you can copy out, so the "own your intelligence" story still holds.
 
+## Gotchas found while ingesting the KB (Sep 27, ~13:45)
+- **PGLite has a single-writer lock: only ONE process can own `~/.gbrain` at a time.** Every Claude session
+  (and every Superset agent) that loads `.mcp.json` spawns its own stdio `gbrain serve`, and all but the first
+  fail with `CONNECTION_CLOSED`. `gbrain import`, `remember` and other CLI writes also block while any `serve` holds it.
+  Find the holder with `pgrep -fl "gbrain serve"`, stop it with SIGTERM (never steal a live lock), then run the command.
+  **Fix for multi-session or swarm use:** run ONE `gbrain serve --http` daemon and point every client at it over
+  HTTP. On PGLite, mint a token BEFORE starting serve (`gbrain auth create local-agents --scopes read,write`).
+  Alternatives: the hosted gbrain.io workspace, or `gbrain migrate --to supabase`.
+- **`gbrain import` refuses any path containing a `skills/` segment** ("Import cannot publish skill paths. Use the
+  shared skill publisher"). It also skips dot-directories (`.claude/`, `.codex/`). To import skill docs as plain
+  pages, rename those segments in a staging copy (`skills` → `skill-docs`, `.claude` → `dot-claude`).
+- Very large files trigger a content-sanity warning (for example, UFO `spec.md` at 178KB). They still import.
+- **What's in the brain:** the whole KB (notes plus `kb/raw`) under `oyihack/`, and every repo's markdown under
+  `sponsor-repos/<repo>/` (gbrain, gstack, memorable-hackathon-kit, qm, superset, ufo-core), keyword-indexed with no embeddings.
+  Test fixtures and node_modules are excluded. Re-run: `bash kb/fetch.sh` (pull repos + `scrape.py`), then `bash kb/ingest.sh`.
+
 ## Fastest path (keyless, no server, no Docker, about 2 min)
 ```bash
 bun upgrade                                  # NEEDS Bun >= 1.3.11
