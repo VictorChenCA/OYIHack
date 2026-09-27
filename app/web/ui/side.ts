@@ -130,10 +130,10 @@ export function createSide(root: HTMLElement, store: Store) {
       <p class="s-reason">${esc(p.summary ?? `${units.length} agents · ${enemies.length} blockers · ${p.knowledge} knowledge pages`)}</p>
       <section><h3>${esc(p.cycle.label)}</h3>${bar(p.progress, p.color, "bar thick")}<div class="s-kv num"><span><b>${Math.round(p.progress * 100)}%</b> through</span><span><b>${left > 0 ? dur(left) : "ended"}</b> left</span><span>${(left / 864e5).toFixed(1)} days</span></div></section>
       <div class="s-actions"><button class="btn primary" data-act="enter-planet" data-id="${p.id}">Zoom in</button>${units.length ? `<button class="btn" data-act="select-planet" data-id="${p.id}">Select ${units.length} agents</button>` : ""}</div>
-      <section><h3>Agents <span class="num dim">${units.length}</span></h3><ul class="ulist">${[...units].sort((a, b) => (a.role === "mothership" ? 0 : 1) - (b.role === "mothership" ? 0 : 1)).slice(0, 14).map((u) => unitRow(u)).join("") || `<li class="dim">No agents yet — start one below.</li>`}</ul></section>
-      ${enemies.length ? `<section><h3>Blockers <span class="num dim">${enemies.length}</span></h3><ul class="ulist">${enemies.map((e) => `<li data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0"><i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i><b>${esc(e.title)}</b><span class="dim trunc">${esc(e.reason)}</span></li>`).join("")}</ul></section>` : ""}
+      <section><h3>Agents <span class="num dim">${units.length}</span></h3><ul class="ulist">${treeOrder(units).slice(0, 14).map((u) => unitRow(u)).join("") || `<li class="dim">No agents yet — start one below.</li>`}</ul></section>
+      ${enemies.length ? `<section><h3>Blockers <span class="num dim">${enemies.length}</span></h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0"><i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i><b>${esc(e.title)}</b><span class="dim trunc">${esc(e.reason)}</span></li>`).join("")}</ul></section>` : ""}
       <section><h3>Knowledge &amp; factories</h3><dl class="stats num"><dt>Knowledge</dt><dd>${p.knowledge} pages</dd><dt>Memory traffic</dt><dd>${bar(p.memTraffic, "#FFD166")}</dd></dl>
-        <ul class="ulist">${facs.map((f) => `<li data-act="focus-factory" data-id="${esc(f.id)}" tabindex="0"><b>${esc(f.label)}</b><span class="dim trunc">every ${dur(f.cadenceMs)}${f.paused ? " · paused" : ""}</span></li>`).join("") || `<li class="dim">No factories.</li>`}</ul></section>`;
+        <ul class="ulist">${facs.map((f) => `<li class="plain" data-act="focus-factory" data-id="${esc(f.id)}" tabindex="0"><i class="dot" style="background:#B8F34A"></i><b>${esc(f.label)}</b><span class="dim trunc">every ${dur(f.cadenceMs)}${f.paused ? " · paused" : ""}</span></li>`).join("") || `<li class="dim">No factories.</li>`}</ul></section>`;
   }
 
   function factoryHtml(s: WorldState, f: Factory) {
@@ -254,3 +254,11 @@ export function createSide(root: HTMLElement, store: Store) {
 
 function deptName(s: WorldState, id: string) { return s.planets.find((p) => p.id === id)?.name ?? id; }
 function fmtV(v: unknown) { return typeof v === "number" ? (Math.abs(v) < 1 && v !== 0 ? v.toFixed(3) : String(Math.round(v * 100) / 100)) : String(v); }
+
+/** Motherships first, each followed by its subagents. */
+function treeOrder(us: Unit[]): Unit[] {
+  const out: Unit[] = []; const seen = new Set<string>();
+  for (const m of us.filter((u) => u.role === "mothership")) { out.push(m); seen.add(m.id); for (const k of us.filter((x) => x.parentId === m.id)) { out.push(k); seen.add(k.id); } }
+  for (const u of us) if (!seen.has(u.id)) out.push(u);
+  return out;
+}

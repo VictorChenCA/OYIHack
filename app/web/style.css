@@ -434,3 +434,5 @@ button.chip { font: inherit; font-size: 12px; color: inherit; cursor: pointer; }
 .grp:hover select { display: inline-block; }
 
 #ui[data-mode=memory] .drawer { display: none; }
+.ulist li.plain { grid-template-columns: 10px auto minmax(0, 1fr); }
+.ulist li b { white-space: nowrap; }
