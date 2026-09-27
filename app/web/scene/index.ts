@@ -23,6 +23,11 @@ function sprite(name: TexName, opts: { tint?: number; add?: boolean; size?: numb
   return s;
 }
 const setSize = (s: Sprite, size: number) => s.scale.set(size / Math.max(1, s.texture.width));
+/** Linear RGB mix a→b by t. */
+const mix = (a: number, b: number, t: number) => {
+  const ch = (sh: number) => Math.round(((a >> sh) & 255) * (1 - t) + ((b >> sh) & 255) * t) << sh;
+  return ch(16) | ch(8) | ch(0);
+};
 
 interface UnitView { glow: Sprite; trail: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
 interface EnemyView { c: Container; g: Graphics; title: Text; x: number; y: number; seen: number; last: Enemy; born: number }
@@ -81,7 +86,11 @@ export function createScene(app: Application, store: Store) {
   /** Memory writes already shown (at|op|slug); the first state marks history as seen without pulsing. */
   const seenWrites = new Set<string>();
   let writesPrimed = false;
-  let sunCaption: Text, sunHint: Text, captionT = 99;
+  let sunHint: Text;
+  /** "+ <what was added>" captions above the sun: newest first, ~9s each (fade over the last 1.5s), at most 2. */
+  const CAPTION_S = 9;
+  const sunCaptions: Text[] = [];
+  const captions: { text: string; t: number; unitId?: string }[] = [];
   const lifts: Sprite[] = [];
   let frame = 0;
 
@@ -126,9 +135,9 @@ export function createScene(app: Application, store: Store) {
     sun.ring = sprite("circle_02", { tint: 0xffd27a, add: true, size: SUN_R * 2.4, alpha: 0 });
     sun.flash = 0;
     L.sun.addChild(sun.halo, sun.l1, sun.l2, sun.core, sun.ring);
-    sunCaption = setPrio(label("", 12, 0xe9dcc0, "IBM Plex Sans", "500"), 0); sunCaption.visible = false;
+    for (let i = 0; i < 2; i++) { const t = setPrio(label("", 12, 0xe9dcc0, "IBM Plex Sans", "500"), 0); t.visible = false; sunCaptions.push(t); L.labels.addChild(t); }
     sunHint = setPrio(label("Open memory", 11, 0xcdb88a, "IBM Plex Sans", "500"), 0); sunHint.visible = false;
-    L.labels.addChild(sunCaption, sunHint);
+    L.labels.addChild(sunHint);
 
     // research station (River Sentinel)
     research.glow = sprite("circle_05", { tint: 0x40e0d0, add: true, size: 150, alpha: 0.3 });
@@ -248,6 +257,7 @@ export function createScene(app: Application, store: Store) {
 
     // sun = GBrain, the company memory. Static and calm; one clean pulse per memory WRITE (reads do nothing visible),
     // with a one-line caption of what was just added.
+    const byIdU = new Map(s.units.map((u) => [u.id, u] as const));
     const writes = s.knowledge?.recent?.filter((m) => m.kind === "write") ?? [];
     let fresh: (typeof writes)[number] | null = null;
     for (const w of writes) {
@@ -259,27 +269,34 @@ export function createScene(app: Application, store: Store) {
     writesPrimed = true;
     if (seenWrites.size > 400) { const keep = [...seenWrites].slice(-200); seenWrites.clear(); keep.forEach((k) => seenWrites.add(k)); }
     if (fresh) {
-      sun.flash = 1; spawnFx("circle_02", 0, 0, 0xffd27a, SUN_R * 2.1, SUN_R * 4.2, 1.8, 0.45);
+      sun.flash = 1; spawnFx("circle_02", 0, 0, 0xffd27a, SUN_R * 2.1, SUN_R * 3.6, 1.8, 0.4);
       const txt = (fresh.text ?? fresh.slug ?? fresh.op ?? "").replace(/\s+/g, " ").trim();
-      sunCaption.text = "+ " + shortTxt(txt || "memory updated", 60); captionT = 0;
+      const who = fresh.unitId ? byIdU.get(fresh.unitId)?.label : undefined;
+      captions.unshift({ text: "+ " + shortTxt(txt || "memory updated", 56) + (who ? `  · ${shortTxt(who, 18)}` : ""), t: 0, unitId: fresh.unitId });
+      captions.length = Math.min(captions.length, 2); // stack at most 2 lines
     }
     sun.flash = Math.max(0, sun.flash - dt * 0.9);
-    const breathe = 0.5 + 0.5 * Math.sin(time * 0.35); // barely visible
-    sun.l1.rotation += dt * 0.008; sun.l2.rotation -= dt * 0.012;
-    sun.halo.alpha = 0.26 + 0.03 * breathe + 0.12 * sun.flash;
-    sun.l1.alpha = 0.36 + 0.03 * breathe + 0.12 * sun.flash; sun.l2.alpha = 0.34;
+    // static sun: no rotation, no breathing; the one pulse is the memory write
+    sun.halo.alpha = 0.26 + 0.12 * sun.flash;
+    sun.l1.alpha = 0.36 + 0.12 * sun.flash; sun.l2.alpha = 0.34;
     sun.ring.alpha = 0;
     sun.core.tint = 0xffb444;
     L.sun.alpha = 1; L.sun.scale.set(pm ? 0.6 : 1); // team view: the sun stays (it is their memory), smaller
     const sunR = SUN_R * (pm ? 0.6 : 1);
-    captionT += dt;
-    sunCaption.visible = captionT < 4.5;
-    if (sunCaption.visible) {
-      sunCaption.alpha = Math.min(1, captionT / 0.4) * Math.min(1, Math.max(0, (4.5 - captionT) / 0.8)) * 0.9;
+    for (const c of captions) c.t += dt;
+    while (captions.length && captions[captions.length - 1].t > CAPTION_S) captions.pop();
+    {
       // sit above the sun, clear of the research station when it is right there
       const rp = s.research?.pos; let capY = -sunR - 22 * ui;
       if (rp && !pm && store.layerOn("research") && Math.abs(rp.x) < 160 * ui && Math.abs(capY - rp.y) < 34 * ui) capY = rp.y - 34 * ui;
-      sunCaption.scale.set(ui * 0.95); sunCaption.position.set(0, capY);
+      sunCaptions.forEach((tx, i) => {
+        const c = captions[i];
+        tx.visible = !!c;
+        if (!c) return;
+        if (tx.text !== c.text) tx.text = c.text;
+        tx.alpha = Math.min(1, c.t / 0.4) * Math.min(1, Math.max(0, (CAPTION_S - c.t) / 1.5)) * (i === 0 ? 0.92 : 0.6);
+        tx.scale.set(ui * 0.95); tx.position.set(0, capY - i * 18 * ui);
+      });
     }
     sunHint.visible = store.hover?.kind === "sun"; sunHint.scale.set(ui * 0.9); sunHint.position.set(0, sunR + 20 * ui);
 
@@ -295,7 +312,8 @@ export function createScene(app: Application, store: Store) {
       v.c.position.set(p.pos.x, p.pos.y); v.c.alpha = da; v.c.scale.set(PK);
       const stage = p.colonization ?? 0;
       v.dept.alpha = stage / 3; v.base.alpha = 1 - (stage / 3) * 0.6;
-      v.dept.rotation += dt * 0.02; v.base.rotation = v.dept.rotation;
+      // static (no spin). Operations shares the base texture: tint it gently with the team color so it reads distinct.
+      if (p.id === "operations") { v.dept.tint = col; v.base.tint = mix(0xffffff, col, 0.35); v.dept.alpha = Math.max(0.55, v.dept.alpha); }
       const away = Math.atan2(p.pos.y, p.pos.x); // night side faces away from the sun
       v.lights.forEach((l, i) => {
         l.visible = stage >= 2;
@@ -340,11 +358,11 @@ export function createScene(app: Application, store: Store) {
       const base = 14 * Math.max(1, ui);
       v.rocks.forEach((r, i) => {
         const h1 = hash(m.id + ":a" + i), h1b = hash(m.id + ":b" + i), h2 = hash(m.id + ":r" + i), h3 = hash(m.id + ":s" + i), h4 = hash(m.id + ":w" + i);
-        const ang = c.a + ((h1 + h1b) / 2 - 0.5) * CLUSTER_SPACING * 0.95 + time * 0.003;
-        const rr = BELT_R + (h2 - 0.5) * BELT_W + Math.sin(time * (0.6 + h4) + h4 * 6.28) * 2.5;
+        const ang = c.a + ((h1 + h1b) / 2 - 0.5) * CLUSTER_SPACING * 0.95;
+        const rr = BELT_R + (h2 - 0.5) * BELT_W;
         r.position.set(Math.cos(ang) * rr, Math.sin(ang) * rr);
         setSize(r, base * (0.25 + 0.65 * h3));
-        r.rotation += dt * (0.25 + h4 * 1.4) * (h1 < 0.5 ? -1 : 1);
+        r.rotation = h4 * 6.28; // static, varied
         r.tint = col; r.alpha = 0.95;
       });
       v.glow.tint = col; setSize(v.glow, BELT_R * CLUSTER_SPACING * 1.1); v.glow.position.set(c.x, c.y); v.glow.alpha = 0.04 + 0.06 * frac;
@@ -362,10 +380,9 @@ export function createScene(app: Application, store: Store) {
     const rpos = s.research?.pos ?? { x: 0, y: -200 };
     const running = s.research?.runs?.some((r) => r.status === "running") ?? false;
     L.research.position.set(rpos.x, rpos.y);
-    research.gem.rotation += dt * 0.05;
     research.shards.forEach((sh) => { sh.visible = false; });
-    research.twinkle.alpha = running ? 0.35 + 0.35 * Math.max(0, Math.sin(time * 3.1)) : 0; research.twinkle.rotation += dt * 0.4; // twinkles only while training
-    research.glow.alpha = running ? 0.4 + 0.15 * Math.sin(time * 2) : 0.16;
+    research.twinkle.alpha = 0;
+    research.glow.alpha = running ? 0.4 : 0.16;
     research.gem.filters = running && glowGem ? [glowGem] : null;
     research.name.position.set(rpos.x, rpos.y + 44 * ui); research.name.scale.set(ui);
 
@@ -378,7 +395,7 @@ export function createScene(app: Application, store: Store) {
       seenF.add(f.id);
       let v = factoryViews.get(f.id);
       if (!v) { v = { s: sprite("spaceStation_018", { tint: 0xcfe6ff }), name: setPrio(label("", 11, 0xaec3d8, "IBM Plex Sans", "500"), MINOR) }; L.factories.addChild(v.s); L.labels.addChild(v.name); factoryViews.set(f.id, v); }
-      setSize(v.s, 34 * ui); v.s.position.set(f.pos.x, f.pos.y); v.s.rotation += dt * 0.08;
+      setSize(v.s, 34 * ui); v.s.position.set(f.pos.x, f.pos.y);
       const da = dimAlpha(f.planetId);
       v.s.alpha = (f.paused ? 0.35 : 1) * da;
       v.name.text = f.label + (f.paused ? " · paused" : ""); v.name.scale.set(ui); v.name.position.set(f.pos.x, f.pos.y - 32 * ui);
@@ -403,7 +420,7 @@ export function createScene(app: Application, store: Store) {
       bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 5 * ui, color: col, alpha: 0.05 * k });
       bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 1.2 * ui, color: 0xfff3d6, alpha: 0.35 * k });
       const n = Math.round(3 * (p.memTraffic ?? 0)); // packets = actual memory traffic
-      for (let i = 0; i < n && pk < packets.length; i++, pk++) {
+      for (let i = 0; i < 0 && pk < packets.length; i++, pk++) { // no moving packets (decorative)
         const t = (time * (0.06 + 0.1 * (p.memTraffic ?? 0)) + i / n + hash(p.id)) % 1;
         const q = packets[pk]; q.position.set(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t); q.alpha = Math.sin(Math.PI * t) * k * 0.7; setSize(q, 16 * ui); q.rotation = 0;
       }
