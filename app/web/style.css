@@ -1,0 +1,5 @@
+/* S2 owns this file. Base tokens only. */
+:root { --bg: #04060C; --text: #D7E0EA; --muted: #7D8A99; --sans: "IBM Plex Sans", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace; --display: "Rajdhani", "IBM Plex Sans", sans-serif; color-scheme: dark; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.45 var(--sans); overflow: hidden; }
+#stage, #memory { position: fixed; inset: 0; } #ui { position: fixed; inset: 0; pointer-events: none; } #ui > * { pointer-events: auto; }
+.stub-bar { position: absolute; top: 12px; left: 12px; font-family: var(--mono); color: var(--muted); }

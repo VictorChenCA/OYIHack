@@ -1,0 +1,27 @@
+{
+  "port": 7777,
+  "company": "C&C",
+  "repoRoot": "/Users/victor/Documents/GitHub/OYIHack",
+  "gbrain": { "url": "https://gbrain.io/mcp", "tokenEnv": "GBRAIN_IO_TOKEN" },
+  "gbrainDev": { "url": "http://127.0.0.1:3131/mcp", "tokenEnv": "GBRAIN_TOKEN" },
+  "sentinelUrl": "http://127.0.0.1:7788",
+  "supersetProjectId": "",
+  "mines": [
+    { "id": "claude", "label": "Claude (subscription usage)", "color": "#D97757", "total": 50, "measured": true },
+    { "id": "river", "label": "River credits", "color": "#40E0D0", "total": 500, "measured": false },
+    { "id": "gbrain", "label": "GBrain credit", "color": "#FFD166", "total": 50, "measured": false }
+  ],
+  "planets": [
+    { "id": "engineering", "name": "Engineering", "color": "#4FD1FF", "prefix": ["eng-", "engineering", "OYIHack"] },
+    { "id": "product_design", "name": "Product Design", "color": "#7C9CFF", "prefix": ["pd-", "design"] },
+    { "id": "arts", "name": "Arts", "color": "#FF7AD9", "prefix": ["art-", "arts"] },
+    { "id": "marketing", "name": "Marketing", "color": "#5CF2B0", "prefix": ["mkt-", "marketing"] }
+  ],
+  "projects": [
+    { "id": "cc-app", "name": "C&C app", "color": "#4FD1FF", "planetId": "engineering" },
+    { "id": "gbrain-triage", "name": "GBrain PR triage", "color": "#2EE6D6", "planetId": "engineering" },
+    { "id": "site", "name": "C&C site", "color": "#7C9CFF", "planetId": "product_design" },
+    { "id": "brand", "name": "Brand", "color": "#FF7AD9", "planetId": "arts" },
+    { "id": "launch", "name": "Launch campaign", "color": "#5CF2B0", "planetId": "marketing" }
+  ]
+}
