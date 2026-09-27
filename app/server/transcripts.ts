@@ -170,5 +170,17 @@ export function pollUsage(ctx: Ctx, now = Date.now()) {
       model: st.model || u.model,
       tier: tier === "unknown" ? u.tier : tier,
     });
+    // the Claude mine includes every subagent transcript of an active mothership session (SPEC §5)
+    if (u.role === "mothership" && path) {
+      const dir = join(dirname(path), u.sessionId, "subagents");
+      if (existsSync(dir)) try { for (const f of new Bun.Glob("**/agent-*.jsonl").scanSync({ cwd: dir, absolute: true })) scan(f); } catch {}
+    }
   }
+}
+
+/** $ per transcript file scanned this server session (motherships + subagents, deduped by message.id). */
+export function fileCosts(): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const [p, st] of files) if (st.tot.cost > 0) m.set(p, st.tot.cost);
+  return m;
 }

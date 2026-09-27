@@ -1,9 +1,10 @@
 // S4: resource mines. claude = subscription usage priced at API rates; river = credits; gbrain = manual.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import type { Ctx } from "./plugin";
+import { fileCosts } from "./transcripts";
 
 const APP = new URL("../", import.meta.url).pathname;
-const seenCost = new Map<string, number>(); // unit id → max cost seen this session (units get deleted when dead)
+const seenCost = new Map<string, number>(); // transcript path → max cost seen this session
 const samples: { t: number; spent: number }[] = [];
 let riverCache: { mtime: number; spend?: number } = { mtime: -1 };
 
@@ -25,10 +26,11 @@ function riverSpend(ctx: Ctx): number {
 const firstCost = new Map<string, number>(); // cost when first observed (pre-existing spend is not "burn")
 
 export function updateMines(ctx: Ctx, now = Date.now()) {
-  for (const u of ctx.world.units.values()) {
-    if (u.simulated || !(u.costUsd > 0)) continue;
-    if (!firstCost.has(u.id)) firstCost.set(u.id, u.costUsd);
-    if (u.costUsd > (seenCost.get(u.id) ?? 0)) seenCost.set(u.id, u.costUsd);
+  // keyed by transcript file (motherships + all their subagent transcripts)
+  const costs = fileCosts();
+  for (const [k, c] of costs) {
+    if (!firstCost.has(k)) firstCost.set(k, c);
+    if (c > (seenCost.get(k) ?? 0)) seenCost.set(k, c);
   }
   let spent = 0, burned = 0;
   for (const [id, v] of seenCost) { spent += v; burned += v - (firstCost.get(id) ?? v); }
