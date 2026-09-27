@@ -31,9 +31,9 @@
     "steps": 80,
     "checkpoint": "river://1f961282-acb7-496e-bf46-6863f3e0b966/sampler_weights/sentinel-glm53flash-s080-inf",
     "val_acc": 0.9783333333333333,
-    "test_acc_trained": null,
-    "test_acc_base": null,
-    "test_all5": null,
+    "test_acc_trained": 0.9392,
+    "test_acc_base": 0.5008,
+    "test_all5": 0.7192,
     "lora_p50_ms": 7274,
     "lora_p95_ms": 9976,
     "base_p50_ms": 6416

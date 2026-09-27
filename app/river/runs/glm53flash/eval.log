@@ -1,2 +1,4 @@
 [transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
 {"trained_mean": {"acc": 0.9392, "macro_f1": 0.9227, "ece": 0.0364, "brier": 0.0946, "nll": 0.1829}}
+{"base_mean": {"acc": 0.5008, "macro_f1": 0.4079, "ece": 0.097, "brier": 0.5736, "nll": 1.0295}}
+{"out": "runs/glm53flash/eval.json", "md": "runs/glm53flash/eval.md"}
