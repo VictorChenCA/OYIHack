@@ -261,15 +261,16 @@ export function createConsole(root: HTMLElement, store: Store) {
   };
   try { const v = Number(localStorage.getItem(RKEY)); if (v > 0) applyH(v); } catch { /* storage unavailable */ }
   grip.addEventListener("pointerdown", (e) => {
-    e.preventDefault(); grip.setPointerCapture(e.pointerId); wrap.classList.add("resizing");
+    if (e.button !== 0) return;
+    e.preventDefault(); wrap.classList.add("resizing");
     const y0 = e.clientY; const h0 = wrap.getBoundingClientRect().height;
-    const move = (ev: PointerEvent) => applyH(h0 + (y0 - ev.clientY));
+    const move = (ev: PointerEvent) => { ev.preventDefault(); applyH(h0 + (y0 - ev.clientY)); };
     const up = () => {
-      grip.removeEventListener("pointermove", move); grip.removeEventListener("pointerup", up); grip.removeEventListener("pointercancel", up);
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
       wrap.classList.remove("resizing");
       try { localStorage.setItem(RKEY, String(Math.round(wrap.getBoundingClientRect().height))); } catch { /* ignore */ }
     };
-    grip.addEventListener("pointermove", move); grip.addEventListener("pointerup", up); grip.addEventListener("pointercancel", up);
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
   });
   grip.addEventListener("dblclick", () => { applyH(null); try { localStorage.removeItem(RKEY); } catch { /* ignore */ } });
 
