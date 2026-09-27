@@ -1,0 +1,37 @@
+{
+  "base": "Qwen/Qwen3.5-9B",
+  "name": "sentinel-v1",
+  "best": {
+    "step": 20,
+    "inference": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s020-inf",
+    "training": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s020-train",
+    "val_acc": 0.8433333333333334,
+    "val_per_field": {
+      "kind": 0.975,
+      "quadrant": 0.825,
+      "human_only": 0.9666666666666667,
+      "department": 0.9166666666666666,
+      "tier": 0.5333333333333333
+    }
+  },
+  "checkpoints": [
+    {
+      "step": 20,
+      "inference": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s020-inf",
+      "training": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s020-train",
+      "val_acc": 0.8433333333333334,
+      "val_per_field": {
+        "kind": 0.975,
+        "quadrant": 0.825,
+        "human_only": 0.9666666666666667,
+        "department": 0.9166666666666666,
+        "tier": 0.5333333333333333
+      }
+    }
+  ],
+  "data": "/Users/victor/Documents/GitHub/OYIHack-river/app/river/data/train.jsonl",
+  "examples": 4400,
+  "lr": 0.0002,
+  "rank": 16,
+  "batch": 32
+}
