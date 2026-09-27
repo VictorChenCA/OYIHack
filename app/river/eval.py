@@ -90,7 +90,13 @@ def latency(sampler, rows, base, runs=10, n=10):
     return {"p50_ms": round(statistics.median(lat)), "p95_ms": round(lat[min(len(lat) - 1, int(0.95 * len(lat)))]),
             "batch": f"{n} blockers x {len(S.FIELDS)} fields = {n * len(S.FIELDS)} prompts, 1 call", "runs": runs}
 
-def evaluate(client, session, base, ckpt, rows, val, do_latency=True):
+def predictions(sampler, rows, base, temps):
+    prompts, index = S.build_batch([r["text"] for r in rows], base)
+    res, _ = S.decode(sample_all(sampler, prompts), index, len(rows), temps=temps, base=base)
+    return [{"id": r.get("id"), "text": r["text"], "gold": r.get("fields"),
+             "pred": {f: {"label": v["label"], "p": v["p"]} for f, v in p.items()}} for r, p in zip(rows, res)]
+
+def evaluate(client, session, base, ckpt, rows, val, do_latency=True, examples=None):
     sampler = make_sampler(client, session, base, ckpt)
     raw_val, _, _ = raw_logprobs(sampler, val, base) if val else ([], 0, 0)
     raw, ptoks, nprompts = raw_logprobs(sampler, rows, base)
@@ -102,6 +108,8 @@ def evaluate(client, session, base, ckpt, rows, val, do_latency=True):
         per_decision = tok_per_prompt * PRICE_PROMPT / 1e6 + PRICE_COMPLETION / 1e6
         res["cost_per_1k_decisions_usd"] = round(per_decision * 1000, 4)
         res["prompt_tokens_per_decision"] = round(tok_per_prompt, 1)
+    if examples:
+        res["examples"] = predictions(sampler, examples, base, temps)
     if do_latency:
         res["latency"] = latency(sampler, rows, base)
     return res
@@ -125,6 +133,15 @@ def md_table(ev):
         if r and "cost_per_1k_decisions_usd" in r:
             lines.append(f"- Cost ({name}): ${r['cost_per_1k_decisions_usd']} per 1k field decisions "
                          f"({r['prompt_tokens_per_decision']} prompt tokens each, ${PRICE_PROMPT}/M assumed).")
+    if t.get("examples"):
+        lines += ["", "## C&C simulator payloads (`app/data/events.jsonl`), label (p): base -> trained", "",
+                  "| Payload | Field | Gold | Base | Trained |", "|---|---|---|---|---|"]
+        for k, te in enumerate(t["examples"]):
+            be = b["examples"][k] if b and b.get("examples") else None
+            for f in S.FIELDS:
+                g = lambda e: f"{e['pred'][f]['label']} ({e['pred'][f]['p']:.2f})" if e else "n/a"
+                lines.append(f"| {te['id'] if f == 'kind' else ''} | {f} | {te['gold'][f]} | {g(be)} | {g(te)} |")
+        lines.append("")
     lines.append(f"- Claude Haiku baseline: {ev.get('haiku', 'not run (no ANTHROPIC_API_KEY in the training environment)')}.")
     return "\n".join(lines) + "\n"
 
@@ -138,16 +155,17 @@ def main():
     ap.add_argument("--compare-base", action="store_true")
     ap.add_argument("--md", default=None)
     ap.add_argument("--no-latency", action="store_true")
+    ap.add_argument("--examples", default=str(S.HERE / "data/live_app.jsonl"), help="extra rows to dump predictions for")
     ap.add_argument("--save-calibration", default=str(S.HERE / "calibration.json"))
     a = ap.parse_args()
-    rows, val = S.read_jsonl(a.data), S.read_jsonl(a.val)
+    rows, val, exs = S.read_jsonl(a.data), S.read_jsonl(a.val), S.read_jsonl(a.examples)
     with closing(river.Client(api_key=os.environ["RIVER_API_KEY"])) as client:
         with client.session(experiment="cc-sentinel-eval") as session:
             ev = {"base_model": a.base, "data": a.data, "val": a.val}
-            ev["trained"] = evaluate(client, session, a.base, a.checkpoint, rows, val, not a.no_latency)
+            ev["trained"] = evaluate(client, session, a.base, a.checkpoint, rows, val, not a.no_latency, exs)
             print(json.dumps({"trained_mean": ev["trained"]["calibrated"]["mean"]}), flush=True)
             if a.compare_base and a.checkpoint != "base":
-                ev["base"] = evaluate(client, session, a.base, "base", rows, val, not a.no_latency)
+                ev["base"] = evaluate(client, session, a.base, "base", rows, val, not a.no_latency, exs)
                 print(json.dumps({"base_mean": ev["base"]["calibrated"]["mean"]}), flush=True)
     Path(a.out).write_text(json.dumps(ev, indent=2))
     if a.checkpoint != "base" and a.save_calibration:

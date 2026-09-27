@@ -5,12 +5,14 @@
     python sidecar.py --checkpoint river://...
 
 GET  /health
-POST /classify {"items":[{"id":"...","text":"..."}]}   ?engine=trained|base|fast  (default: the served engine)
+POST /classify {"items":[{"id":"...","text":"..."}]}   ?engine=trained|base|fast|auto[&budget_ms=1500]
+     (default: the served engine; auto = River within the budget, else the fast classifier)
      -> {"results":[{"id","fields":{"kind":{"label","p","dist"},...},"latency_ms"}],"model","checkpoint","engine"}
 POST /reload {"checkpoint":"river://..."}                hot-swap the active LoRA (warms up before returning)
 GET  /models                                             known checkpoints + eval summaries
 """
 import argparse, json, os, sys, threading, time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FTimeout
 from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -21,6 +23,7 @@ import river_client as river
 import sentinel as S
 
 HERE = S.HERE
+_POOL = ThreadPoolExecutor(4)
 
 class Engine:
     def __init__(self, base, checkpoint, serve_base):
@@ -50,7 +53,19 @@ class Engine:
             out = self.session.sample(prompts, base_model=self.base, checkpoint=self.checkpoint, **kw)
         return [o[0] for o in out]
 
+    def classify_auto(self, items, budget_ms=1500):
+        """River within a latency budget, else the fast classifier (the River call finishes in the background)."""
+        fut = _POOL.submit(self.classify, items, None)
+        try:
+            return fut.result(timeout=budget_ms / 1000)
+        except FTimeout:
+            out = self.classify(items, "fast")
+            out["engine"] = f"fast (river over {budget_ms} ms budget)"
+            return out
+
     def classify(self, items, engine=None):
+        if engine == "auto":
+            return self.classify_auto(items)
         engine = engine or ("base" if self.serve_base else "trained")
         texts = [it.get("text", "") for it in items]
         t0 = time.time()
@@ -139,7 +154,11 @@ def make_handler(engine):
                 return self._send(400, {"error": f"bad json: {e}"})
             try:
                 if u.path == "/classify":
-                    eng = parse_qs(u.query).get("engine", [body.get("engine")])[0]
+                    q = parse_qs(u.query)
+                    eng = q.get("engine", [body.get("engine")])[0]
+                    if eng == "auto":
+                        budget = int(q.get("budget_ms", [body.get("budget_ms", 1500)])[0])
+                        return self._send(200, engine.classify_auto(body.get("items", []), budget))
                     return self._send(200, engine.classify(body.get("items", []), eng))
                 if u.path == "/reload":
                     return self._send(200, engine.reload(body["checkpoint"]))

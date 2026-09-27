@@ -2,16 +2,16 @@
   "base": "Qwen/Qwen3.5-9B",
   "name": "sentinel-v1",
   "best": {
-    "step": 20,
-    "inference": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s020-inf",
-    "training": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s020-train",
-    "val_acc": 0.8433333333333334,
+    "step": 60,
+    "inference": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s060-inf",
+    "training": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s060-train",
+    "val_acc": 0.8966666666666667,
     "val_per_field": {
-      "kind": 0.975,
-      "quadrant": 0.825,
-      "human_only": 0.9666666666666667,
-      "department": 0.9166666666666666,
-      "tier": 0.5333333333333333
+      "kind": 0.9916666666666667,
+      "quadrant": 0.8416666666666667,
+      "human_only": 1.0,
+      "department": 1.0,
+      "tier": 0.65
     }
   },
   "checkpoints": [
@@ -26,6 +26,32 @@
         "human_only": 0.9666666666666667,
         "department": 0.9166666666666666,
         "tier": 0.5333333333333333
+      }
+    },
+    {
+      "step": 40,
+      "inference": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s040-inf",
+      "training": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s040-train",
+      "val_acc": 0.8683333333333334,
+      "val_per_field": {
+        "kind": 0.9916666666666667,
+        "quadrant": 0.8916666666666667,
+        "human_only": 1.0,
+        "department": 0.9916666666666667,
+        "tier": 0.4666666666666667
+      }
+    },
+    {
+      "step": 60,
+      "inference": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s060-inf",
+      "training": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s060-train",
+      "val_acc": 0.8966666666666667,
+      "val_per_field": {
+        "kind": 0.9916666666666667,
+        "quadrant": 0.8416666666666667,
+        "human_only": 1.0,
+        "department": 1.0,
+        "tier": 0.65
       }
     }
   ],
