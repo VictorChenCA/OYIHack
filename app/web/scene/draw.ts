@@ -48,14 +48,13 @@ export function fogTexture(inner: number): Texture {
   const c = document.createElement("canvas"); c.width = c.height = 512;
   const x = c.getContext("2d")!;
   const gr = x.createRadialGradient(256, 256, 0, 256, 256, 256);
-  // Softer vignette (lighter cosmos): the frontier still reads as fog, but the system is not boxed in black.
-  // Clear inside `inner` (charted space), then a clearly darker band: the fog is the unknown.
-  gr.addColorStop(0, "rgba(8,12,24,0)");
-  gr.addColorStop(Math.min(0.95, inner), "rgba(8,12,24,0)");
-  gr.addColorStop(Math.min(0.96, inner + 0.05), "rgba(8,12,24,0.5)");
-  gr.addColorStop(Math.min(0.97, inner + 0.16), "rgba(8,12,24,0.74)");
-  gr.addColorStop(Math.min(0.98, inner + 0.35), "rgba(8,12,24,0.88)");
-  gr.addColorStop(1, "rgba(8,12,24,0.94)");
+  // Clear inside `inner` (charted space), then a clean, darker falloff: the fog is the unknown.
+  gr.addColorStop(0, "rgba(3,5,10,0)");
+  gr.addColorStop(Math.min(0.95, inner), "rgba(3,5,10,0)");
+  gr.addColorStop(Math.min(0.96, inner + 0.06), "rgba(3,5,10,0.55)");
+  gr.addColorStop(Math.min(0.97, inner + 0.18), "rgba(3,5,10,0.8)");
+  gr.addColorStop(Math.min(0.98, inner + 0.35), "rgba(3,5,10,0.93)");
+  gr.addColorStop(1, "rgba(3,5,10,0.97)");
   x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
   return Texture.from(c);
 }

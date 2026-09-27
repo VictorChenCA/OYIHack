@@ -56,7 +56,6 @@ export function createScene(app: Application, store: Store) {
 
   let nebula: TilingSprite, stars1: TilingSprite, stars2: TilingSprite, fog: Sprite;
   const bgFill = new Graphics();
-  const smoke: Sprite[] = [];
   const sun = {} as { core: Sprite; l1: Sprite; l2: Sprite; halo: Sprite; ring: Sprite; flash: number };
   const research = {} as { gem: Sprite; shards: Sprite[]; twinkle: Sprite; glow: Sprite; name: Text };
   const planetViews = new Map<string, PlanetView>();
@@ -113,9 +112,10 @@ export function createScene(app: Application, store: Store) {
 
   function build() {
     // background (screen space, parallax)
-    nebula = new TilingSprite({ texture: tex.nebula, width: app.screen.width, height: app.screen.height }); nebula.alpha = 0.85; nebula.tint = 0xb4c2e8;
-    stars1 = new TilingSprite({ texture: tex.starfield, width: app.screen.width, height: app.screen.height }); stars1.blendMode = "add"; stars1.alpha = 0.7;
-    stars2 = new TilingSprite({ texture: tex.starfield, width: app.screen.width, height: app.screen.height }); stars2.blendMode = "add"; stars2.alpha = 0.45; stars2.tileScale.set(0.55);
+    // nearly plain: deep navy-black, a faint starfield with a hint of parallax, nebula barely there
+    nebula = new TilingSprite({ texture: tex.nebula, width: app.screen.width, height: app.screen.height }); nebula.alpha = 0.06; nebula.tint = 0x6f7fa8;
+    stars1 = new TilingSprite({ texture: tex.starfield, width: app.screen.width, height: app.screen.height }); stars1.blendMode = "add"; stars1.alpha = 0.22;
+    stars2 = new TilingSprite({ texture: tex.starfield, width: app.screen.width, height: app.screen.height }); stars2.blendMode = "add"; stars2.alpha = 0.12; stars2.tileScale.set(0.55);
     bg.addChild(bgFill, nebula, stars1, stars2);
 
     // sun
@@ -139,10 +139,9 @@ export function createScene(app: Application, store: Store) {
     L.research.addChild(research.glow, research.gem, ...research.shards, research.twinkle);
     L.labels.addChild(research.name);
 
-    // fog + frontier smoke
+    // fog of war: a clean radial falloff beyond the frontier (no drifting smoke)
     fog = new Sprite(fogTexture(FOG_IN / FOG_OUT)); fog.anchor.set(0.5);
     L.fog.addChild(fog);
-    for (let i = 0; i < 10; i++) { const s = sprite("smoke_04", { tint: 0x2a344d, alpha: 0.18 }); smoke.push(s); L.fog.addChild(s); }
     for (let i = 0; i < 24; i++) { const s = sprite("circle_05", { tint: 0x9fb8d8, add: true, alpha: 0 }); lifts.push(s); L.fog.addChild(s); }
 
     for (let i = 0; i < 64; i++) { const p = sprite("star_04", { tint: 0xffe2a0, add: true, size: 26, alpha: 0 }); packets.push(p); L.packets.addChild(p); }
@@ -239,13 +238,13 @@ export function createScene(app: Application, store: Store) {
     const PK = planetK(), PR = PLANET_R * PK; // displayed planet radius
     const m0 = mode(); const pm: DeptId | null = m0.kind === "planet" ? m0.planetId : null;
     const inPm = (pid?: string) => !pm || pid === pm; // planet view REMOVES everything that is not this planet's
-    bgFill.clear().rect(0, 0, app.screen.width, app.screen.height).fill({ color: 0x0c1528 });
+    bgFill.clear().rect(0, 0, app.screen.width, app.screen.height).fill({ color: 0x05070d });
 
     // background parallax
     for (const t of [nebula, stars1, stars2]) { t.width = app.screen.width; t.height = app.screen.height; }
     nebula.tilePosition.set(-cam.x * cam.scale * 0.03, -cam.y * cam.scale * 0.03);
     stars1.tilePosition.set(-cam.x * cam.scale * 0.08, -cam.y * cam.scale * 0.08);
-    stars2.tilePosition.set(-cam.x * cam.scale * 0.16 + time * 2, -cam.y * cam.scale * 0.16);
+    stars2.tilePosition.set(-cam.x * cam.scale * 0.12, -cam.y * cam.scale * 0.12);
 
     // sun = GBrain, the company memory. Static and calm; one clean pulse per memory WRITE (reads do nothing visible),
     // with a one-line caption of what was just added.
@@ -298,7 +297,7 @@ export function createScene(app: Application, store: Store) {
       v.lights.forEach((l, i) => {
         l.visible = stage >= 2;
         const aa = away + (hash(p.id + i) - 0.5) * 2.2, rr = PLANET_R * (0.35 + 0.5 * hash(i + p.id));
-        l.position.set(Math.cos(aa) * rr, Math.sin(aa) * rr); l.alpha = 0.5 + 0.4 * Math.sin(time * 2 + i * 1.7);
+        l.position.set(Math.cos(aa) * rr, Math.sin(aa) * rr); l.alpha = 0.6;
       });
       v.ring.clear();
       if (stage >= 3) {
@@ -360,8 +359,8 @@ export function createScene(app: Application, store: Store) {
     const rpos = s.research?.pos ?? { x: 0, y: -200 };
     const running = s.research?.runs?.some((r) => r.status === "running") ?? false;
     L.research.position.set(rpos.x, rpos.y);
-    research.gem.rotation += dt * 0.25;
-    research.shards.forEach((sh, i) => { const a = -time * 0.6 + (i * Math.PI * 2) / 3; sh.position.set(Math.cos(a) * 36, Math.sin(a) * 36); sh.rotation -= dt; });
+    research.gem.rotation += dt * 0.05;
+    research.shards.forEach((sh) => { sh.visible = false; });
     research.twinkle.alpha = running ? 0.35 + 0.35 * Math.max(0, Math.sin(time * 3.1)) : 0; research.twinkle.rotation += dt * 0.4; // twinkles only while training
     research.glow.alpha = running ? 0.4 + 0.15 * Math.sin(time * 2) : 0.16;
     research.gem.filters = running && glowGem ? [glowGem] : null;
@@ -474,12 +473,12 @@ export function createScene(app: Application, store: Store) {
       v.ship.texture = tex[v.texName]; setSize(v.ship, size); v.ship.position.set(v.x, v.y); v.ship.rotation = u.role === "sentinel" ? time * 0.4 : v.rot;
       v.ship.tint = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
       v.ship.alpha = (u.status === "idle" || u.status === "done" ? 0.6 : 1) * k;
-      v.glow.tint = u.status === "blocked" ? 0xff4d4d : col; setSize(v.glow, size * (u.role === "mothership" ? 2 : 1.6)); v.glow.position.set(v.x, v.y);
-      v.glow.alpha = (u.status === "acting" ? 0.24 + 0.1 * Math.sin(time * 4) : u.role === "mothership" ? 0.24 : 0.16) * k;
+      v.glow.tint = col; setSize(v.glow, size * (u.role === "mothership" ? 2 : 1.6)); v.glow.position.set(v.x, v.y);
+      v.glow.alpha = (u.role === "mothership" ? 0.2 : 0.12) * k;
       const moving = active(u);
       const back = v.rot + Math.PI / 2; // ships face up; exhaust sits behind the nose
       v.trail.visible = moving && u.role !== "sentinel";
-      if (v.trail.visible) { v.trail.tint = col; setSize(v.trail, size * (0.9 + 0.25 * Math.sin(time * 30 + hash(u.id) * 9))); v.trail.position.set(v.x + Math.cos(back) * size * 0.55, v.y + Math.sin(back) * size * 0.55); v.trail.alpha = 0.55 * k; }
+      if (v.trail.visible) { v.trail.tint = col; setSize(v.trail, size * 0.7); v.trail.position.set(v.x + Math.cos(back) * size * 0.55, v.y + Math.sin(back) * size * 0.55); v.trail.alpha = 0.3 * k; }
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
       v.ship.filters = focused && glowSel ? [glowSel] : null;
       const uHot = focused || sel0.has(u.id) || (store.hover?.kind === "unit" && store.hover.id === u.id);
@@ -628,7 +627,7 @@ export function createScene(app: Application, store: Store) {
         arc(ov, p.x, p.y, r, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * hp);
         ov.stroke({ width: 1.6 * ui, color: hp > 0.5 ? 0x5cf2b0 : hp > 0.25 ? 0xffb020 : 0xff4d4d, alpha: 0.6 * da });
       }
-      if (u.status === "blocked") ov.circle(p.x, p.y, r * 1.35).stroke({ width: 1.6 * ui, color: 0xff4d4d, alpha: (0.5 + 0.4 * Math.sin(time * 6)) * da });
+      if (u.status === "blocked") ov.circle(p.x, p.y, r * 1.35).stroke({ width: 1.2 * ui, color: 0xff5a5a, alpha: 0.6 * da });
       if (u.status === "acting" && Math.sin(time * 10 + hash(u.id) * 6) > 0) ov.circle(p.x + r * 0.9, p.y - r * 0.9, 2.5 * ui).fill({ color: 0xffffff, alpha: 0.9 * da });
       if (sel.has(u.id)) {
         ov.circle(p.x, p.y, r * 1.6).stroke({ width: 1.8 * ui, color: 0x7dffb2, alpha: 0.9 });
@@ -683,7 +682,7 @@ export function createScene(app: Application, store: Store) {
     const fo = store.focus;
     if (fo && fo.kind !== "unit") {
       const w = fo.kind === "enemy" ? enemyPos.get(fo.id) : fo.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === fo.id); return p ? { ...p.pos, r: PR * 1.25 } : undefined; })() : undefined;
-      if (w) { const r = w.r * 1.2; for (let k = 0; k < 4; k++) arc(ov, w.x, w.y, r, time * 0.8 + (k * Math.PI) / 2, time * 0.8 + (k * Math.PI) / 2 + 0.9); ov.stroke({ width: 2 * ui, color: 0xe8f6ff, alpha: 0.85 }); }
+      if (w) ov.circle(w.x, w.y, w.r * 1.3 + 4 * ui).stroke({ width: 1.6 * ui, color: 0xe8f6ff, alpha: 0.8 });
     }
 
     // shockwaves
@@ -701,10 +700,6 @@ export function createScene(app: Application, store: Store) {
     // fog of war
     L.fog.visible = store.layerOn("fog");
     fog.width = fog.height = R * 2 * FOG_OUT; // clear to FOG_IN·R (what the company has charted), darker beyond
-    smoke.forEach((sm, i) => {
-      const a = (i / smoke.length) * Math.PI * 2 + time * 0.004 * (i % 2 ? 1 : -1), rr = R * (1.02 + 0.06 * Math.sin(time * 0.05 + i));
-      sm.position.set(Math.cos(a) * rr, Math.sin(a) * rr); setSize(sm, R * 0.55); sm.rotation += dt * 0.01 * (i % 2 ? 1 : -1);
-    });
     // the fog lifts a little around places agents have already reached out there
     let li = 0;
     for (const u of visUnits) {
