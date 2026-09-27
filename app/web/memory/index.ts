@@ -94,8 +94,15 @@ export function createMemory(root: HTMLElement, store: Store) {
     teams.innerHTML = s.planets.map((p) => `<span class="mr-team" style="--c:${p.color}"><i class="mr-dot"></i>${esc(p.name)} <b>${p.knowledge || 0}</b></span>`).join("");
   }
 
-  function renderFeed(s: WorldState) {
+  let feedSig = "";
+  function renderFeed(s: WorldState, force = false) {
     const writes = s.knowledge.recent.filter((e) => e.kind === "write").sort((a, b) => b.at - a.at).slice(0, 40);
+    const sig = writes.map((e) => `${e.slug}|${e.text}|${e.unitId}`).join("\n");
+    if (!force && sig === feedSig && body.querySelector(".mr-sec")) { // same items: only refresh "time ago" (don't rebuild under the cursor)
+      body.querySelectorAll<HTMLElement>("[data-at]").forEach((el, i) => { const e = writes[i]; if (e) { el.dataset.at = String(e.at); el.textContent = ago(e.at); } });
+      return;
+    }
+    feedSig = sig;
     if (!writes.length) { body.innerHTML = `<div class="mr-sec">Recently added</div><div class="mr-empty">Nothing written yet. Agents' memory writes will appear here as they happen.</div>`; return; }
     const rows = writes.map((e) => {
       const k = evKey(e); const fresh = primed && !seen.has(k); seen.add(k);
@@ -130,7 +137,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     if (s) renderHeader(s);
     if (view === "page") renderPage();
     else if (view === "search") renderSearch();
-    else if (s) renderFeed(s);
+    else if (s) renderFeed(s, true);
   }
 
   async function openPage(slug: string, title: string) {
@@ -178,7 +185,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     if (item) {
       const slug = item.dataset.slug ?? "";
       if (slug) openPage(slug, item.dataset.title ?? slug);
-      else store.toast("That memory write has no page yet");
+      else { if (view !== "page") prevView = view; view = "page"; page = { slug: "memory note (no page yet)", title: item.dataset.title ?? "", html: `<p>${esc(item.dataset.title ?? "")}</p>`, loading: false }; renderPage(); }
     }
   });
 
@@ -198,7 +205,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     if (view === "page") { if (store.state) renderHeader(store.state); return; }
     if (view === "search") { if (store.state) renderHeader(store.state); return; }
     if (now - lastRender < 900) return; // fixture ticks at 4Hz; keep the feed calm
-    lastRender = now; render();
+    lastRender = now; if (store.state) { renderHeader(store.state); renderFeed(store.state); }
   });
 
   const onMode = (m: typeof store.mode) => {
