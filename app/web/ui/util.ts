@@ -18,7 +18,8 @@ export function live(node: HTMLElement) {
     set(html: string, force = false) {
       if (!force && html === last) return;
       const a = document.activeElement;
-      if (!force && (held || (a && node.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)))) return;
+      const typing = a && node.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && !/^(checkbox|radio|button)$/.test((a as HTMLInputElement).type);
+      if (!force && (held || typing)) return;
       const st = node.scrollTop; node.innerHTML = html; node.scrollTop = st; last = html;
     },
     reset() { last = ""; },
