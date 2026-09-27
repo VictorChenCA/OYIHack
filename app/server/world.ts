@@ -38,7 +38,7 @@ export const taskSignature = (prompt: string) =>
 export const normDept = (id: string): DeptId => (id === "arts" || id === "product_design" ? "design" : id) as DeptId;
 
 /** Motion law (founder spec): distance in "units" after t seconds — 1s → 1, 60s → 1.5, ∞ → 2. Slow, decelerating, outward. */
-export const distUnits = (sec: number) => (sec <= 1 ? Math.max(0, sec) : 2 - 1 / (1 + Math.log(sec) / Math.log(60)));
+export const distUnits = (secRaw: number) => { const sec = secRaw / 3; return sec <= 1 ? Math.max(0, sec) : 2 - 1 / (1 + Math.log(sec) / Math.log(60)); }; // slowed 3x
 
 export function tierOf(model?: string): Tier {
   const m = (model ?? "").toLowerCase();
@@ -241,13 +241,33 @@ export class World implements WorldApi {
   // ---------- enemies ----------
   /** A blocker sits just beyond the frontier of the team it concerns (the Sentinel's department call, else the blocked
    *  agents' teams). Shared by several teams → between them. Same cause → same spot. */
-  private enemyPos(e: Enemy): Vec {
+  /** Blockers and to-dos form a tidy column straight out from the team they concern (beyond where its agents fly):
+   *  urgent (do now) closest, then schedule, delegate, drop. Shared by several teams → between them. */
+  private columnSlot = new Map<string, number>();
+  private enemyTeamAngle(e: Enemy): number {
     const dept = e.classification && e.classification.department.p >= 0.5 ? [normDept(e.classification.department.label)] : [];
     const teams = [...new Set([...dept, ...e.planetIds])].map((id) => this.planet(id as DeptId));
     const c = teams.length ? teams.reduce((a, p) => add(a, p.pos), { x: 0, y: 0 }) : { x: 1, y: 0 };
-    const mid = { x: c.x / Math.max(1, teams.length), y: c.y / Math.max(1, teams.length) };
-    const a = Math.atan2(mid.y, mid.x) + (hash(e.causeKey) - 0.5) * 0.28;
-    return polar(TEAM_R + 90 + 2.35 * UNIT + hash(e.id) * 50, a);
+    return Math.atan2(c.y, c.x);
+  }
+  private enemyPos(e: Enemy): Vec {
+    const slot = this.columnSlot.get(e.id) ?? 0;
+    const a = this.enemyTeamAngle(e) + (slot % 2 ? 1 : -1) * (slot ? 0.035 : 0);
+    return polar(TEAM_R + 90 + 2.15 * UNIT + slot * 52, a);
+  }
+  /** Recompute each team's column order (called every tick). */
+  private layoutColumns() {
+    const rank: Record<Quadrant, number> = { do_now: 0, schedule: 1, delegate: 2, drop: 3 };
+    const groups = new Map<string, Enemy[]>();
+    for (const e of this.enemies.values()) {
+      if (e.resolved || e.defeatedAt) continue;
+      const k = Math.round(this.enemyTeamAngle(e) * 100).toString();
+      (groups.get(k) ?? groups.set(k, []).get(k)!).push(e);
+    }
+    for (const list of groups.values()) {
+      list.sort((x, y) => rank[x.quadrant] - rank[y.quadrant] || Number(y.humanOnly) - Number(x.humanOnly) || (x.due ?? x.createdAt) - (y.due ?? y.createdAt));
+      list.forEach((e, i) => this.columnSlot.set(e.id, i));
+    }
   }
   block(u: Unit, t: NonNullable<ReturnType<typeof ruleTriage>>) {
     let e = [...this.enemies.values()].find((x) => x.causeKey === t.causeKey && !x.resolved);
@@ -347,6 +367,7 @@ export class World implements WorldApi {
   }
   tick(now = Date.now()) {
     this.tickPlanets(now);
+    this.layoutColumns();
     this.sunPulse *= 0.94;
     for (const u of this.units.values()) {
       if (u.status === "dead") { if (u.simulated) { if (now - u.lastEventAt > 8000) this.units.delete(u.id); continue; } u.status = u.role === "subagent" ? "done" : "idle"; u.endedAt ??= u.lastEventAt; }
@@ -357,7 +378,7 @@ export class World implements WorldApi {
       const off = this.offsets.get(u.id) ?? { angle: (hash(u.id) - 0.5) * 1.1, dist: 0 };
       // everything explores OUTWARD: from its home, along a bearing that fans out from the sun→team direction
       const home = parent ? parent.pos : add(team.pos, polar(90, teamA));
-      const bearing = parent ? teamA + off.angle * 0.9 : teamA + off.angle * 0.55;
+      const bearing = parent ? teamA + off.angle * 0.9 : teamA + off.angle * 0.28; // motherships fly out toward the team's task column
       const scale = parent ? UNIT * 0.35 : UNIT;
       u.home = home;
       const dirTo = (d: number) => add(home, polar(d, bearing));
@@ -381,7 +402,7 @@ export class World implements WorldApi {
       const budget = u.etaMs ? Math.max(60_000, u.etaMs * 1.6) : 12 * 60_000;
       u.hp = Math.max(0.05, Math.min(1, 1 - (now - u.startedAt) / budget) - u.failCount * 0.04);
       const want = dirTo(distUnits(u.status === "blocked" ? Math.max(0, (u.lastEventAt - u.startedAt) / 1000) : elapsed) * scale);
-      u.pos = lerp(u.pos, want, 0.08); // smooth, never fast
+      u.pos = lerp(u.pos, want, 0.04); // smooth and slow
       // dependency links: waiting on another agent's output
       const dep = u.blockedBy ? this.enemies.get(u.blockedBy) : undefined;
       u.dependsOn = dep?.dependsOnUnit ? [dep.dependsOnUnit] : undefined;
