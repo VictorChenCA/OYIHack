@@ -86,6 +86,14 @@ Batch datum = `{"input_ids", "target_tokens" (ids shifted by 1), "weights" (0 on
 Tokenize with HF `AutoTokenizer.from_pretrained(BASE)`. Full script: `kb/raw/river/guides_sft.md`.
 RL: `guides_rl-sync.md` (sample, then score with YOUR reward fn, then update). Tools/multi-turn: `guides_rl-tools.md`.
 
+## Our key (Sep 27)
+`RIVER_API_KEY` is in `.env` (gitignored), with **about $1000 of credit**. Verified 13:45: `health_check() == True`.
+Load it with `set -a; . ./.env; set +a`, then use `.venv-river/bin/python` (river-client 0.12.0).
+`get_capabilities()` for this key returns 13 models: Qwen3.8-27B-FP8, Qwen3.6-35B-A3B-FP8, Qwen3.5-397B-A17B-FP8,
+Qwen3.5-122B-A10B-FP8, Qwen3.5-9B, Kimi-K2.6-NVFP4(-262K), GLM-5.2-NVFP4(-262K), GLM-5.3-Flash,
+DeepSeek-V4-Flash-0731, **DeepSeek-V4.1-Flash (new, not in the docs list)**, Nemotron-3.5-Lightning-30B-A3B-NVFP4.
+Whether this key can create deployments (team vs. personal) is untested; sampling a checkpoint works either way.
+
 ## Models (check live with `get_capabilities()`; access is per key)
 `Qwen/Qwen3.5-9B` (small/fast) · `Qwen/Qwen3.6-35B-A3B-FP8` (SFT guide) · `Qwen/Qwen3.8-27B-FP8` ·
 `Qwen/Qwen3.5-122B-A10B-FP8` · `Qwen/Qwen3.5-397B-A17B-FP8` · `nvidia/Kimi-K2.6-NVFP4[-262K]` ·

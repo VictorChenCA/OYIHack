@@ -136,7 +136,7 @@ Both are Garry Tan / YC projects (`yc-software/qm`, `garrytan/gbrain`).
 - [x] Prize tracks per sponsor: see **Prizes** above
 - [ ] Judging criteria? Team size limit? (Kickoff talk: judges weigh what you built today, and sponsors judge their side quests.) (Nothing published. The event page only says teams are allowed. Ask an organizer.)
 - [x] Submission format and location: form on the submissions page (opens 16:00); see **Submissions** above
-- [x] **River credits:** free at the River AI booth; unused credits expire at the end of the day (`kb/sponsors/river.md`)
+- [x] **River credits: DONE.** Team key with about $1000 of credit is in `.env` as `RIVER_API_KEY` (verified 13:45). Booth credits expire at the end of the day.
 - [ ] **UFO credits?** Hosted UFO runs on a prepaid balance and needs a card.
 - [x] **Hosted QM for hackers:** agent37 credit at https://www.agent37.com/redeem/QMHACK (see `kb/sponsors/qm.md`)
 - [ ] Memorable dashboard key (`mk_...`) for agents, from memorable.sh/dash
