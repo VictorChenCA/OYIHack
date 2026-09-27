@@ -462,6 +462,15 @@ html, body { background: #05070C; }
 .console[data-mode=commander] .c-prompt { text-shadow: none; }
 .st-word { text-shadow: none !important; }
 .s-head h2 .dot { box-shadow: none; }
+/* One typeface family, no neon: glows off everywhere; uppercase labels stay small and quiet. */
+:root { --display: "IBM Plex Sans", system-ui, sans-serif; --accent: #6CB6FF; }
+.dot, .status i, .bar i, .stages i.on, .quest i, .quest.phi i, .layer.on i, .toast i, .toast.warn i { box-shadow: none !important; }
+.btn:hover, .grp.on { box-shadow: none; }
+.c-prompt, .brand, .squad-core b, .s-titles h2, .rk-score { text-shadow: none !important; }
+.brand { font: 700 15px/1 var(--sans); letter-spacing: 0.02em; }
+.s-titles h2 { font: 600 17px/1.2 var(--sans); letter-spacing: 0; }
+.lbl, .p-title, .side h3, .c-side h3 { letter-spacing: 0.08em !important; font-weight: 600; }
+.st-word { letter-spacing: 0.04em; }
 
 /* Bottom bar: vertical resize from its top edge; content scrolls inside. */
 .console { min-height: 120px; max-height: 70vh; }
