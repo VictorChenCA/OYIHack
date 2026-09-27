@@ -35,11 +35,12 @@ export function fogTexture(inner: number): Texture {
   const c = document.createElement("canvas"); c.width = c.height = 512;
   const x = c.getContext("2d")!;
   const gr = x.createRadialGradient(256, 256, 0, 256, 256, 256);
-  gr.addColorStop(0, "rgba(4,6,12,0)");
-  gr.addColorStop(Math.min(0.95, inner), "rgba(4,6,12,0)");
-  gr.addColorStop(Math.min(0.97, inner + 0.12), "rgba(4,6,12,0.45)");
-  gr.addColorStop(Math.min(0.98, inner + 0.3), "rgba(4,6,12,0.82)");
-  gr.addColorStop(1, "rgba(4,6,12,0.96)");
+  // Softer vignette (lighter cosmos): the frontier still reads as fog, but the system is not boxed in black.
+  gr.addColorStop(0, "rgba(10,16,30,0)");
+  gr.addColorStop(Math.min(0.95, inner), "rgba(10,16,30,0)");
+  gr.addColorStop(Math.min(0.97, inner + 0.12), "rgba(10,16,30,0.28)");
+  gr.addColorStop(Math.min(0.98, inner + 0.3), "rgba(10,16,30,0.58)");
+  gr.addColorStop(1, "rgba(10,16,30,0.78)");
   x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
   return Texture.from(c);
 }
