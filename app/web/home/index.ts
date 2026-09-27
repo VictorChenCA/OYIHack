@@ -34,13 +34,20 @@ const CSS = `
 .hm-open { font-size: 12px; color: var(--muted, #7D8A99); }
 .hm-card.live .hm-open { color: var(--accent, #4FD1FF); }
 .hm-foot { margin-top: 28px; font-size: 12px; color: var(--dim, #5B6675); }
+.hm-auth { position: absolute; top: 16px; right: 20px; display: flex; align-items: center; gap: 10px; font-size: 13px; z-index: 2; }
+.hm-user { display: inline-flex; align-items: center; gap: 8px; }
+.hm-av { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-style: normal; font: 700 10.5px/1 var(--sans, sans-serif); color: #0B1220; background: #9FB8FF; }
+.hm-dot { color: var(--dim, #5B6675); }
+.hm-btn { font: inherit; font-size: 13px; color: var(--text, #D7E0EA); padding: 5px 12px; border-radius: 8px; cursor: pointer; background: rgba(79,209,255,.1); border: 1px solid rgba(79,209,255,.35); }
+.hm-btn.ghost { background: transparent; border-color: var(--line, rgba(120,180,255,.16)); color: var(--muted, #7D8A99); }
+.hm-btn:hover { border-color: rgba(79,209,255,.6); }
 .hm-foot kbd { font: 11px var(--mono, monospace); border: 1px solid var(--line, rgba(120,180,255,.16)); border-radius: 4px; padding: 1px 5px; }
 `;
 
 export function createHome(root: HTMLElement, store: Store) {
   if (!document.getElementById("hm-style")) { const st = document.createElement("style"); st.id = "hm-style"; st.textContent = CSS; document.head.appendChild(st); }
   root.classList.add("home-root");
-  root.innerHTML = `<div class="hm-wrap">
+  root.innerHTML = `<div class="hm-auth"></div><div class="hm-wrap">
     <div class="hm-brand"><div class="hm-logo">C&amp;C</div><h1 class="hm-title">C&amp;C</h1></div>
     <p class="hm-sub">Run a company of AI agents</p>
     <div class="hm-sec">Companies</div>
@@ -49,6 +56,25 @@ export function createHome(root: HTMLElement, store: Store) {
   </div>`;
   const grid = root.querySelector(".hm-grid") as HTMLElement;
   let lastSig = "";
+
+  // Mock sign-in (home page only; the galaxy view is real). Stored per browser.
+  const auth = root.querySelector(".hm-auth") as HTMLElement;
+  const AUTH_KEY = "cc.home.user";
+  const getUser = (): string | null => { try { return localStorage.getItem(AUTH_KEY); } catch { return null; } };
+  const setUser = (u: string | null) => { try { if (u) localStorage.setItem(AUTH_KEY, u); else localStorage.removeItem(AUTH_KEY); } catch { /* storage unavailable */ } };
+  let user: string | null = getUser();
+  const renderAuth = () => {
+    auth.innerHTML = user
+      ? `<span class="hm-user"><i class="hm-av">${esc(user.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase())}</i>${esc(user)}</span><span class="hm-dot">·</span><button class="hm-btn ghost" data-auth="out">Sign out</button>`
+      : `<button class="hm-btn" data-auth="in">Sign in</button>`;
+  };
+  auth.addEventListener("click", (e) => {
+    const b = (e.target as HTMLElement).closest("[data-auth]") as HTMLElement | null; if (!b) return;
+    if (b.dataset.auth === "in") { user = "Victor Chen"; setUser(user); store.toast("Signed in as Victor Chen (mock)"); }
+    else { user = null; setUser(null); store.toast("Signed out"); }
+    renderAuth();
+  });
+  renderAuth();
 
   const companies = (): Company[] => {
     const s = store.state;
