@@ -99,6 +99,7 @@ export class World implements WorldApi {
   autonomy: Autonomy = "assist";
   stances: Record<number, Stance> = {};
   extraAdvice: Advice[] = [];
+  overview?: string;
   feed: FeedItem[] = [];
   sunPulse = 0;
   durations: Record<string, number[]> = {};
@@ -164,7 +165,7 @@ export class World implements WorldApi {
       };
       this.units.set(mother.id, mother);
       this.stats(planetId).unitsEver++;
-      this.log(`${mother.label} arrived at ${this.planet(planetId).name}`, { unitId: mother.id });
+      this.log(`${mother.label} joined ${this.planet(planetId).name}`, { unitId: mother.id });
     }
     if (ev.transcript_path && !mother.transcriptPath) mother.transcriptPath = ev.transcript_path;
     if (ev._workspaceId && !mother.workspaceId) mother.workspaceId = ev._workspaceId;
@@ -195,7 +196,9 @@ export class World implements WorldApi {
     u.charted = u.charted || hist.length > 0;
     u.etaMs = hist.length ? median(hist) : null;
     u.startedAt = Date.now(); u.progress = 0; u.hp = 1; u.failCount = 0; u.status = "working";
-    this.offsets.set(u.id, { angle: (hash(u.id + u.taskSig) - 0.5) * 1.1, dist: u.charted ? 200 + hash(u.id) * 200 : 0 });
+    // the task's SITE: stable per (planet, task signature), so a repeated task flies the same charted route
+    this.offsets.set(u.id, { angle: (hash(u.planetId + u.taskSig) - 0.5) * 1.3, dist: 190 + hash(u.taskSig + "d") * 170 });
+    u.siteLabel = short(task, 36);
     this.log(`${u.label} ▶ ${short(task, 60)}${u.etaMs ? ` · ETA ${Math.round(u.etaMs / 1000)}s` : " · frontier"}`, { unitId: u.id });
   }
 
@@ -279,7 +282,7 @@ export class World implements WorldApi {
     const input = ev.tool_input ? short(String((ev.tool_input as any).command ?? (ev.tool_input as any).file_path ?? (ev.tool_input as any).url ?? (ev.tool_input as any).query ?? (ev.tool_input as any).slug ?? JSON.stringify(ev.tool_input)), 90) : "";
     switch (ev.hook_event_name) {
       case "UserPromptSubmit": this.unblock(u); this.startTask(u, ev.prompt ?? "task"); break;
-      case "SubagentStart": u.task = ev.agent_type ?? "subagent"; u.status = "working"; u.startedAt = Date.now(); this.offsets.set(u.id, { angle: (hash(u.id) - 0.5) * 1.6, dist: 90 + hash(u.id + "d") * 120 }); break;
+      case "SubagentStart": { u.task = ev.agent_type ?? "subagent"; u.status = "working"; u.startedAt = Date.now(); const sibs = [...this.units.values()].filter((x) => x.parentId === u.parentId).length; this.offsets.set(u.id, { angle: sibs * 0.9 + hash(u.id) * 0.4, dist: 55 + (sibs % 3) * 22 }); u.siteLabel = `${ev.agent_type ?? "subagent"} task`; break; }
       case "PreToolUse": {
         this.unblock(u); if (u.status !== "attacking") u.status = "acting"; u.toolCount++; u.lastTool = tool; u.lastToolInput = input;
         this.stats(u.planetId).tools++;
@@ -334,14 +337,19 @@ export class World implements WorldApi {
       if (u.attacking && this.enemies.get(u.attacking)) {
         const e = this.enemies.get(u.attacking)!; u.target = lerp(e.pos, home, 0.12);
       } else if (u.role === "subagent" && parent) {
-        u.target = add(parent.target, polar(off.dist, outward));
+        u.target = add(parent.target, polar(off.dist, off.angle));
       } else if (u.charted) {
         u.target = add(home, polar(off.dist || 260, outward));
       } else {
-        const need = Math.max(160, FOG_R + 120 - len(home));
+        const need = Math.max(220, FOG_R + 110 - len(home));
         u.target = add(home, polar(need, outward));
       }
-      if (u.status === "idle") { u.pos = lerp(u.pos, add(home, polar(70, hash(u.id) * 6.28)), 0.1); continue; }
+      if (u.status === "idle") {
+        // park in formation beside the colony (sunward side), in arrival order
+        const idle = [...this.units.values()].filter((x) => x.planetId === u.planetId && x.role === "mothership" && x.status === "idle");
+        const i = idle.indexOf(u), sunward = Math.atan2(-home.y, -home.x);
+        u.pos = lerp(u.pos, add(home, polar(62 + Math.floor(i / 4) * 26, sunward + 1.25 + (i % 4) * 0.32)), 0.12); continue;
+      }
       if (u.status === "done") { u.pos = lerp(u.pos, home, 0.12); if (now - u.lastEventAt > 6000 && u.role === "subagent") this.units.delete(u.id); continue; }
       const elapsed = now - u.startedAt;
       if (u.status !== "blocked") u.progress = u.attacking ? Math.min(1, u.progress + 0.03) : u.etaMs ? Math.min(0.97, elapsed / u.etaMs) : 0.92 * (1 - Math.exp(-elapsed / 150_000));
@@ -366,20 +374,20 @@ export class World implements WorldApi {
     const enemies = [...this.enemies.values()].filter((e) => !e.resolved);
     const q: Record<Quadrant, number> = { do_now: 0, schedule: 1, delegate: 2, drop: 3 };
     enemies.sort((a, b) => Number(b.humanOnly) - Number(a.humanOnly) || q[a.quadrant] - q[b.quadrant] || b.blocked.length - a.blocked.length);
-    for (const e of enemies.slice(0, 3)) out.push({ id: `en:${e.id}`, priority: 10 - q[e.quadrant] + (e.humanOnly ? 1 : 0), text: `${e.humanOnly ? "★ Needs you: " : ""}${e.blocked.length} unit${e.blocked.length === 1 ? "" : "s"} blocked by “${e.title}”${e.humanOnly ? "" : ": send a unit"}` });
+    for (const e of enemies.slice(0, 3)) out.push({ id: `en:${e.id}`, priority: 10 - q[e.quadrant] + (e.humanOnly ? 1 : 0), text: `${e.humanOnly ? "Needs you: " : ""}${e.blocked.length} agent${e.blocked.length === 1 ? "" : "s"} blocked by “${e.title}”${e.humanOnly ? "" : ": send an agent"}` });
     const units = [...this.units.values()];
     for (const p of this.planets) {
       const idle = units.filter((u) => u.planetId === p.id && u.role === "mothership" && u.status === "idle");
-      if (idle.length) out.push({ id: `idle:${p.id}`, priority: 5, text: `${idle.length} worker${idle.length > 1 ? "s" : ""} idle on ${p.name}: assign a task` });
-      if (p.colonization === 0) out.push({ id: `colonize:${p.id}`, priority: 3, text: `${p.name} is uncolonized: deploy a mothership` });
+      if (idle.length) out.push({ id: `idle:${p.id}`, priority: 5, text: `${idle.length} agent${idle.length > 1 ? "s" : ""} idle in ${p.name}: assign a task` });
+      if (p.colonization === 0) out.push({ id: `colonize:${p.id}`, priority: 3, text: `${p.name} has no agents yet: start one` });
       const left = p.cycle.endAt - Date.now();
       if (left > 0 && left < 45 * 60_000) out.push({ id: `cycle:${p.id}`, priority: 7, text: `${p.name}: ${p.cycle.label} ends in ${Math.round(left / 60_000)} min` });
     }
     const sigs = new Map<string, number>(); for (const [sig, xs] of Object.entries(this.durations)) sigs.set(sig, xs.length);
-    const rep = [...sigs.entries()].find(([sig, n]) => n >= 3 && !this.factories.some((f) => f.prompt.toLowerCase().includes(sig.split(" ")[0])));
+    const rep = [...sigs.entries()].find(([sig, n]) => n >= 3 && this.sigExample.has(sig) && !this.factories.some((f) => f.prompt.toLowerCase().includes(sig.split(" ")[0])));
     if (rep) out.push({ id: `fac:${rep[0]}`, priority: 4, text: `“${this.sigExample.get(rep[0]) ?? rep[0]}” ran ${rep[1]}×: build a factory for it` });
-    if (!units.some((u) => !u.charted && (u.status === "working" || u.status === "acting"))) out.push({ id: "frontier", priority: 1, text: "Nobody on the frontier: scout a task you've never done" });
-    for (const m of this.mines) if (m.remaining / m.total < 0.15) out.push({ id: `mine:${m.id}`, priority: 8, text: `${m.label} below 15%: top up` });
+    if (!units.some((u) => !u.charted && (u.status === "working" || u.status === "acting"))) out.push({ id: "frontier", priority: 1, text: "Nothing new being explored: try a task you haven't done before" });
+    for (const m of this.mines) if (m.remaining / m.total < 0.15) out.push({ id: `mine:${m.id}`, priority: 8, text: `${m.label} credits below 15%: top up` });
     const seen = new Set<string>();
     return out.filter((a) => (seen.has(a.id) ? false : (seen.add(a.id), true))).sort((a, b) => b.priority - a.priority).slice(0, 7);
   }
@@ -389,7 +397,7 @@ export class World implements WorldApi {
     return {
       now: Date.now(), company: this.cfg.company, planets: this.planets, projects: this.projects, units,
       enemies: [...this.enemies.values()], factories: this.factories, mines: this.mines, research: this.research, knowledge: this.knowledge,
-      sunPulse: this.sunPulse, feed: this.feed.slice(0, 60), advice: this.advice(), views: this.views, activeViewId: this.activeViewId,
+      sunPulse: this.sunPulse, overview: this.overview, feed: this.feed.slice(0, 60), advice: this.advice(), views: this.views, activeViewId: this.activeViewId,
       filter: this.filter, autonomy: this.autonomy, stances: this.stances, simulated: units.some((u) => u.simulated), systemRadius: SYSTEM_R,
     };
   }

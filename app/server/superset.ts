@@ -136,13 +136,13 @@ export async function sendToUnit(ctx: Ctx, unitId: string, text: string): Promis
 }
 
 async function promptUnits(ctx: Ctx, unitIds: string[], text: string): Promise<CommandResult> {
-  if (!unitIds.length) return { ok: false, message: "No units selected" };
+  if (!unitIds.length) return { ok: false, message: "No agents selected" };
   const anyWs = unitIds.some((id) => { const u = ctx.world.units.get(id); return u && (u.workspaceId || (u.parentId && ctx.world.units.get(u.parentId)?.workspaceId)); });
   if (anyWs) { const rd = await supersetReady(); if (!rd.ok) return notReady(rd.why); }
   const errs = (await Promise.all(unitIds.map((id) => sendToUnit(ctx, id, text)))).filter(Boolean) as string[];
   const sent = unitIds.length - errs.length;
   if (!sent) return { ok: false, message: errs.join(" · ") };
-  return { ok: true, message: `Sent to ${sent} unit${sent === 1 ? "" : "s"}${errs.length ? ` (${errs.length} skipped: ${errs[0]})` : ""}` };
+  return { ok: true, message: `Sent to ${sent} agent${sent === 1 ? "" : "s"}${errs.length ? ` (${errs.length} skipped: ${errs[0]})` : ""}` };
 }
 
 const blockerText = (e: Enemy) => `Take on this blocker for the team: ${e.title}. Context: ${e.reason}. Resolve it if you can; if it truly needs a human, reply with exactly what's needed.`;
@@ -164,14 +164,14 @@ export async function handleSupersetCommand(cmd: any, ctx: Ctx): Promise<Command
       const e = ctx.world.enemies.get(cmd.enemyId);
       if (!e) return { ok: false, message: "Enemy not found (already cleared?)" };
       const ids: string[] = (cmd.unitIds ?? []).filter((id: string) => ctx.world.units.has(id));
-      if (!ids.length) return { ok: false, message: "No units selected to attack" };
+      if (!ids.length) return { ok: false, message: "No agents selected" };
       for (const id of ids) markAttacking(ctx, id, e);
-      ctx.world.log(`⚔ ${ids.length} unit${ids.length === 1 ? "" : "s"} → ${e.title}`, { enemyId: e.id });
+      ctx.world.log(`→ ${ids.length} agent${ids.length === 1 ? "" : "s"} → ${e.title}`, { enemyId: e.id });
       const text = (cmd.interrupt ? "[Interrupt from the commander] " : "") + blockerText(e);
       const sim = ids.every((id) => ctx.world.units.get(id)?.simulated);
-      if (sim) return { ok: true, message: `Attacking ${e.title} (simulated units)` };
+      if (sim) return { ok: true, message: `Sent to ${e.title} (simulated agents)` };
       const r = await promptUnits(ctx, ids, text);
-      return { ok: true, message: `Attacking “${e.title}”: ${r.message}` };
+      return { ok: true, message: `Sent to “${e.title}”: ${r.message}` };
     }
     case "deploy_for_enemy": {
       const e = ctx.world.enemies.get(cmd.enemyId);
@@ -189,11 +189,11 @@ export async function handleSupersetCommand(cmd: any, ctx: Ctx): Promise<Command
       const ids = ctx.world.resolveEnemy(cmd.enemyId, cmd.note);
       const text = `Unblocked: ${cmd.note || "resolved by the commander"}. Continue your task.`;
       const targets = [...new Set([...ids, ...attackers])].filter((id) => { const u = ctx.world.units.get(id); return u && !u.simulated && (u.workspaceId || u.terminalId); });
-      if (!targets.length) return { ok: true, message: `Resolved “${e.title}” (${ids.length} unit${ids.length === 1 ? "" : "s"} unblocked)` };
+      if (!targets.length) return { ok: true, message: `Resolved “${e.title}” (${ids.length} agent${ids.length === 1 ? "" : "s"} unblocked)` };
       const rd = await supersetReady();
-      if (!rd.ok) return { ok: true, message: `Resolved “${e.title}”; couldn't notify units (Superset not ready: ${rd.why})` };
+      if (!rd.ok) return { ok: true, message: `Resolved “${e.title}”; couldn't notify agents (Superset not ready: ${rd.why})` };
       const errs = (await Promise.all(targets.map((id) => sendToUnit(ctx, id, text)))).filter(Boolean);
-      return { ok: true, message: `Resolved “${e.title}”: notified ${targets.length - errs.length}/${targets.length} unit(s)` };
+      return { ok: true, message: `Resolved “${e.title}”: notified ${targets.length - errs.length}/${targets.length} agent(s)` };
     }
   }
   return undefined;
@@ -209,7 +209,7 @@ export function supersetOnHook(ev: HookEvent, ctx: Ctx) {
     const match = (ev.cwd ?? "").includes(p.name) || (p.workspaceId && ev._workspaceId === p.workspaceId);
     if (!match) continue;
     const e = ctx.world.enemies.get(p.enemyId); const u = ctx.world.units.get(ev.session_id);
-    if (u && e && !e.resolved) { markAttacking(ctx, u.id, e); ctx.world.log(`⚔ ${u.label} engaging “${e.title}”`, { enemyId: e.id, unitId: u.id }); }
+    if (u && e && !e.resolved) { markAttacking(ctx, u.id, e); ctx.world.log(`→ ${u.label} engaging “${e.title}”`, { enemyId: e.id, unitId: u.id }); }
     pendingAttack.splice(i, 1);
   }
 }

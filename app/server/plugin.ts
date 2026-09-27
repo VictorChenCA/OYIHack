@@ -32,6 +32,8 @@ export interface WorldApi {
   autonomy: Autonomy;
   stances: Record<number, Stance>;
   projects: Project[];
+  planets: import("../shared/types").Planet[];
+  overview?: string;                                   // S3: AI summary of the whole company (bottom bar default)
   extraAdvice: import("../shared/types").Advice[];       // S3: LLM strategy advice merged into state.advice
   log(text: string, extra?: Partial<FeedItem>): void;
   snapshot(): WorldState;

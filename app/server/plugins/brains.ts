@@ -7,6 +7,7 @@ import { heuristic, candidates, rank } from "../rank";
 import { runCommander, refreshAdvice } from "../commander";
 import { periodicSummaries, summarize } from "../summaries";
 import { stats } from "../llm";
+import { overviewTick } from "../overview";
 
 let lastSummaryTick = 0, lastAutonomy = 0, lastAdvice = 0;
 const startedAt = Date.now();
@@ -65,7 +66,7 @@ const plugin: Plugin = {
   onTick(ctx) {
     const now = Date.now();
     detectNewEnemies(ctx);
-    if (now - lastSummaryTick > 5000) { lastSummaryTick = now; periodicSummaries(ctx); }
+    if (now - lastSummaryTick > 5000) { lastSummaryTick = now; periodicSummaries(ctx); overviewTick(ctx); }
     if (now - lastAutonomy > 5000) { lastAutonomy = now; void autonomyPass(ctx).catch((e) => console.warn(`[brains] autonomy: ${e?.message ?? e}`)); }
     if (now - lastAdvice > ADVICE_EVERY) { lastAdvice = now; void refreshAdvice(ctx).catch((e) => console.warn(`[brains] advice: ${e?.message ?? e}`)); }
   },

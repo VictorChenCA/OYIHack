@@ -125,7 +125,7 @@ function describe(c: Command): string {
   switch (c.type) {
     case "add_view": return `view “${c.view.name}” (${c.view.highlight.length} highlighted)`;
     case "spawn": return `spawn on ${c.planetId}: ${clip(c.prompt, 40)}`;
-    case "prompt": return `prompt ${c.unitIds.length} unit(s)`;
+    case "prompt": return `prompt ${c.unitIds.length} agent(s)`;
     case "attack": return `attack ${c.enemyId} with ${c.unitIds.length}`;
     case "deploy_for_enemy": return `deploy ${c.tier} for ${c.enemyId}`;
     case "group": return `group ${c.group} ← ${c.unitIds.length}`;
