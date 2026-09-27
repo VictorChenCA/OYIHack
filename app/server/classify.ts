@@ -6,7 +6,7 @@ import { claudeJson } from "./llm";
 
 const KINDS: EnemyKind[] = ["credential", "account", "approval", "rate_limit", "billing", "missing_info", "dependency", "failure"];
 const QUADS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
-const DEPTS: DeptId[] = ["engineering", "marketing", "product_design", "arts"];
+const DEPTS: DeptId[] = ["engineering", "marketing", "product_design"]; // arts folded into marketing
 const TIERS: Tier[] = ["haiku", "sonnet", "opus", "fable"];
 const pick = <T extends string>(v: any, allowed: T[], dflt: T): T => (allowed.includes(v) ? v : dflt);
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
@@ -37,7 +37,7 @@ export function defaultTier(kind: EnemyKind, text: string): Tier {
 }
 
 export function deptGuess(e: Enemy, text: string): DeptId {
-  if (/\b(logo|brand|image|video|illustrat|art)\b/i.test(text)) return "arts";
+  if (/\b(logo|brand|image|video|illustrat|art)\b/i.test(text)) return "marketing";
   if (/\b(post|launch|outreach|tiktok|instagram|twitter|x\.com|linkedin|campaign|newsletter)\b/i.test(text)) return "marketing";
   if (/\b(ux|landing page|figma|flow|wireframe|design)\b/i.test(text)) return "product_design";
   return e.planetIds[0] ?? "engineering";
@@ -70,7 +70,7 @@ export async function sentinel(ctx: Ctx, items: { id: string; text: string }[], 
       out.set(r.id, {
         kind: sc(f.kind, KINDS, "failure"), quadrant: sc(f.quadrant, QUADS, "schedule"),
         humanOnly: { label: String(f.human_only?.label ?? "no").toLowerCase() === "yes", p: Number(f.human_only?.p ?? 0.5), dist: f.human_only?.dist },
-        department: sc(f.department, DEPTS, "engineering"), tier: sc(f.tier, TIERS, "sonnet"),
+        department: sc(f.department?.label === "arts" ? { ...f.department, label: "marketing" } : f.department, DEPTS, "engineering"), tier: sc(f.tier, TIERS, "sonnet"),
         source, latencyMs: Number(r.latency_ms ?? Date.now() - t0),
       });
     }
@@ -91,7 +91,7 @@ const POLICY = `Triage policy:
 - Waiting on another department's output -> dependency, schedule; department = the one being waited on.
 - "Waiting for your input" with nothing specific -> missing_info, drop (do_now if a deadline is mentioned).
 - Failing tests or build errors -> failure, engineering, tier sonnet (opus if architectural).
-- Departments: code/PRs/CI -> engineering; posts/launch/outreach -> marketing; UX/landing page/flows -> product_design; logo/brand/images/video -> arts.
+- Departments: code/PRs/CI -> engineering; posts/launch/outreach -> marketing; UX/landing page/flows -> product_design; logo/brand/images/video -> marketing.
 - Tier: trivial/lookup -> haiku; routine implementation/writing -> sonnet; complex multi-file/strategy -> opus; hardest long-horizon -> fable.`;
 
 async function haikuClassify(e: Enemy, ctx: Ctx, live: Enemy[]): Promise<{ cls: Classification; title?: string; reason?: string; causeKey?: string } | null> {
@@ -105,7 +105,7 @@ Other live blockers (canonical causeKey: title):
 ${others}
 
 Reply with ONLY strict JSON:
-{"kind":"credential|account|approval|rate_limit|billing|missing_info|dependency|failure","quadrant":"do_now|schedule|delegate|drop","humanOnly":true|false,"department":"engineering|marketing|product_design|arts","tier":"haiku|sonnet|opus|fable","title":"<=5 words, e.g. Needs GITHUB_TOKEN","reason":"<=15 words why units are blocked","causeKey":"kind:short-canonical-cause (reuse an existing key above if it is the SAME root cause)","confidence":0.0-1.0}`;
+{"kind":"credential|account|approval|rate_limit|billing|missing_info|dependency|failure","quadrant":"do_now|schedule|delegate|drop","humanOnly":true|false,"department":"engineering|marketing|product_design","tier":"haiku|sonnet|opus|fable","title":"<=5 words, e.g. Needs GITHUB_TOKEN","reason":"<=15 words why units are blocked","causeKey":"kind:short-canonical-cause (reuse an existing key above if it is the SAME root cause)","confidence":0.0-1.0}`;
   const t0 = Date.now();
   const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 45_000, urgent: true });
   if (!j) return null;

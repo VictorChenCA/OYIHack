@@ -4,7 +4,7 @@ import type { Advice, Command, DeptId, HideFilter, Tier, View } from "../shared/
 import type { Ctx } from "./plugin";
 import { claudeJson } from "./llm";
 
-const DEPTS: DeptId[] = ["engineering", "marketing", "product_design", "arts"];
+const DEPTS: DeptId[] = ["engineering", "marketing", "product_design"];
 const TIERS: Tier[] = ["haiku", "sonnet", "opus", "fable", "river", "unknown"];
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 

@@ -156,7 +156,7 @@ export interface Mine {
   hidden?: boolean;
 }
 
-export interface MemoryEvent { at: number; op: string; kind: "read" | "write"; slug?: string; unitId?: string; planetId?: DeptId }
+export interface MemoryEvent { at: number; op: string; kind: "read" | "write"; slug?: string; unitId?: string; planetId?: DeptId; text?: string /* what was added, e.g. the remembered fact or page title */ }
 
 export interface Knowledge { pages: number; facts: number; procedures: number; recent: MemoryEvent[] }
 

@@ -9,7 +9,7 @@ import type { AppConfig, WorldApi } from "./plugin";
 const DATA = new URL("../data/", import.meta.url).pathname;
 mkdirSync(DATA, { recursive: true });
 const DURATIONS = DATA + "durations.json";
-const SYSTEM_R = 1450;
+const SYSTEM_R = 1900;
 const FOG_R = SYSTEM_R * 0.78;
 const DAY = 86_400_000;
 
@@ -118,8 +118,8 @@ export class World implements WorldApi {
     const hackEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0).getTime();
     this.planets = cfg.planets.map((p, i) => ({
       id: p.id, name: p.name, color: p.color,
-      baseAngle: Math.PI + (i * Math.PI) / 3,          // W, NW, NE, E across the northern sky
-      orbitRadius: 540 + i * 95,
+      baseAngle: Math.PI + (i * 2 * Math.PI) / cfg.planets.length, // evenly spaced; angle = progress through the team's cycle
+      orbitRadius: 1150,                               // distance from memory: new teams start far out, move in as their knowledge grows
       cycle: p.id === "engineering"
         ? { kind: "deadline", label: "Hackathon submission · 17:00", startAt: hackStart, endAt: hackEnd }
         : { kind: "sprint", label: "Sprint 1 · 1 week", startAt: dayStart, endAt: dayStart + 7 * DAY },
@@ -131,8 +131,8 @@ export class World implements WorldApi {
   }
 
   log(text: string, extra: Partial<FeedItem> = {}) { this.feed.unshift({ at: Date.now(), text, ...extra }); if (this.feed.length > 200) this.feed.length = 200; }
-  planet(id: DeptId) { return this.planets.find((p) => p.id === id)!; }
-  stats(id: DeptId) { let s = this.planetStats.get(id); if (!s) this.planetStats.set(id, (s = { unitsEver: 0, tools: 0 })); return s; }
+  planet(id: DeptId) { const pid = (id as string) === "arts" ? "marketing" : id; return this.planets.find((p) => p.id === pid) ?? this.planets[0]; }
+  stats(id: DeptId) { if ((id as string) === "arts") id = "marketing" as DeptId; let s = this.planetStats.get(id); if (!s) this.planetStats.set(id, (s = { unitsEver: 0, tools: 0 })); return s; }
 
   registerSpawn(s: Omit<SpawnRec, "at">) { this.spawns.push({ ...s, at: Date.now() }); if (this.spawns.length > 100) this.spawns.shift(); }
   attach(unitId: string, workspaceId?: string, terminalId?: string) { const u = this.units.get(unitId); if (u) { if (workspaceId) u.workspaceId = workspaceId; if (terminalId) u.terminalId = terminalId; } }
@@ -216,8 +216,8 @@ export class World implements WorldApi {
   memoryEvent(ev: MemoryEvent) {
     this.knowledge.recent.unshift(ev); if (this.knowledge.recent.length > 40) this.knowledge.recent.length = 40;
     if (ev.kind === "write") this.knowledge.facts++;
-    this.sunPulse = Math.min(1, this.sunPulse + (ev.kind === "write" ? 0.6 : 0.3));
-    if (ev.planetId) { const p = this.planet(ev.planetId); p.memTraffic = Math.min(1, p.memTraffic + 0.35); }
+    this.sunPulse = Math.min(1, this.sunPulse + (ev.kind === "write" ? 0.5 : 0.04));
+    if (ev.planetId) { const p = this.planet(ev.planetId); p.memTraffic = Math.min(1, p.memTraffic + (ev.kind === "write" ? 0.35 : 0.08)); }
   }
   setPlanetKnowledge(planetId: DeptId, pages: number) { this.planet(planetId).knowledge = pages; }
   markCharted(unitId: string, veteran: boolean) { const u = this.units.get(unitId); if (u) { u.charted = true; u.veteran = veteran; } }
@@ -289,8 +289,10 @@ export class World implements WorldApi {
         const m = tool.match(/^mcp__(gbrain[\w-]*)__(\w+)/);
         if (m) {
           const op = m[2]; const write = /remember|put_page|add_link|capture|forget/.test(op);
-          const slug = String((ev.tool_input as any)?.slug ?? (ev.tool_input as any)?.entity ?? "") || undefined;
-          this.memoryEvent({ at: Date.now(), op, kind: write ? "write" : "read", slug, unitId: u.id, planetId: u.planetId });
+          const ti = (ev.tool_input ?? {}) as any;
+          const slug = String(ti.slug ?? ti.entity ?? "") || undefined;
+          const text = write ? short(String(ti.fact ?? ti.title ?? (typeof ti.content === "string" ? ti.content.replace(/^---[\s\S]*?---/, "").replace(/[#*_>`]/g, "").trim() : "") ?? slug ?? ""), 90) || undefined : undefined;
+          this.memoryEvent({ at: Date.now(), op, kind: write ? "write" : "read", slug, unitId: u.id, planetId: this.planet(u.planetId).id, text });
         }
         break;
       }
@@ -318,8 +320,12 @@ export class World implements WorldApi {
     for (const p of this.planets) {
       const c = p.cycle;
       p.progress = Math.max(0, Math.min(1, (now - c.startAt) / (c.endAt - c.startAt)));
-      p.pos = polar(p.orbitRadius, p.baseAngle + 2 * Math.PI * p.progress);
       const st = this.stats(p.id);
+      // DISTANCE FROM THE SUN = distance from what the company knows: GBrain pages + charted work pull a team inward
+      const known = Math.min(1, (p.knowledge + 2 * Object.keys(this.durations).length * (st.unitsEver > 0 ? 0.15 : 0)) / 40);
+      const want = 1150 - 430 * known;
+      p.orbitRadius += (want - p.orbitRadius) * 0.02;
+      p.pos = polar(p.orbitRadius, p.baseAngle + 2 * Math.PI * p.progress);
       p.colonization = Math.min(3, (st.unitsEver > 0 ? 1 : 0) + (st.tools > 25 ? 1 : 0) + (p.knowledge > 5 || st.tools > 120 ? 1 : 0)) as Planet["colonization"];
       p.memTraffic *= 0.97;
     }
@@ -339,9 +345,12 @@ export class World implements WorldApi {
       } else if (u.role === "subagent" && parent) {
         u.target = add(parent.target, polar(off.dist, off.angle));
       } else if (u.charted) {
-        u.target = add(home, polar(off.dist || 260, outward));
+        // known work: between the team and the sun (memory), closer the better it's known
+        const sunward = Math.atan2(-home.y, -home.x) + off.angle * 0.8;
+        u.target = add(home, polar(Math.min(off.dist || 260, len(home) - 260), sunward));
       } else {
-        const need = Math.max(220, FOG_R + 110 - len(home));
+        // first-time work: outward, into the fog of war
+        const need = Math.max(220, FOG_R + 120 - len(home));
         u.target = add(home, polar(need, outward));
       }
       if (u.status === "idle") {
