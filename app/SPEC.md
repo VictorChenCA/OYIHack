@@ -314,6 +314,8 @@ Browser: Pixi v8 scene + DOM UI <── WebSocket state (4 Hz) ── server;  B
 - **Transcript:** the model is `.message.model`, usage is `.message.usage.*` (deduplicate by `.message.id`), and subagent
   transcripts live in `<session>/subagents/**`.
 - **Web app** on localhost (`bun run dev`); it can be opened in Superset's built-in browser.
+- **Budgets:** River up to $500 (Sentinel training and Research Center retrains). Anthropic API up to $50 (summaries,
+  classification fallback, commander, teacher). The mines show both as live pools.
 - **Contract:** `app/shared/types.ts` v2 is owned by the main session. Slices ask for changes; they don't edit it.
 
 ## 11. Decisions (defaults in bold; the user can override)

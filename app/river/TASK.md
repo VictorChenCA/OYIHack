@@ -60,6 +60,7 @@ fields, each an enum with a probability distribution:
 - The sidecar gets `POST /reload {"checkpoint": "<uri>"}` (hot-swaps the active LoRA) and `GET /models` (known checkpoints + eval summaries).
 
 ## Speed gate + traditional fallback
+- You may train on **both** candidate bases and keep the better speed/quality trade-off, if time allows.
 - Report the Sentinel's measured live latency (p50/p95, batch of 10 blockers × 5 fields).
 - **If p50 is over 1.5 s:** also train a **traditional classifier** for the live hot path, on the same labels: scikit-learn logistic
   regression per field over sentence embeddings (or TF-IDF), in `app/river/fast_clf.py`, with the model file under 5 MB.
@@ -70,7 +71,7 @@ fields, each an enum with a probability distribution:
 | By | Step | Output |
 |---|---|---|
 | +10 min | **Setup:** Python 3.12; `pip install river-client==0.12.0 anthropic transformers numpy`. Run `health_check()` and `get_capabilities()`. **Latency benchmark:** batch 40 one-token samples on `Qwen/Qwen3.5-9B` and on `nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4`, and pick the faster one that has a usable tokenizer and renderer (fallback: `Qwen/Qwen3.6-35B-A3B-FP8`) | `app/river/STATUS.md` (log each milestone here) |
-| +25 min | **Policy + dataset.** Write `app/river/policy.md`, C&C's triage policy (start from the rules below). Act as the teacher (or call `claude-sonnet-5` if `ANTHROPIC_API_KEY` is set) to generate about **600 realistic blockers** in the style of real hook payloads: `PermissionRequest` (tool + input), `Notification` (permission_prompt / idle_prompt / agent_needs_input), `StopFailure` (`error`: authentication_failed / billing_error / rate_limit), and last assistant messages ("I need a GITHUB_TOKEN…", "Waiting on the logo from Arts…", "Signing up for TikTok requires a phone number…"). Cover all 4 departments. The teacher labels all 5 fields **by the policy**. Split: train 70%, val 10%, **test_unseen 20%** (services, vendors and phrasing styles never seen in train; hold out the vendors by name) | `app/river/data/{train,val,test_unseen}.jsonl`, `app/river/policy.md` |
+| +25 min | **Policy + dataset.** Write `app/river/policy.md`, C&C's triage policy (start from the rules below). Act as the teacher (or call `claude-sonnet-5` if `ANTHROPIC_API_KEY` is set) to generate about **1,000–1,500 realistic blockers** (the budget allows it; quality over quantity) in the style of real hook payloads: `PermissionRequest` (tool + input), `Notification` (permission_prompt / idle_prompt / agent_needs_input), `StopFailure` (`error`: authentication_failed / billing_error / rate_limit), and last assistant messages ("I need a GITHUB_TOKEN…", "Waiting on the logo from Arts…", "Signing up for TikTok requires a phone number…"). Cover all 4 departments. The teacher labels all 5 fields **by the policy**. Split: train 70%, val 10%, **test_unseen 20%** (services, vendors and phrasing styles never seen in train; hold out the vendors by name) | `app/river/data/{train,val,test_unseen}.jsonl`, `app/river/policy.md` |
 | +45 min | **SFT:** one training example per (item, field). The prompt is a short instruction + blocker text + field question + the code→label legend, **without the policy rules** (the model has to learn them); the target is the single code. LoRA rank 16, lr 1e-4 to 2e-4, batch 32, about 60–120 `train_step`s. Log loss every step, and save **inference and training** checkpoints every 20 steps, keeping the best on val | `app/river/steps.jsonl`, `app/river/checkpoint.json` (`river://…` paths, base model) |
 | +55 min | **Calibrate + eval:** fit one temperature per field on val (minimize NLL). On `test_unseen`, compare **base** (same prompt), **trained**, and, if a key or CLI is available, **Claude Haiku** (`claude-haiku-4-5-20251001`, JSON output). Metrics: per-field accuracy and macro-F1, ECE and Brier, latency p50/p95 (batched, end-to-end), cost per 1k decisions | `app/river/eval.json`, `app/river/eval.md` (a table ready for the UI and the judges) |
 | +65 min | **Sidecar:** `app/river/sidecar.py`, stdlib `http.server`, deps = river-client + transformers only. `GET /health`; `POST /classify {"items":[{"id":"...","text":"..."}]}` returns `{"results":[{"id","fields":{"kind":{"label","p","dist":{...}},...},"latency_ms"}],"model","checkpoint"}`. It holds one River session with the LoRA loaded (`create_model` + `load_weights`, or whatever `python-api.md` says is fastest), warms up on start, batches all items × fields in one call, and takes `--base` to serve the untrained base for the live A/B toggle. Port 7788, localhost only | `app/river/sidecar.py`, `app/river/README.md` (how to run it locally with `.venv-river`) |
@@ -79,7 +80,7 @@ fields, each an enum with a probability distribution:
 **Hard stops (PT):** dataset by **15:25**, training done by **15:50**, eval + sidecar by **16:00**. If you're behind, ship the best
 partial checkpoint with an honest eval. Don't skip the base-vs-trained table: it's the side quest.
 
-**Stretch (only if everything above is done):** the "calibrated decisions" idea from Jev. Run a short River RL pass (`guides_rl-sync.md`)
+**Stretch (encouraged: the budget covers it, but only after everything above is done):** the "calibrated decisions" idea from Jev. Run a short River RL pass (`guides_rl-sync.md`)
 whose reward is the log score of the correct label, and report ECE before and after.
 
 ## Starting triage policy (put it in `policy.md`, then refine)
@@ -96,6 +97,6 @@ whose reward is the log score of the correct label, and report ECE before and af
 - Tier: trivial or lookup → `haiku`; routine implementation or writing → `sonnet`; complex multi-file work or strategy → `opus`; the hardest reasoning and long horizon → `fable`.
 
 ## Rules
-- Touch only `app/river/**`. **Don't create River deployments** (they're gated and billed per hour). Keep total River spend under $20 (and Anthropic spend under $15, if a key is used).
+- Touch only `app/river/**`. **Don't create River deployments** (they're gated and billed per hour). **Budget:** River up to **$500**, Anthropic up to **$50** (if a key is used). Log the running spend in `STATUS.md`.
 - Commit and push to the branch **`river-sentinel`** at every milestone (small commits; no data over 5 MB). Update `app/river/STATUS.md` each time.
 - At the end, reply with: the checkpoint URI, the eval table, the measured latency, and the exact commands to run the sidecar locally.
