@@ -4,18 +4,18 @@
     "quadrant": 0.9833,
     "human_only": 0.9833,
     "department": 0.9083,
-    "tier": 0.8833,
-    "mean": 0.9517
+    "tier": 0.9,
+    "mean": 0.955
   },
   "test_unseen": {
-    "kind": 0.8962,
+    "kind": 0.9077,
     "quadrant": 0.7885,
-    "human_only": 0.8077,
-    "department": 0.6115,
-    "tier": 0.6269,
-    "mean": 0.7462
+    "human_only": 0.85,
+    "department": 0.6769,
+    "tier": 0.6308,
+    "mean": 0.7708
   },
-  "fit_s": 0.9,
-  "latency_ms_10_items": 1.0,
-  "model_bytes": 1154505
+  "fit_s": 3.2,
+  "latency_ms_10_items": 1.7,
+  "model_bytes": 1941984
 }

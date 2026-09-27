@@ -1,0 +1,2 @@
+{"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "create_model_s": 17.8}
+{"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "path": "model.sample in-memory LoRA", "items": 10, "poll_s": 0.05, "p50_ms": 6589, "p95_ms": 9153, "all": [5199, 5798, 6092, 6121, 7058, 7320, 8128, 9153]}

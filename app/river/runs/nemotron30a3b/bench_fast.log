@@ -1,0 +1,5 @@
+{"base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "create_model_s": 14.5}
+{"base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "path": "model.sample in-memory LoRA", "items": 10, "poll_s": 0.05, "p50_ms": 3271, "p95_ms": 4625, "all": [2612, 2962, 3182, 3237, 3305, 3849, 3886, 4625]}
+{"base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "path": "model.sample in-memory LoRA", "items": 1, "poll_s": 0.05, "p50_ms": 4281, "p95_ms": 10730, "all": [2704, 3312, 4150, 4232, 4331, 5104, 5278, 10730]}
+{"base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "path": "session.sample(checkpoint)", "items": 10, "poll_s": 0.05, "p50_ms": 3375, "p95_ms": 3501, "all": [3238, 3306, 3346, 3350, 3399, 3433, 3440, 3501]}
+{"base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4", "path": "client.sample base", "items": 10, "poll_s": 0.05, "p50_ms": 2903, "p95_ms": 4082, "all": [2636, 2850, 2865, 2894, 2913, 2939, 3251, 4082]}
