@@ -813,7 +813,11 @@ export function createScene(app: Application, store: Store) {
     const mine = s.units.filter((u) => u.planetId === pid && !u.hidden && u.status !== "dead");
     for (const u of mine) { pts.push(u.pos); if (u.role === "mothership" && u.status !== "idle" && u.status !== "done") pts.push(u.target); }
     const ids = new Set(mine.map((u) => u.id));
-    for (const e of s.enemies) if (!e.hidden && (e.planetIds.includes(pid) || e.blocked.some((id) => ids.has(id)))) pts.push(e.pos);
+    // blockers sit at the system edge: a far one only pulls the frame toward it (its tether shows the way), so the team stays readable
+    for (const e of s.enemies) if (!e.hidden && (e.planetIds.includes(pid) || e.blocked.some((id) => ids.has(id)))) {
+      const d = Math.hypot(e.pos.x - p.pos.x, e.pos.y - p.pos.y), k = d > 900 ? 0.35 : 1;
+      pts.push({ x: p.pos.x + (e.pos.x - p.pos.x) * k, y: p.pos.y + (e.pos.y - p.pos.y) * k });
+    }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const q of pts) { x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y); }
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
