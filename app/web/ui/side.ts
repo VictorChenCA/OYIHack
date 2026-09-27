@@ -130,7 +130,8 @@ export function createSide(root: HTMLElement, store: Store) {
       <section><h3>${esc(p.cycle.label)}</h3>${bar(p.progress, p.color, "bar thick")}<div class="s-kv num"><span><b>${Math.round(p.progress * 100)}%</b> through</span><span><b>${left > 0 ? dur(left) : "ended"}</b> left</span><span>${(left / 864e5).toFixed(1)} days</span></div></section>
       <section><h3>Colonization</h3><div class="stages">${[0, 1, 2, 3].map((i) => `<i class="${i <= p.colonization ? "on" : ""}" style="--c:${p.color}"></i>`).join("")}</div></section>
       <dl class="stats num"><dt>Knowledge</dt><dd>${p.knowledge} pages</dd><dt>Memory traffic</dt><dd>${bar(p.memTraffic, "#FFD166")}</dd><dt>Units</dt><dd>${units.length} (${units.filter((u) => u.status === "working" || u.status === "acting").length} active)</dd><dt>Enemies</dt><dd class="${enemies.length ? "bad" : ""}">${enemies.length}</dd><dt>Factories</dt><dd>${facs.length}</dd></dl>
-      <div class="s-actions"><button class="btn primary" data-act="enter-planet" data-id="${p.id}">Enter planet</button></div>`;
+      <div class="s-actions"><button class="btn primary" data-act="enter-planet" data-id="${p.id}">Enter planet</button>${units.length ? `<button class="btn" data-act="select-planet" data-id="${p.id}">Select ${units.length} units</button>` : ""}</div>
+      ${units.length ? `<section><h3>Units</h3><ul class="ulist">${units.slice(0, 12).map((u) => unitRow(u)).join("")}</ul></section>` : ""}`;
   }
 
   function factoryHtml(s: WorldState, f: Factory) {
@@ -151,7 +152,7 @@ export function createSide(root: HTMLElement, store: Store) {
   function researchHtml(s: WorldState) {
     const r = s.research; const card = r.card ?? {};
     const cardRows = Object.entries(card).filter(([, v]) => typeof v === "number" || typeof v === "string" || typeof v === "boolean").slice(0, 8);
-    return `<header class="s-head" style="--c:#40E0D0"><div class="s-icon">${tierGlyph("river", 34)}</div><div class="s-titles"><h2>Research Center</h2><div class="s-badges"><span class="badge" style="--c:${r.sidecarUp ? "#5CF2B0" : "#FF4D4D"}">sidecar ${r.sidecarUp ? "up" : "down"}</span><span class="badge" style="--c:#40E0D0">RIVER</span></div></div></header>
+    return `<header class="s-head" style="--c:#40E0D0"><div class="s-icon">${tierGlyph("river", 34)}</div><div class="s-titles"><h2>Research Center</h2><div class="s-badges"><span class="badge" style="--c:${r.sidecarUp ? "#5CF2B0" : "#FF4D4D"}">sidecar ${r.sidecarUp ? "up" : "down"}</span><span class="badge" style="--c:#40E0D0">RIVER</span>${r.runs.some((t) => t.status === "running" || t.status === "queued") ? `<span class="badge sim" style="--c:#40E0D0">training…</span>` : ""}</div></div></header>
       <section><h3>Sentinel engine</h3><select data-act="engine" aria-label="Sentinel engine">${(["sentinel", "sentinel-base", "fast", "haiku"] as const).map((e) => `<option value="${e}" ${r.engine === e ? "selected" : ""}>${e}</option>`).join("")}</select></section>
       <section><h3>Models <span class="num dim">${r.models.length}</span></h3><ul class="models">${r.models.map((m) => `<li><div><b class="mono">${esc(m.id)}</b> ${m.active ? `<span class="badge" style="--c:#5CF2B0">active</span>` : ""}<div class="dim small mono trunc">${esc(m.checkpoint)}</div>${m.eval ? `<div class="small">${Object.entries(m.eval).slice(0, 4).map(([k, v]) => `<span class="kv">${esc(k)} <b class="num">${esc(fmtV(v))}</b></span>`).join("")}</div>` : ""}</div>${m.active ? "" : `<button class="btn sm" data-act="promote" data-id="${esc(m.id)}">Promote</button>`}</li>`).join("") || `<li class="dim">No models yet.</li>`}</ul></section>
       ${cardRows.length ? `<section><h3>Eval card</h3><dl class="stats num">${cardRows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(fmtV(v))}</dd>`).join("")}</dl></section>` : ""}
@@ -215,6 +216,7 @@ export function createSide(root: HTMLElement, store: Store) {
     },
     "enter-planet": (t) => store.setMode({ kind: "planet", planetId: t.dataset.id as DeptId }),
     "enter-memory": () => store.setMode({ kind: "memory" }),
+    "select-planet": (t) => { const s = store.state; if (s) store.select(s.units.filter((u) => u.planetId === t.dataset.id && !hiddenUnit(u) && u.status !== "dead").map((u) => u.id)); },
     "factory-run": (t) => store.command({ type: "factory_run", factoryId: t.dataset.id! }),
     "factory-toggle": (t) => store.command({ type: "factory_toggle", factoryId: t.dataset.id!, paused: t.dataset.paused === "1" }),
     "build-factory": (t) => {

@@ -38,7 +38,7 @@ export function createConsole(root: HTMLElement, store: Store) {
   const hint = form.querySelector<HTMLElement>(".c-send-hint")!;
   const pop = wrap.querySelector<HTMLElement>(".ctx-pop")!;
 
-  const chat: ChatLine[] = [{ role: "cmdr", text: "Commander online. Ask me to spawn, prompt, attack, group, build factories or change the view.", at: Date.now() }];
+  const chat: ChatLine[] = [{ role: "cmdr", text: "Commander online. Ask me to spawn, prompt, attack, group, build factories or change the view.", at: Date.now() }]; let thinking = false;
   let detail: UnitDetail | null = null; let detailFor = ""; let detailTimer: ReturnType<typeof setInterval> | null = null;
   let rows: Row[] = [];
   let lastMode = "";
@@ -140,7 +140,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 30;
     let html = "";
     if (k === "commander") {
-      html = chat.map((c) => `<div class="msg ${c.role}"><span class="who">${c.role === "me" ? "you" : "cmdr"}</span><span class="txt">${esc(c.text)}</span><time class="num">${clock(c.at)}</time></div>`).join("");
+      html = chat.map((c) => `<div class="msg ${c.role}"><span class="who">${c.role === "me" ? "you" : "cmdr"}</span><span class="txt">${esc(c.text)}</span><time class="num">${clock(c.at)}</time></div>`).join("") + (thinking ? `<div class="msg cmdr"><span class="who">cmdr</span><span class="txt shimmer">thinking…</span><time></time></div>` : "");
     } else if (!detail) {
       html = `<div class="dim pad">Loading history…</div>`;
     } else if (!rows.length) {
@@ -167,10 +167,13 @@ export function createConsole(root: HTMLElement, store: Store) {
     ta.value = ""; autosize();
     const k = modeKey();
     if (k === "commander") {
-      chat.push({ role: "me", text, at: Date.now() }); renderLog(true);
+      chat.push({ role: "me", text, at: Date.now() }); thinking = !store.fixture; renderLog(true); setTimeout(() => { if (thinking) { thinking = false; renderLog(); } }, 45000);
       const r = await store.command({ type: "commander", text });
       if (store.fixture) setTimeout(() => { chat.push({ role: "cmdr", text: `(fixture) Commander would act on: “${text}”`, at: Date.now() }); renderLog(true); }, 500);
-      else if (!r.ok) { chat.push({ role: "cmdr", text: `⚠ ${r.message}`, at: Date.now() }); renderLog(true); }
+      else if (r.ok && (typeof r.data === "string" || typeof (r.data as { reply?: unknown } | undefined)?.reply === "string")) {
+        thinking = false; chat.push({ role: "cmdr", text: typeof r.data === "string" ? r.data : String((r.data as { reply: string }).reply), at: Date.now() }); renderLog(true);
+      }
+      else if (!r.ok) { thinking = false; chat.push({ role: "cmdr", text: `⚠ ${r.message}`, at: Date.now() }); renderLog(true); }
     } else if (k === "squad") {
       await store.command({ type: "prompt", unitIds: [...store.selection], text });
     } else {
@@ -218,7 +221,7 @@ export function createConsole(root: HTMLElement, store: Store) {
   store.on("state", () => { setMode(); render(); });
   store.on("focus", () => setMode());
   store.on("selection", () => setMode());
-  store.on("commander", (text) => { chat.push({ role: "cmdr", text, at: Date.now() }); if (modeKey() === "commander") renderLog(true); });
+  store.on("commander", (text) => { thinking = false; chat.push({ role: "cmdr", text, at: Date.now() }); if (modeKey() === "commander") renderLog(true); });
 
   // Global: Enter or "/" focuses the console input when not typing elsewhere.
   window.addEventListener("keydown", (e) => {
