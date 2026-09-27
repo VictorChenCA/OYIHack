@@ -4,7 +4,7 @@ import type { Ctx } from "./plugin";
 import { claudeJson } from "./llm";
 import { digest } from "./commander";
 
-let last = 0, inFlight = false;
+let last = 0, inFlight = false, llmAt = 0;
 const EVERY = 75_000;
 
 function computed(ctx: Ctx) {
@@ -30,8 +30,8 @@ function computedPlanet(ctx: Ctx, id: string) {
 
 export function overviewTick(ctx: Ctx) {
   const w = ctx.world;
-  if (!w.overview || !inFlight) w.overview = w.overview && Date.now() - last < EVERY ? w.overview : computed(ctx);
-  for (const p of w.planets) if (!p.summary || Date.now() - last > EVERY) p.summary = p.summary && Date.now() - last < EVERY ? p.summary : computedPlanet(ctx, p.id);
+  // computed lines stay live every tick unless a fresh AI summary exists
+  if (Date.now() - llmAt > EVERY) { w.overview = computed(ctx); for (const p of w.planets) p.summary = computedPlanet(ctx, p.id); }
   if (inFlight || Date.now() - last < EVERY) return;
   const real = [...w.units.values()].some((u) => !u.simulated && u.status !== "dead");
   if (!real) { last = Date.now(); w.overview = computed(ctx); for (const p of w.planets) p.summary = computedPlanet(ctx, p.id); return; }
@@ -44,7 +44,7 @@ WORLD STATE:
 ${digest(ctx, 30)}`;
   claudeJson<{ overview?: string; planets?: Record<string, string> }>(prompt, { model: "haiku", timeoutMs: 60_000 })
     .then((j) => {
-      if (j?.overview) w.overview = j.overview.trim();
+      if (j?.overview) { w.overview = j.overview.trim(); llmAt = Date.now(); }
       if (j?.planets) for (const p of w.planets) if (j.planets[p.id]) p.summary = j.planets[p.id].trim();
     })
     .catch((e) => console.warn(`[overview] ${e?.message ?? e}`))

@@ -23,7 +23,7 @@ They're sized by how many units they block and shaped by an urgent/important gri
 approvals) are gold, so one missing token holding five agents is one target you resolve once. Agents launch into
 Superset worktrees from the map.
 [VERIFY] Memorable procedures turn repeat tasks into charted lanes with a known ETA, while first-time tasks fly into the fog.
-[VERIFY] A River-trained model (the Tactician) ranks which units should take on each enemy, shown with base vs trained accuracy on unseen enemy types.
+A River-trained model, the Sentinel (Qwen3.5-9B + LoRA, 100 SFT steps on C&C's triage policy), classifies every blocker the moment it appears: kind, urgency, human-only or not, team, and best agent tier, with calibrated confidences. On 260 unseen blockers (held-out vendors, tasks and phrasings), mean accuracy rose from 0.545 (base) to 0.916 (trained), and all five fields were right in 67% of cases, up from 5%. The Research Center in C&C lets you correct classifications and retrain on River.
 We used C&C to run its own launch: the agents on screen built and marketed C&C today.
 The scale shot uses a simulator and is labeled SIMULATED.
 
@@ -39,7 +39,7 @@ The scale shot uses a simulator and is labeled SIMULATED.
 - [ ] **GBrain**, "new skill or memory improvement". GBrain use is mandatory anyway. Tick it if we ship a new GBrain skill
       (for example the Daily Sync factory skill, or an after-action-report skill that writes a swarm's results to the brain).
 - [ ] **Memorable**. Tick it if a Memorable recall really sets a repeat task's ETA (known road versus fog) in the demo.
-- [ ] **River AI**. Tick it only if a model trained with the River API is used in the demo, with base vs trained shown.
+- [x] **River AI**. The Sentinel is live in the demo (the River sidecar), with base vs trained in `app/river/eval.md` and on the Research Center card.
 - [ ] **QM**. Needs a fork of `yc-software/qm`. Tick it only if Command is wired into a QM fork (for example QM swarm
       sessions feeding the map). Command answers QM's swarm-visualization problem, so it's worth it if there's time.
 - [ ] **UFO**. Not used; leave unticked.
