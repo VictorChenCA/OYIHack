@@ -556,7 +556,7 @@ body.readonly [data-act="send"], body.readonly [data-act="send-sel"], body.reado
 body.readonly .deploy, body.readonly [data-act="spawn-ms"], body.readonly [data-act="help-agent"], body.readonly [data-act="spawn-team"],
 body.readonly .side-forms, body.readonly [data-act="autonomy"], body.readonly [data-act="retrain"], body.readonly [data-act="promote"],
 body.readonly [data-act="factory-run"], body.readonly [data-act="factory-toggle"], body.readonly .rk-check, body.readonly .rk-foot,
-body.readonly [data-act="add-group"], body.readonly [data-act="prompt-unit"], body.readonly .gold-sec { display: none !important; }
+body.readonly [data-act="add-group"], body.readonly [data-act="prompt-unit"], body.readonly .seg { display: none !important; }
 body.readonly select[data-act="engine"] { pointer-events: none; opacity: 0.6; }
 .aut-help { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11.5px; line-height: 1.4; }
 .aut-help li { opacity: 0.6; margin: 2px 0; }
