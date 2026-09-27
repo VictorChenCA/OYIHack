@@ -74,7 +74,7 @@ function preamble(ctx: Ctx, planetId: DeptId, projectId?: string) {
   const planet = ctx.cfg.planets.find((p) => p.id === planetId);
   const project = ctx.cfg.projects.find((p) => p.id === projectId) ?? ctx.cfg.projects.find((p) => p.planetId === planetId);
   const dept = planetId === "product_design" ? "product-design" : planetId;
-  return `You are a unit in C&C (Command and Control) on the ${planet?.name ?? planetId} planet, project ${project?.name ?? projectId ?? "general"}. ` +
+  return `You are an agent in C&C (Command and Control) on the ${planet?.name ?? planetId} team, project ${project?.name ?? projectId ?? "general"}. ` +
     `Before starting, search GBrain (gbrain-cloud MCP) for relevant company memory. ` +
     `When you finish, remember your key result in GBrain under company/${dept}/... with provenance. ` +
     `If you're blocked on something only a human can do (a key, an account signup, a payment, an approval), stop and state exactly what you need in one line.\n\n`;

@@ -1,6 +1,18 @@
 // S4 Ops plugin: Superset (spawn/prompt/attack/deploy/resolve), transcripts (usage + /api/unit/:id), GBrain counts,
 // Memorable recall/record, mines, factories and the Research Center server. Every piece degrades gracefully.
-import type { Plugin } from "../plugin";
+import type { Plugin, Ctx } from "../plugin";
+import { readTail } from "../transcript-tail";
+import { firstLine, taskSignature } from "../world";
+let lastRecover = 0;
+function recoverTasks(ctx: Ctx) {
+  for (const u of ctx.world.units.values()) {
+    if ((u.task && !/^You are (a unit|an agent) in C&C/.test(u.task)) || u.simulated || u.role !== "mothership" || !u.transcriptPath) continue;
+    const t = readTail(u.transcriptPath, 400); const p = t?.lastPrompt; if (!p) continue;
+    const task = firstLine(p); if (!task) continue;
+    u.task = task.slice(0, 140); u.taskSig = taskSignature(task); u.siteLabel = task.slice(0, 36);
+    if (u.status === "idle") u.status = "working";
+  }
+}
 import { handleSupersetCommand, initSuperset, supersetOnHook, supersetReady } from "../superset";
 import { pollUsage, unitDetail } from "../transcripts";
 import { gbrainTick } from "../gbrain-counts";
@@ -34,6 +46,7 @@ const plugin: Plugin = {
     memorableOnHook(ev, ctx);
   },
   onTick(ctx) {
+    if (Date.now() - lastRecover > 4000) { lastRecover = Date.now(); try { recoverTasks(ctx); } catch {} }
     const now = Date.now();
     if (now - lastUsage > 5_000) { lastUsage = now; try { pollUsage(ctx, now); } catch (e) { console.error("[ops] usage:", e); } }
     if (now - lastMines > 3_000) { lastMines = now; try { updateMines(ctx, now); } catch (e) { console.error("[ops] mines:", e); } }
