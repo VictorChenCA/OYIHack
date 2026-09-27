@@ -149,11 +149,13 @@ function systemSvg(): string {
   for (const m of S.mines ?? []) out.push(`<g transform="translate(${m.pos.x} ${m.pos.y})"><polygon points="-36,-13 -13,-36 23,-30 40,3 16,33 -23,30" fill="#1b2433" stroke="${m.color}" stroke-width="3"/><text y="${m.pos.x < -40 ? 80 : m.pos.x > 40 ? 80 : 118}" class="lbl sm" fill="${m.color}">${esc(m.id.toUpperCase())}</text></g>`);
   // research station
   if (S.research?.pos) out.push(`<g transform="translate(${S.research.pos.x} ${S.research.pos.y})"><rect x="-28" y="-28" width="56" height="56" transform="rotate(45)" fill="none" stroke="#40E0D0" stroke-width="3"/><circle r="6" fill="#40E0D0"/><text y="80" class="lbl" fill="#40E0D0">RESEARCH</text></g>`);
+  // sentinel (River-trained classifier), next to company memory
+  if ((S as any).sentinel?.pos) { const q = (S as any).sentinel.pos; out.push(`<g transform="translate(${q.x.toFixed(0)} ${q.y.toFixed(0)})"><path d="M0,-34 L22,0 L0,34 L-22,0 Z" fill="#2DD4BF"/><circle r="44" fill="none" stroke="#5CF2B0" stroke-opacity=".6" stroke-width="2"/><text y="80" class="lbl" fill="#2DD4BF">SENTINEL</text></g>`); }
   // sun
   out.push(`<circle r="260" fill="url(#sun)" opacity=".55"/><circle r="110" fill="url(#sun)"/><text y="180" class="lbl big" fill="#FFD166">GBRAIN</text>`);
   // planets
   for (const p of planets) {
-    const rings = Array.from({ length: p.}, (_, i) => `<circle r="${72 + i * 14}" fill="none" stroke="${p.color}" stroke-opacity="${0.5 - i * 0.12}" stroke-width="2"/>`).join("");
+    const rings = ""; // no orbits or cycles: teams are fixed and equidistant
     out.push(`<g transform="translate(${p.pos.x.toFixed(0)} ${p.pos.y.toFixed(0)})">${rings}<circle r="56" fill="${p.color}" fill-opacity=".9"/><circle r="50" fill="#000" fill-opacity=".3" transform="translate(12 -9)"/><text y="-98" class="lbl big" fill="${p.color}">${esc(p.name.toUpperCase())}</text></g>`);
   }
   // tethers + units
