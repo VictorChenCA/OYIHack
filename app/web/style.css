@@ -563,7 +563,7 @@ body.readonly select[data-act="engine"] { pointer-events: none; opacity: 0.6; }
 .aut-help li.on { opacity: 1; }
 .home-auth { position: absolute; top: 14px; right: 18px; z-index: 5; display: flex; align-items: center; gap: 10px; font-size: 13px; }
 /* Right-side legend (K2): wider, one line per entry */
-.legend-panel { width: min(330px, calc(100vw - 60px)); }
-.legend-panel .lr li { grid-template-columns: 22px 84px minmax(0, 1fr); white-space: nowrap; }
+.legend-panel { width: min(340px, calc(100vw - 60px)); }
+.legend-panel .lr li { grid-template-columns: 22px 74px minmax(0, 1fr); white-space: nowrap; }
 .legend-panel .lr span { overflow: hidden; text-overflow: ellipsis; }
 .legend-panel .lr-ic svg { display: block; }
