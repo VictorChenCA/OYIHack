@@ -529,7 +529,7 @@ button.brand { background: none; border: 0; cursor: pointer; padding: 0 4px; }
 .console[data-mode="agent"] .c-log { flex: 1 1 auto; }
 .legend-r { position: fixed; right: 0; }
 .legend-panel { box-sizing: border-box; width: min(260px, calc(100vw - 60px)); }
-.c-left { overflow-y: auto; overflow-x: hidden; place-items: start center; padding: 8px 0; }
+.c-left { overflow-y: auto; overflow-x: hidden; place-items: start center; padding: 20px 0 8px; }
 .c-left .ag { display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0 8px; box-sizing: border-box; }
 .ag-core svg { display: block; }
 .side .ulist li.ms { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
