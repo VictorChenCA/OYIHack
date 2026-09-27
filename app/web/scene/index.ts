@@ -29,11 +29,16 @@ export function createScene(app: Application, store: Store) {
   const root = new Container(); app.stage.addChild(root);
   const bg = new Container(); root.addChild(bg);
   const world = new Container(); root.addChild(world);
+  const top = new Container(); root.addChild(top); // labels: same camera transform, outside bloom
   const hud = new Graphics(); root.addChild(hud);
   const cam = new Camera(app, world);
   let built = false, fitted = false, time = 0;
 
-  loadTextures().then(build).catch((e) => console.error("[scene] asset load failed", e));
+  const fonts = Promise.race([
+    Promise.all(['600 16px Rajdhani', '700 16px Rajdhani', '500 12px "IBM Plex Sans"', '500 12px "JetBrains Mono"'].map((f) => document.fonts.load(f))),
+    new Promise((r) => setTimeout(r, 2500)),
+  ]).catch(() => {});
+  Promise.all([loadTextures(), fonts]).then(build).catch((e) => console.error("[scene] asset load failed", e));
 
   // ---------- layers ----------
   const L = {
@@ -42,7 +47,7 @@ export function createScene(app: Application, store: Store) {
     tethers: new Graphics(), enemies: new Container(), unitGlow: new Container(), units: new Container(), overlay: new Graphics(),
     fx: new Container(), fog: new Container(), labels: new Container(),
   };
-  for (const k of Object.keys(L) as (keyof typeof L)[]) world.addChild(L[k]);
+  for (const k of Object.keys(L) as (keyof typeof L)[]) (k === "labels" ? top : world).addChild(L[k]);
   L.beams.blendMode = "add"; L.unitGlow.blendMode = "add";
 
   let nebula: TilingSprite, stars1: TilingSprite, stars2: TilingSprite, fog: Sprite;
@@ -63,9 +68,9 @@ export function createScene(app: Application, store: Store) {
   let bloom: Filter | null = null, glowSel: Filter | null = null, glowGold: Filter | null = null, glowGem: Filter | null = null;
   import("pixi-filters").then((pf) => {
     try {
-      bloom = new pf.AdvancedBloomFilter({ threshold: 0.42, bloomScale: 0.9, brightness: 1.0, blur: 6, quality: 4 });
+      bloom = new pf.AdvancedBloomFilter({ threshold: 0.6, bloomScale: 0.55, brightness: 1.0, blur: 5, quality: 4 });
       glowSel = new pf.GlowFilter({ distance: 12, outerStrength: 2.2, innerStrength: 0, color: 0xc8f4ff, quality: 0.2 });
-      glowGold = new pf.GlowFilter({ distance: 12, outerStrength: 2.5, innerStrength: 0.3, color: GOLD, quality: 0.2 });
+      glowGold = new pf.GlowFilter({ distance: 10, outerStrength: 1.6, innerStrength: 0, color: GOLD, quality: 0.2 });
       glowGem = new pf.GlowFilter({ distance: 14, outerStrength: 2, innerStrength: 0.2, color: 0x9fffef, quality: 0.2 });
       world.filters = [bloom];
     } catch (e) { console.warn("[scene] pixi-filters unavailable, using additive sprites only", e); }
@@ -82,7 +87,7 @@ export function createScene(app: Application, store: Store) {
     sun.halo = sprite("circle_05", { tint: 0xff9a3c, add: true, size: SUN_R * 7, alpha: 0.35 });
     sun.l1 = sprite("light_03", { tint: 0xffd27a, add: true, size: SUN_R * 4.2, alpha: 0.55 });
     sun.l2 = sprite("light_01", { tint: 0xffb347, add: true, size: SUN_R * 3.4, alpha: 0.5 });
-    sun.core = sprite("sphere1", { tint: 0xffc45a, size: SUN_R * 2 });
+    sun.core = sprite("sphere1", { tint: 0xffb444, size: SUN_R * 2 });
     sun.ring = sprite("circle_02", { tint: 0xffd27a, add: true, size: SUN_R * 2.4, alpha: 0 });
     sun.flash = 0;
     L.sun.addChild(sun.halo, sun.l1, sun.l2, sun.core, sun.ring);
@@ -193,6 +198,7 @@ export function createScene(app: Application, store: Store) {
   app.ticker.add((ticker) => {
     const dt = Math.min(0.1, ticker.deltaMS / 1000); time += dt; frame++;
     cam.update(dt);
+    top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
     if (!fitted) { fitted = true; cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * 1.05); cam.update(0); }
@@ -217,10 +223,10 @@ export function createScene(app: Application, store: Store) {
     if (lastWriteAt === 0) lastWriteAt = 1;
     sun.flash = Math.max(0, sun.flash - dt * 1.4);
     sun.l1.rotation += dt * 0.05; sun.l2.rotation -= dt * 0.08;
-    sun.halo.alpha = 0.25 + 0.2 * pulse + 0.4 * sun.flash;
-    sun.l1.alpha = 0.4 + 0.3 * pulse + 0.3 * sun.flash;
+    sun.halo.alpha = 0.18 + 0.14 * pulse + 0.4 * sun.flash;
+    sun.l1.alpha = 0.28 + 0.2 * pulse + 0.3 * sun.flash; sun.l2.alpha = 0.3 + 0.15 * pulse;
     const rp = (time * 0.45) % 1; setSize(sun.ring, SUN_R * (2.1 + rp * 2.2)); sun.ring.alpha = (1 - rp) * (0.25 + 0.5 * pulse);
-    sun.core.tint = sun.flash > 0.05 ? 0xffe6a8 : 0xffc45a;
+    sun.core.tint = sun.flash > 0.05 ? 0xffd890 : 0xffb444;
     L.sun.alpha = mode().kind === "planet" ? 0.7 : 1;
 
     // orbits + cycle markers
@@ -285,7 +291,7 @@ export function createScene(app: Application, store: Store) {
     L.belt.rotation += dt * 0.004;
     L.mines.visible = store.layerOn("mines");
     const seenMine = new Set<string>();
-    for (const m of mines) {
+    mines.forEach((m, mi) => {
       seenMine.add(m.id);
       let v = mineViews.get(m.id);
       if (!v) {
@@ -298,10 +304,12 @@ export function createScene(app: Application, store: Store) {
       v.glow.tint = col; v.glow.position.set(m.pos.x, m.pos.y); v.glow.alpha = 0.2 + 0.25 * frac;
       const lv = store.layerOn("mines") && store.layerOn("labels");
       v.name.visible = v.val.visible = lv;
-      v.name.text = m.label.toUpperCase(); v.name.scale.set(ui); v.name.position.set(m.pos.x, m.pos.y + 40 * ui);
-      v.val.text = `$${m.remaining.toFixed(m.remaining < 100 ? 1 : 0)} / $${m.total}`; v.val.scale.set(ui * 0.9); v.val.position.set(m.pos.x, m.pos.y + 55 * ui);
-      v.val.style.fill = frac < 0.2 ? 0xff4d4d : 0xcfe0f0;
-    }
+      const up = mi % 2 === 1 ? -1 : 1, ly = m.pos.y + up * 34 * ui + (up < 0 ? -16 * ui : 0);
+      v.name.text = m.label.toUpperCase(); v.name.scale.set(ui * 0.85); v.name.position.set(m.pos.x, ly);
+      const val = `$${m.remaining.toFixed(m.remaining < 100 ? 1 : 0)}/${m.total}`; if (v.val.text !== val) v.val.text = val;
+      v.val.scale.set(ui * 0.8); v.val.position.set(m.pos.x, ly + 14 * ui);
+      v.val.tint = frac < 0.2 ? 0xff4d4d : 0xffffff;
+    });
     for (const [id, v] of mineViews) if (!seenMine.has(id)) { v.s.destroy(); v.glow.destroy(); v.name.destroy(); v.val.destroy(); mineViews.delete(id); }
 
     // research station
