@@ -188,8 +188,9 @@ function refineText(e: Enemy, ctx: Ctx) { return haikuPath(e, ctx, false).catch(
 /** Track new enemies (call from onTick). */
 const seen = new Set<string>();
 export function detectNewEnemies(ctx: Ctx) {
+  // to-dos come from company/todos.md with their own type; never reclassify them
   for (const e of ctx.world.enemies.values()) {
-    if (seen.has(e.id) || e.resolved) continue;
+    if (seen.has(e.id) || e.resolved || e.kind === "todo" || e.source === "company/todos.md") continue;
     seen.add(e.id);
     void classifyEnemy(e, ctx).catch((err) => console.warn(`[brains] classify: ${err?.message ?? err}`));
   }

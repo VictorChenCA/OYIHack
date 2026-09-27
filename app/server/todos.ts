@@ -39,7 +39,7 @@ export function syncTodos(ctx: Ctx) {
       id, causeKey: `todo:${id}`, title: it.title, reason: it.person ? "Needs a person" : "An agent can take this", kind: "todo", quadrant: q, humanOnly: it.person,
       blocked: [], attackers: [], strength: 1, createdAt: Date.now(), planetIds: [it.team], pos: { x: 0, y: 0 }, owner: it.owner, due: it.due, source: "company/todos.md",
     };
-    Object.assign(e, { title: it.title, quadrant: q, humanOnly: it.person, planetIds: [it.team], owner: it.owner, due: it.due, defeatedAt: undefined, resolved: false });
+    Object.assign(e, { kind: "todo", source: "company/todos.md", classification: undefined, title: it.title, reason: it.person ? "Needs a person" : "An agent can take this", quadrant: q, humanOnly: it.person, planetIds: [it.team], owner: it.owner, due: it.due, defeatedAt: undefined, resolved: false, blocked: [], attackers: [] });
     w.enemies.set(id, e);
   }
 }

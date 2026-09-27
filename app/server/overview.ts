@@ -10,12 +10,15 @@ const EVERY = 75_000;
 function computed(ctx: Ctx) {
   const w = ctx.world; const units = [...w.units.values()].filter((u) => u.status !== "dead");
   const working = units.filter((u) => ["working", "acting", "attacking"].includes(u.status)).length;
-  const blockers = [...w.enemies.values()].filter((e) => !e.resolved);
+  const open = [...w.enemies.values()].filter((e) => !e.resolved && !e.defeatedAt);
+  const blockers = open.filter((e) => e.kind !== "todo");
+  const todos = open.filter((e) => e.kind === "todo");
   const needYou = blockers.filter((e) => e.humanOnly).length;
   const depts = w.planets.filter((p) => units.some((u) => u.planetId === p.id)).length;
   const parts = [`${working} agent${working === 1 ? "" : "s"} working across ${depts} team${depts === 1 ? "" : "s"}`];
   if (blockers.length) parts.push(`${blockers.length} blocker${blockers.length === 1 ? "" : "s"}${needYou ? ` (${needYou} need you)` : ""}`);
   else parts.push("no blockers");
+  if (todos.length) parts.push(`${todos.length} to-do${todos.length === 1 ? "" : "s"} (${todos.filter((t) => t.due && t.due < Date.now() + 30 * 60_000).length} due within 30 min)`);
   const facts = w.knowledge.recent.filter((m) => m.kind === "write" && Date.now() - m.at < 15 * 60_000).length;
   if (facts) parts.push(`${facts} memories written in the last 15 min`);
   return parts.join(" · ");

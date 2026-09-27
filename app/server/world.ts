@@ -282,6 +282,7 @@ export class World implements WorldApi {
   }
   applyClassification(enemyId: string, cls: Classification) {
     const e = this.enemies.get(enemyId); if (!e) return;
+    if (e.kind === "todo" || e.source === "company/todos.md") return; // to-dos keep the type/owner from company/todos.md
     e.classification = cls; e.kind = cls.kind.label; e.quadrant = cls.quadrant.label; e.humanOnly = cls.humanOnly.label;
     // escalate: 3+ blocked is always urgent+important
     if (e.blocked.length >= 3 && e.quadrant !== "do_now") e.quadrant = "do_now";
