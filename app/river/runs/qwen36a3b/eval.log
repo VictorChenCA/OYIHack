@@ -1,0 +1,4 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+{"trained_mean": {"acc": 0.9331, "macro_f1": 0.9314, "ece": 0.0553, "brier": 0.1219, "nll": 0.238}}
+{"base_mean": {"acc": 0.5661, "macro_f1": 0.4815, "ece": 0.0771, "brier": 0.5003, "nll": 0.9107}}
+{"out": "runs/qwen36a3b/eval.json", "md": "runs/qwen36a3b/eval.md"}

@@ -1,0 +1,50 @@
+{
+  "base": "Qwen/Qwen3.6-35B-A3B-FP8",
+  "name": "sentinel-qwen36a3b",
+  "best": {
+    "step": 80,
+    "inference": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s080-inf",
+    "training": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/weights/sentinel-qwen36a3b-s080-train",
+    "val_acc": 0.9483333333333335,
+    "val_per_field": {
+      "kind": 0.9916666666666667,
+      "quadrant": 0.8833333333333333,
+      "human_only": 1.0,
+      "department": 1.0,
+      "tier": 0.8666666666666667
+    }
+  },
+  "checkpoints": [
+    {
+      "step": 40,
+      "inference": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s040-inf",
+      "training": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/weights/sentinel-qwen36a3b-s040-train",
+      "val_acc": 0.8966666666666667,
+      "val_per_field": {
+        "kind": 1.0,
+        "quadrant": 0.8833333333333333,
+        "human_only": 0.9166666666666666,
+        "department": 0.9916666666666667,
+        "tier": 0.6916666666666667
+      }
+    },
+    {
+      "step": 80,
+      "inference": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s080-inf",
+      "training": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/weights/sentinel-qwen36a3b-s080-train",
+      "val_acc": 0.9483333333333335,
+      "val_per_field": {
+        "kind": 0.9916666666666667,
+        "quadrant": 0.8833333333333333,
+        "human_only": 1.0,
+        "department": 1.0,
+        "tier": 0.8666666666666667
+      }
+    }
+  ],
+  "data": "/Users/victor/Documents/GitHub/OYIHack-river/app/river/data/train.jsonl",
+  "examples": 4400,
+  "lr": 0.0002,
+  "rank": 16,
+  "batch": 32
+}

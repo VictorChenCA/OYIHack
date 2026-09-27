@@ -1,0 +1,4 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+{"trained_mean": {"acc": 0.8631, "macro_f1": 0.8265, "ece": 0.0533, "brier": 0.1868, "nll": 0.4646}}
+{"base_mean": {"acc": 0.4162, "macro_f1": 0.3137, "ece": 0.0654, "brier": 0.6644, "nll": 1.2266}}
+{"out": "runs/nemotron30a3b/eval.json", "md": "runs/nemotron30a3b/eval.md"}

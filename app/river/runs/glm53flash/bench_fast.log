@@ -1,0 +1,5 @@
+{"base": "zai-org/GLM-5.3-Flash", "create_model_s": 20.4}
+{"base": "zai-org/GLM-5.3-Flash", "path": "model.sample in-memory LoRA", "items": 10, "poll_s": 0.05, "p50_ms": 6421, "p95_ms": 8660, "all": [5981, 5992, 6030, 6052, 6789, 7178, 8640, 8660]}
+{"base": "zai-org/GLM-5.3-Flash", "path": "model.sample in-memory LoRA", "items": 1, "poll_s": 0.05, "p50_ms": 5647, "p95_ms": 9410, "all": [4217, 4606, 5202, 5617, 5678, 5691, 7561, 9410]}
+{"base": "zai-org/GLM-5.3-Flash", "path": "session.sample(checkpoint)", "items": 10, "poll_s": 0.05, "p50_ms": 7274, "p95_ms": 9976, "all": [6527, 6545, 7106, 7216, 7333, 7446, 8764, 9976]}
+{"base": "zai-org/GLM-5.3-Flash", "path": "client.sample base", "items": 10, "poll_s": 0.05, "p50_ms": 6416, "p95_ms": 8836, "all": [5411, 5727, 6168, 6304, 6528, 6868, 7055, 8836]}

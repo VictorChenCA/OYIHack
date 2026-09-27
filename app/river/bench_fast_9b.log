@@ -1,0 +1,5 @@
+{"base": "Qwen/Qwen3.5-9B", "create_model_s": 12.5}
+{"base": "Qwen/Qwen3.5-9B", "path": "model.sample in-memory LoRA", "items": 10, "poll_s": 0.05, "p50_ms": 3283, "p95_ms": 3912, "all": [2852, 2922, 3176, 3184, 3381, 3610, 3797, 3912]}
+{"base": "Qwen/Qwen3.5-9B", "path": "model.sample in-memory LoRA", "items": 1, "poll_s": 0.05, "p50_ms": 2876, "p95_ms": 4803, "all": [2402, 2611, 2623, 2822, 2930, 3052, 3417, 4803]}
+{"base": "Qwen/Qwen3.5-9B", "path": "session.sample(checkpoint)", "items": 10, "poll_s": 0.05, "p50_ms": 3175, "p95_ms": 4301, "all": [2997, 3027, 3124, 3137, 3213, 3215, 3273, 4301]}
+{"base": "Qwen/Qwen3.5-9B", "path": "client.sample base", "items": 10, "poll_s": 0.05, "p50_ms": 2496, "p95_ms": 2724, "all": [2221, 2277, 2278, 2472, 2519, 2608, 2666, 2724]}

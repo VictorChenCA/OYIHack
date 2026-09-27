@@ -1,6 +1,6 @@
 """Speed-gate fallback: a traditional classifier for the live hot path (not the River model).
 
-TF-IDF over word unigrams+bigrams, one multinomial logistic regression per field, numpy only (no scikit-learn in
+TF-IDF over word unigrams+bigrams and char 4-grams, one multinomial logistic regression per field, numpy only (no scikit-learn in
 .venv-river). Same labels and output shape as the Sentinel. Model file: fast_clf.json (well under 5 MB).
 
     python fast_clf.py --train data/train.jsonl --val data/val.jsonl --test data/test_unseen.jsonl
@@ -23,7 +23,8 @@ TOK = re.compile(r"[a-z0-9_]+")
 
 def feats(text):
     w = TOK.findall(text.lower())
-    return w + [a + " " + b for a, b in zip(w, w[1:])]
+    ch = [f"#{x[i:i + 4]}" for x in w if len(x) > 3 for i in range(len(x) - 3)]  # char 4-grams: unseen vendor names
+    return w + [a + " " + b for a, b in zip(w, w[1:])] + ch
 
 class Fast:
     def __init__(self, vocab, idf, W, b):

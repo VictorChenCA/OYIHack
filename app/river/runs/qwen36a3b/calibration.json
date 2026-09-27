@@ -1,0 +1,8 @@
+{
+  "kind": 1.749,
+  "quadrant": 2.0114,
+  "human_only": 1.0,
+  "department": 1.0,
+  "tier": 1.5209,
+  "_checkpoint": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s080-inf"
+}

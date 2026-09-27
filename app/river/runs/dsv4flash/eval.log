@@ -1,0 +1,4 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+{"trained_mean": {"acc": 0.9369, "macro_f1": 0.9235, "ece": 0.0236, "brier": 0.0936, "nll": 0.1707}}
+{"base_mean": {"acc": 0.5331, "macro_f1": 0.4005, "ece": 0.1222, "brier": 0.5483, "nll": 0.9771}}
+{"out": "runs/dsv4flash/eval.json", "md": "runs/dsv4flash/eval.md"}

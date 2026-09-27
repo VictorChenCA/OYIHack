@@ -1,0 +1,545 @@
+{
+  "base_model": "zai-org/GLM-5.3-Flash",
+  "data": "/Users/victor/Documents/GitHub/OYIHack-river/app/river/data/test_unseen.jsonl",
+  "val": "/Users/victor/Documents/GitHub/OYIHack-river/app/river/data/val.jsonl",
+  "trained": {
+    "checkpoint": "river://1f961282-acb7-496e-bf46-6863f3e0b966/sampler_weights/sentinel-glm53flash-s080-inf",
+    "n": 260,
+    "uncalibrated": {
+      "kind": {
+        "acc": 0.9962,
+        "macro_f1": 0.9962,
+        "ece": 0.0025,
+        "brier": 0.003,
+        "nll": 0.0039
+      },
+      "quadrant": {
+        "acc": 0.9846,
+        "macro_f1": 0.9773,
+        "ece": 0.0082,
+        "brier": 0.0223,
+        "nll": 0.0349
+      },
+      "human_only": {
+        "acc": 0.9962,
+        "macro_f1": 0.9961,
+        "ece": 0.0032,
+        "brier": 0.0072,
+        "nll": 0.0136
+      },
+      "department": {
+        "acc": 0.9346,
+        "macro_f1": 0.9337,
+        "ece": 0.0544,
+        "brier": 0.1078,
+        "nll": 0.261
+      },
+      "tier": {
+        "acc": 0.7846,
+        "macro_f1": 0.7102,
+        "ece": 0.1765,
+        "brier": 0.3847,
+        "nll": 0.8735
+      },
+      "mean": {
+        "acc": 0.9392,
+        "macro_f1": 0.9227,
+        "ece": 0.049,
+        "brier": 0.105,
+        "nll": 0.2374
+      },
+      "exact_all5": 0.7192
+    },
+    "calibrated": {
+      "kind": {
+        "acc": 0.9962,
+        "macro_f1": 0.9962,
+        "ece": 0.0039,
+        "brier": 0.0027,
+        "nll": 0.005
+      },
+      "quadrant": {
+        "acc": 0.9846,
+        "macro_f1": 0.9773,
+        "ece": 0.0082,
+        "brier": 0.0223,
+        "nll": 0.0349
+      },
+      "human_only": {
+        "acc": 0.9962,
+        "macro_f1": 0.9961,
+        "ece": 0.0032,
+        "brier": 0.0072,
+        "nll": 0.0136
+      },
+      "department": {
+        "acc": 0.9346,
+        "macro_f1": 0.9337,
+        "ece": 0.0544,
+        "brier": 0.1078,
+        "nll": 0.261
+      },
+      "tier": {
+        "acc": 0.7846,
+        "macro_f1": 0.7102,
+        "ece": 0.1123,
+        "brier": 0.3332,
+        "nll": 0.5999
+      },
+      "mean": {
+        "acc": 0.9392,
+        "macro_f1": 0.9227,
+        "ece": 0.0364,
+        "brier": 0.0946,
+        "nll": 0.1829
+      },
+      "exact_all5": 0.7192
+    },
+    "temps": {
+      "kind": 1.749,
+      "quadrant": 1.0,
+      "human_only": 1.0,
+      "department": 1.0,
+      "tier": 1.749
+    },
+    "cost_per_1k_decisions_usd": 0.0416,
+    "prompt_tokens_per_decision": 136.1,
+    "examples": [
+      {
+        "id": "live0",
+        "text": "{\"hook_event_name\": \"StopFailure\", \"session_id\": \"sim-engineering-1-l0oo\", \"error\": \"authentication_failed\", \"error_details\": \"GITHUB_TOKEN missing for gh pr comment\"}",
+        "gold": {
+          "kind": "credential",
+          "quadrant": "do_now",
+          "human_only": "yes",
+          "department": "engineering",
+          "tier": "haiku"
+        },
+        "pred": {
+          "kind": {
+            "label": "credential",
+            "p": 1.0
+          },
+          "quadrant": {
+            "label": "do_now",
+            "p": 1.0
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 1.0
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.9995
+          },
+          "tier": {
+            "label": "sonnet",
+            "p": 0.7663
+          }
+        }
+      },
+      {
+        "id": "live1",
+        "text": "{\"hook_event_name\": \"Stop\", \"session_id\": \"sim-marketing-0-r4n8\", \"last_assistant_message\": \"I drafted the thread. To post it I need an X account; signing up requires a phone number.\"}",
+        "gold": {
+          "kind": "account",
+          "quadrant": "schedule",
+          "human_only": "yes",
+          "department": "marketing",
+          "tier": "sonnet"
+        },
+        "pred": {
+          "kind": {
+            "label": "account",
+            "p": 1.0
+          },
+          "quadrant": {
+            "label": "schedule",
+            "p": 0.9999
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 1.0
+          },
+          "department": {
+            "label": "marketing",
+            "p": 1.0
+          },
+          "tier": {
+            "label": "sonnet",
+            "p": 0.9732
+          }
+        }
+      },
+      {
+        "id": "live2",
+        "text": "{\"hook_event_name\": \"StopFailure\", \"session_id\": \"sim-engineering-2-gm92\", \"error\": \"rate_limit\", \"error_details\": \"429 Too Many Requests\"}",
+        "gold": {
+          "kind": "rate_limit",
+          "quadrant": "delegate",
+          "human_only": "no",
+          "department": "engineering",
+          "tier": "haiku"
+        },
+        "pred": {
+          "kind": {
+            "label": "rate_limit",
+            "p": 1.0
+          },
+          "quadrant": {
+            "label": "delegate",
+            "p": 1.0
+          },
+          "human_only": {
+            "label": "no",
+            "p": 1.0
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.9992
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.9983
+          }
+        }
+      },
+      {
+        "id": "live3",
+        "text": "{\"hook_event_name\": \"Notification\", \"session_id\": \"sim-marketing-7-184i\", \"notification_type\": \"idle_prompt\", \"message\": \"Claude is waiting for your input\"}",
+        "gold": {
+          "kind": "missing_info",
+          "quadrant": "drop",
+          "human_only": "no",
+          "department": "marketing",
+          "tier": "haiku"
+        },
+        "pred": {
+          "kind": {
+            "label": "missing_info",
+            "p": 0.9981
+          },
+          "quadrant": {
+            "label": "drop",
+            "p": 1.0
+          },
+          "human_only": {
+            "label": "no",
+            "p": 1.0
+          },
+          "department": {
+            "label": "marketing",
+            "p": 0.9984
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.9524
+          }
+        }
+      },
+      {
+        "id": "live4",
+        "text": "{\"hook_event_name\": \"PermissionRequest\", \"session_id\": \"sim-product_design-6-1\", \"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"git push origin HEAD\"}}",
+        "gold": {
+          "kind": "approval",
+          "quadrant": "schedule",
+          "human_only": "yes",
+          "department": "product_design",
+          "tier": "sonnet"
+        },
+        "pred": {
+          "kind": {
+            "label": "approval",
+            "p": 0.9997
+          },
+          "quadrant": {
+            "label": "schedule",
+            "p": 0.9974
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 1.0
+          },
+          "department": {
+            "label": "product_design",
+            "p": 1.0
+          },
+          "tier": {
+            "label": "sonnet",
+            "p": 0.9161
+          }
+        }
+      }
+    ]
+  },
+  "base": {
+    "checkpoint": "base",
+    "n": 260,
+    "uncalibrated": {
+      "kind": {
+        "acc": 0.7038,
+        "macro_f1": 0.6874,
+        "ece": 0.0907,
+        "brier": 0.4562,
+        "nll": 0.9838
+      },
+      "quadrant": {
+        "acc": 0.3615,
+        "macro_f1": 0.1328,
+        "ece": 0.5433,
+        "brier": 1.0798,
+        "nll": 2.245
+      },
+      "human_only": {
+        "acc": 0.6154,
+        "macro_f1": 0.5853,
+        "ece": 0.1629,
+        "brier": 0.4882,
+        "nll": 0.7064
+      },
+      "department": {
+        "acc": 0.4808,
+        "macro_f1": 0.4147,
+        "ece": 0.2902,
+        "brier": 0.6872,
+        "nll": 1.2255
+      },
+      "tier": {
+        "acc": 0.3423,
+        "macro_f1": 0.2193,
+        "ece": 0.2714,
+        "brier": 0.8384,
+        "nll": 1.7486
+      },
+      "mean": {
+        "acc": 0.5008,
+        "macro_f1": 0.4079,
+        "ece": 0.2717,
+        "brier": 0.71,
+        "nll": 1.3819
+      },
+      "exact_all5": 0.0346
+    },
+    "calibrated": {
+      "kind": {
+        "acc": 0.7038,
+        "macro_f1": 0.6874,
+        "ece": 0.0855,
+        "brier": 0.452,
+        "nll": 0.9554
+      },
+      "quadrant": {
+        "acc": 0.3615,
+        "macro_f1": 0.1328,
+        "ece": 0.1421,
+        "brier": 0.6861,
+        "nll": 1.2492
+      },
+      "human_only": {
+        "acc": 0.6154,
+        "macro_f1": 0.5853,
+        "ece": 0.0882,
+        "brier": 0.4436,
+        "nll": 0.629
+      },
+      "department": {
+        "acc": 0.4808,
+        "macro_f1": 0.4147,
+        "ece": 0.1395,
+        "brier": 0.565,
+        "nll": 0.986
+      },
+      "tier": {
+        "acc": 0.3423,
+        "macro_f1": 0.2193,
+        "ece": 0.0297,
+        "brier": 0.7211,
+        "nll": 1.3277
+      },
+      "mean": {
+        "acc": 0.5008,
+        "macro_f1": 0.4079,
+        "ece": 0.097,
+        "brier": 0.5736,
+        "nll": 1.0295
+      },
+      "exact_all5": 0.0346
+    },
+    "temps": {
+      "kind": 1.15,
+      "quadrant": 5.3503,
+      "human_only": 1.749,
+      "department": 2.3131,
+      "tier": 7.0757
+    },
+    "cost_per_1k_decisions_usd": 0.0416,
+    "prompt_tokens_per_decision": 136.1,
+    "examples": [
+      {
+        "id": "live0",
+        "text": "{\"hook_event_name\": \"StopFailure\", \"session_id\": \"sim-engineering-1-l0oo\", \"error\": \"authentication_failed\", \"error_details\": \"GITHUB_TOKEN missing for gh pr comment\"}",
+        "gold": {
+          "kind": "credential",
+          "quadrant": "do_now",
+          "human_only": "yes",
+          "department": "engineering",
+          "tier": "haiku"
+        },
+        "pred": {
+          "kind": {
+            "label": "credential",
+            "p": 0.4274
+          },
+          "quadrant": {
+            "label": "do_now",
+            "p": 0.5603
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 0.687
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.811
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.3796
+          }
+        }
+      },
+      {
+        "id": "live1",
+        "text": "{\"hook_event_name\": \"Stop\", \"session_id\": \"sim-marketing-0-r4n8\", \"last_assistant_message\": \"I drafted the thread. To post it I need an X account; signing up requires a phone number.\"}",
+        "gold": {
+          "kind": "account",
+          "quadrant": "schedule",
+          "human_only": "yes",
+          "department": "marketing",
+          "tier": "sonnet"
+        },
+        "pred": {
+          "kind": {
+            "label": "account",
+            "p": 0.6881
+          },
+          "quadrant": {
+            "label": "do_now",
+            "p": 0.4254
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 0.8732
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.4854
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.3179
+          }
+        }
+      },
+      {
+        "id": "live2",
+        "text": "{\"hook_event_name\": \"StopFailure\", \"session_id\": \"sim-engineering-2-gm92\", \"error\": \"rate_limit\", \"error_details\": \"429 Too Many Requests\"}",
+        "gold": {
+          "kind": "rate_limit",
+          "quadrant": "delegate",
+          "human_only": "no",
+          "department": "engineering",
+          "tier": "haiku"
+        },
+        "pred": {
+          "kind": {
+            "label": "rate_limit",
+            "p": 0.7103
+          },
+          "quadrant": {
+            "label": "do_now",
+            "p": 0.5752
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 0.6555
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.7884
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.3388
+          }
+        }
+      },
+      {
+        "id": "live3",
+        "text": "{\"hook_event_name\": \"Notification\", \"session_id\": \"sim-marketing-7-184i\", \"notification_type\": \"idle_prompt\", \"message\": \"Claude is waiting for your input\"}",
+        "gold": {
+          "kind": "missing_info",
+          "quadrant": "drop",
+          "human_only": "no",
+          "department": "marketing",
+          "tier": "haiku"
+        },
+        "pred": {
+          "kind": {
+            "label": "missing_info",
+            "p": 0.3829
+          },
+          "quadrant": {
+            "label": "do_now",
+            "p": 0.3579
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 0.687
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.6688
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.363
+          }
+        }
+      },
+      {
+        "id": "live4",
+        "text": "{\"hook_event_name\": \"PermissionRequest\", \"session_id\": \"sim-product_design-6-1\", \"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"git push origin HEAD\"}}",
+        "gold": {
+          "kind": "approval",
+          "quadrant": "schedule",
+          "human_only": "yes",
+          "department": "product_design",
+          "tier": "sonnet"
+        },
+        "pred": {
+          "kind": {
+            "label": "approval",
+            "p": 0.9245
+          },
+          "quadrant": {
+            "label": "do_now",
+            "p": 0.498
+          },
+          "human_only": {
+            "label": "yes",
+            "p": 0.5
+          },
+          "department": {
+            "label": "engineering",
+            "p": 0.4017
+          },
+          "tier": {
+            "label": "haiku",
+            "p": 0.3697
+          }
+        }
+      }
+    ]
+  }
+}

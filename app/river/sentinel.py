@@ -62,7 +62,9 @@ def n_tokens(prompt, base=BASE):
     return len(_tok[base].encode(prompt, add_special_tokens=False))
 
 def prompt_str(text, field, base=BASE):
-    return renderer(base).build_sample_prompt([{"role": "user", "content": user_prompt(text, field)}]).to_kwargs()["prompt"]
+    p = renderer(base).build_sample_prompt([{"role": "user", "content": user_prompt(text, field)}]).to_kwargs()["prompt"]
+    # GLM leaves "<think>" open (its training example is "<think></think>A"), so close it: the next token is the code
+    return p + "</think>" if p.endswith("<think>") else p
 
 def training_example(text, field, label, base=BASE):
     code = CODES[FIELDS[field].index(label)]
