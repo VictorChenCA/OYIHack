@@ -174,7 +174,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     for (const ev of recent) {
       const k = evKey(ev); if (seenEv.has(k)) continue; seenEv.add(k);
       const node = ev.slug ? sim.byId.get(ev.slug) ?? null : null;
-      pulses.push({ node, t0: performance.now(), kind: ev.kind });
+      if (pulses.length < 60) pulses.push({ node, t0: performance.now(), kind: ev.kind });
       if (ev.slug && !node && ev.kind === "write") scheduleRefetch();
     }
     if (seenEv.size > 2000) { seenEv.clear(); primeEvents(recent); }
@@ -476,7 +476,7 @@ export function createMemory(root: HTMLElement, store: Store) {
       if (!sim.nodes.length) return;
       const n = Math.random() < 0.25 ? null : sim.nodes[Math.floor(Math.random() * sim.nodes.length)];
       const kind = Math.random() < 0.6 ? "read" : "write";
-      pulses.push({ node: n, t0: performance.now(), kind });
+      if (pulses.length < 60) pulses.push({ node: n, t0: performance.now(), kind });
       const units = store.state?.units ?? [];
       const u = units[Math.floor(Math.random() * units.length)];
       const op = n ? (kind === "write" ? (Math.random() < 0.5 ? "put_page" : "remember") : (Math.random() < 0.5 ? "get_page" : "search")) : kind === "write" ? "remember" : "recall";
@@ -491,6 +491,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   }
   // periodic refresh while open (server caches 30s)
   setInterval(() => { if (visible && !store.fixture) load(); }, 30000);
+  (window as any).__mem = { cam, sim, fitView, get autoFit() { return autoFit; }, get camTarget() { return camTarget; }, get W() { return W; }, get H() { return H; } }; // debug handle
   store.on("mode", (m) => (m.kind === "memory" ? show() : hide()));
   if (store.mode.kind === "memory") show(); else root.hidden = true;
   // dev convenience: ?memory opens the explorer directly
