@@ -21,7 +21,7 @@ function sprite(name: TexName, opts: { tint?: number; add?: boolean; size?: numb
 const setSize = (s: Sprite, size: number) => s.scale.set(size / Math.max(1, s.texture.width));
 
 interface UnitView { glow: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
-interface EnemyView { c: Container; aura: Sprite; hull: Sprite; halo: Sprite; badge: Text; drones: Sprite[]; smoke: Sprite; x: number; y: number; seen: number; kind: string; last: Enemy }
+interface EnemyView { c: Container; title: Text; aura: Sprite; hull: Sprite; halo: Sprite; badge: Text; drones: Sprite[]; smoke: Sprite; x: number; y: number; seen: number; kind: string; last: Enemy }
 interface PlanetView { c: Container; base: Sprite; dept: Sprite; lights: Sprite[]; ring: Graphics; dish: Sprite; name: Text; cycle: Text }
 interface Fx { s: Sprite; t: number; dur: number; from: number; to: number; alpha: number }
 
@@ -157,7 +157,7 @@ export function createScene(app: Application, store: Store) {
   function enemyView(e: Enemy): EnemyView {
     let v = enemyViews.get(e.id);
     if (v && v.kind === e.kind) return v;
-    if (v) { v.c.destroy({ children: true }); }
+    if (v) { v.c.destroy({ children: true }); v.title.destroy(); }
     const c = new Container();
     const aura = sprite("circle_05", { add: true, alpha: 0.5 });
     const halo = sprite("magic_02", { tint: GOLD, add: true, alpha: 0.7 });
@@ -170,7 +170,8 @@ export function createScene(app: Application, store: Store) {
     const badge = label("!", 22, GOLD, "Rajdhani", "700");
     c.addChild(aura, smokeS, halo, hull, badge);
     L.enemies.addChild(c);
-    v = { c, aura, hull, halo, badge, drones, smoke: smokeS, x: e.pos.x, y: e.pos.y, seen: 0, kind: e.kind, last: e };
+    const title = label("", 13, 0xffffff, "Rajdhani", "700"); L.labels.addChild(title);
+    v = { c, title, aura, hull, halo, badge, drones, smoke: smokeS, x: e.pos.x, y: e.pos.y, seen: 0, kind: e.kind, last: e };
     enemyViews.set(e.id, v);
     return v;
   }
@@ -446,11 +447,15 @@ export function createScene(app: Application, store: Store) {
       if (nd) v.hull.alpha = 0.9;
       v.c.alpha = Math.max(...(e.planetIds.length ? e.planetIds.map((p) => dimAlpha(p)) : [1]));
       if (e.resolved) v.c.alpha *= 0.4;
+      const tt = `${e.title.toUpperCase()}${e.strength > 1 ? `  ×${Math.round(e.strength)}` : ""}`;
+      if (v.title.text !== tt) v.title.text = tt;
+      v.title.tint = e.humanOnly ? GOLD : qc; v.title.alpha = v.c.alpha;
+      v.title.visible = store.layerOn("labels"); v.title.scale.set(ui); v.title.position.set(v.c.x, v.c.y + size * 0.95 + 8 * ui);
     }
     for (const [id, v] of enemyViews) if (v.seen !== frame) {
       const stillThere = s.enemies.some((e) => e.id === id);
       if (!stillThere || v.last.resolved) { shock(v.x, v.y); spawnFx("circle_02", v.x, v.y, 0xffffff, 40, 520, 0.8, 1); spawnFx("light_01", v.x, v.y, QUAD_COLOR[v.last.quadrant] ?? 0xffffff, 60, 260, 0.6, 0.9); }
-      v.c.destroy({ children: true }); enemyViews.delete(id);
+      v.c.destroy({ children: true }); v.title.destroy(); enemyViews.delete(id);
     }
 
     // lanes + mining paths
