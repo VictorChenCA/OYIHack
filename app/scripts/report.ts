@@ -153,7 +153,7 @@ function systemSvg(): string {
   out.push(`<circle r="260" fill="url(#sun)" opacity=".55"/><circle r="110" fill="url(#sun)"/><text y="180" class="lbl big" fill="#FFD166">GBRAIN</text>`);
   // planets
   for (const p of planets) {
-    const rings = Array.from({ length: p.colonization }, (_, i) => `<circle r="${72 + i * 14}" fill="none" stroke="${p.color}" stroke-opacity="${0.5 - i * 0.12}" stroke-width="2"/>`).join("");
+    const rings = Array.from({ length: p.}, (_, i) => `<circle r="${72 + i * 14}" fill="none" stroke="${p.color}" stroke-opacity="${0.5 - i * 0.12}" stroke-width="2"/>`).join("");
     out.push(`<g transform="translate(${p.pos.x.toFixed(0)} ${p.pos.y.toFixed(0)})">${rings}<circle r="56" fill="${p.color}" fill-opacity=".9"/><circle r="50" fill="#000" fill-opacity=".3" transform="translate(12 -9)"/><text y="-98" class="lbl big" fill="${p.color}">${esc(p.name.toUpperCase())}</text></g>`);
   }
   // tethers + units
@@ -180,7 +180,7 @@ function lanesSvg(): string {
   const W = 1000, laneH = 46, top = 18, H = top + planets.length * laneH + 34;
   const max = Math.max(1, ...[...activity.values()].flat());
   const x = (t: number) => ((t - t0) / span) * W;
-  const out: string[] = [`<svg viewBox="-150 0 ${W + 160} ${H}" class="lanes" role="img" aria-label="Activity by planet over time">`];
+  const out: string[] = [`<svg viewBox="-150 0 ${W + 160} ${H}" class="lanes" role="img" aria-label="Activity by team over time">`];
   planets.forEach((p, i) => {
     const y0 = top + i * laneH, a = activity.get(p.id) ?? Array(BUCKETS).fill(0);
     out.push(`<text x="-12" y="${y0 + laneH / 2 + 4}" text-anchor="end" class="lane-lbl" fill="${p.color}">${esc(p.name)}</text>`);
@@ -233,7 +233,7 @@ const bar = (frac: number, color: string) => `<div class="bar"><i style="width:$
 const colonized = new Set<string>();
 const notable = timeline.flatMap((t) => {
   const arr = t.text.match(/ arrived at (.+)$/);
-  if (arr) { if (colonized.has(arr[1])) return []; colonized.add(arr[1]); return [{ ...t, text: `◆ First ship lands: ${arr[1]} colonized (${t.text.split(" ")[0]})`, level: "ok" }]; }
+  if (arr) { if (colonized.has(arr[1])) return []; colonized.add(arr[1]); return [{ ...t, text: `◆ First agent joins ${arr[1]} (${t.text.split(" ")[0]})`, level: "ok" }]; }
   return t.enemyId || /✓|★|⚠/.test(t.text) ? [t] : [];
 });
 const tlItems = (notable.length > 140 ? [...notable.slice(0, 40), null, ...notable.slice(-99)] : notable).map((t) => t === null ? `<li class="gap">… ${notable.length - 139} more …</li>` :
@@ -246,11 +246,11 @@ const planetCards = planets.map((p) => {
   const kn = live?.planets.find((x) => x.id === p.id)?.knowledge ?? p.knowledge;
   const tot = st.charted + st.frontier;
   return `<article class="planet" style="--c:${p.color}">
-    <header><div class="orb"></div><div><h3>${esc(p.name)}</h3><div class="muted small">${esc(p.cycle.label)} · ${(p.progress * 100).toFixed(0)}% through · colonization ${p.colonization}/3</div></div></header>
+    <header><div class="orb"></div><div><h3>${esc(p.name)}</h3><div class="muted small">${p.knowledge} memory pages</div></div></header>
     <div class="stats">
       <div><b>${st.units.size}</b><span>motherships</span></div><div><b>${st.subs.size}</b><span>subagents</span></div>
       <div><b>${st.tools}</b><span>tool calls</span></div><div><b>${st.memW}</b><span>GBrain writes</span></div>
-      <div><b>${kn}</b><span>brain pages</span></div><div><b>${pe.filter((e) => e.resolvedAt).length}/${pe.length}</b><span>enemies cleared</span></div>
+      <div><b>${kn}</b><span>brain pages</span></div><div><b>${pe.filter((e) => e.resolvedAt).length}/${pe.length}</b><span>blockers cleared</span></div>
     </div>
     ${tot ? `<div class="small muted">Charted ${st.charted} · frontier ${st.frontier}</div>${bar(st.charted / tot, p.color)}` : ""}
     ${tasks.length ? `<h4>Work</h4><ul class="tasks">${tasks.map(([t, n]) => `<li><span>${esc(t)}</span><em>×${n}</em></li>`).join("")}</ul>` : `<p class="muted small">No work recorded yet.</p>`}
@@ -323,36 +323,36 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:30px}
   <div>
     <div class="tag"><i></i>After-action report · ${esc(S.company)} · ${generated.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
     <h1>C&amp;C after&#8209;action report</h1>
-    <p class="lede">One person ran a company of Claude Code agents from an RTS command center. Every ship below was a real agent session (or a labeled simulation); every enemy was something that blocked them. This is what happened between <span class="mono">${fmtTime(t0)}</span> and <span class="mono">${fmtTime(t1)}</span> PT.</p>
-    <div class="legend"><span><i style="background:${GOLD}"></i>gold = human-only</span>${(Object.keys(QC) as Quadrant[]).map((q) => `<span><i style="background:${QC[q]}"></i>${QL[q]}</span>`).join("")}</div>
+    <p class="lede">One founder ran a company of Claude Code agents from C&C. Every agent below was a real Claude Code session (or a labeled simulation); every blocker was something that stopped them. This is what happened between <span class="mono">${fmtTime(t0)}</span> and <span class="mono">${fmtTime(t1)}</span> PT.</p>
+    <div class="legend"><span><i style="background:${GOLD}"></i>gold ring = needs a person</span>${(Object.keys(QC) as Quadrant[]).map((q) => `<span><i style="background:${QC[q]}"></i>${QL[q]}</span>`).join("")}</div>
   </div>
-  <div class="panel" style="padding:8px">${systemSvg()}<div class="small muted" style="text-align:center;padding:4px 0 2px">Snapshot at ${fmtTime(S.now)} · ${S.units.length} units on the map · ${S.enemies.filter((e) => !e.resolved).length} enemies open${live ? "" : " · (server offline: replayed state)"}</div></div>
+  <div class="panel" style="padding:8px">${systemSvg()}<div class="small muted" style="text-align:center;padding:4px 0 2px">Snapshot at ${fmtTime(S.now)} · ${S.units.length} agents on the map · ${S.enemies.filter((e) => !e.resolved).length} blockers open${live ? "" : " · (server offline: replayed state)"}</div></div>
 </section>
 
 <section class="kpis">
-  ${kpi("Units deployed", String(motherships.size), `${realSessions.size} real · ${motherships.size - realSessions.size} simulated`)}
+  ${kpi("Agents deployed", String(motherships.size), `${realSessions.size} real · ${motherships.size - realSessions.size} simulated`)}
   ${kpi("Subagents", String(subagents.size), `fanned out by motherships`, "#7C9CFF")}
   ${kpi("Tool calls", toolCalls.toLocaleString(), `${toolFails} failed (${toolCalls ? ((toolFails / toolCalls) * 100).toFixed(1) : 0}%)`, "#5CF2B0")}
-  ${kpi("Enemies cleared", `${cleared.length}<span class="muted" style="font-size:18px"> / ${ens.length}</span>`, `${open.length} still open · median ${fmtDur(ttr)} to clear`, "#FF7AD9")}
-  ${kpi("Gold blockers", `${goldCleared.length}<span class="muted" style="font-size:18px"> / ${gold.length}</span>`, `resolved by the human · median ${fmtDur(goldTtr)}`, GOLD)}
+  ${kpi("Blockers cleared", `${cleared.length}<span class="muted" style="font-size:18px"> / ${ens.length}</span>`, `${open.length} still open · median ${fmtDur(ttr)} to clear`, "#FF7AD9")}
+  ${kpi("Needed a person", `${goldCleared.length}<span class="muted" style="font-size:18px"> / ${gold.length}</span>`, `resolved by the human · median ${fmtDur(goldTtr)}`, GOLD)}
   ${kpi("GBrain writes", String(memWrites), `${memReads} recalls/reads · sun pulses`, "#FFD166")}
   ${kpi("Charted vs frontier", `${charted}<span class="muted" style="font-size:18px"> / ${frontier}</span>`, `known routes vs first-time tasks`, "#9fe6ff")}
-  ${kpi("Spend", usd(spend.reduce((a, m) => a + m.spent, 0)), liveCost ? `${usd(liveCost)} measured from live transcripts` : "across all mines", "#D97757")}
+  ${kpi("Spend", usd(spend.reduce((a, m) => a + m.spent, 0)), liveCost ? `${usd(liveCost)} measured from live transcripts` : "across all credit pools", "#D97757")}
 </section>
 
-<section class="panel"><h2>Activity by planet</h2>${lanesSvg()}<div class="small muted">Area = tool calls over time. Bars under each lane = enemies, from appearance to clearance (gold = human-only).</div></section>
+<section class="panel"><h2>Activity by team</h2>${lanesSvg()}<div class="small muted">Area = tool calls over time. Bars under each lane = blockers, from appearance to clearance (gold ring = needs a person).</div></section>
 
 <div class="two">
-  <section class="panel"><h2>Spend by mine</h2>
+  <section class="panel"><h2>Spend by credit pool</h2>
     ${spend.length ? spend.map((m) => `<div class="rowbar"><span>${esc(m.label.split(" (")[0])}</span>${bar(m.total ? m.spent / m.total : 0, m.color)}<b>${usd(m.spent)}</b></div><div class="small muted" style="margin:-4px 0 8px 130px">${usd(m.remaining)} of ${usd(m.total)} left · ${m.measured ? "measured" : "entered by hand"}${m.burnPerDay ? ` · ${usd(m.burnPerDay)}/day` : ""}</div>`).join("") : `<p class="muted">No mine data (server offline).</p>`}
   </section>
   <section class="panel"><h2>GBrain writes by department</h2>
     ${memByDept.map(({ p, w }) => `<div class="rowbar"><span>${esc(p.name)}</span>${bar(w / memMax, p.color)}<b>${w}</b></div>`).join("")}
-    <h4>Enemy types</h4>${kindCounts.length ? kindCounts.map(([k, n]) => `<div class="rowbar"><span>${esc(k.replace("_", " "))}</span>${bar(n / Math.max(...kindCounts.map((x) => x[1])), "#FF7AD9")}<b>${n}</b></div>`).join("") : `<p class="muted small">None.</p>`}
+    <h4>Blocker kinds</h4>${kindCounts.length ? kindCounts.map(([k, n]) => `<div class="rowbar"><span>${esc(k.replace("_", " "))}</span>${bar(n / Math.max(...kindCounts.map((x) => x[1])), "#FF7AD9")}<b>${n}</b></div>`).join("") : `<p class="muted small">None.</p>`}
   </section>
 </div>
 
-<h2 style="margin:8px 0 14px">Planets</h2>
+<h2 style="margin:8px 0 14px">Teams</h2>
 <section class="planets">${planetCards}</section>
 
 ${riverSection()}
@@ -360,13 +360,13 @@ ${riverSection()}
 <div class="two">
   <section class="panel"><h2>Timeline</h2><ul class="feed">${tlItems || `<li class="muted">No events recorded.</li>`}</ul></section>
   <section class="panel"><h2>What's real vs simulated</h2>
-    <p class="small muted" style="margin-top:0">This report: <b class="mono">${realN.toLocaleString()}</b> real hook events and <b class="mono">${simEvents.toLocaleString()}</b> simulated (${(simShare * 100).toFixed(0)}%). Simulated units carry a SIMULATED badge in the app.</p>
+    <p class="small muted" style="margin-top:0">This report: <b class="mono">${realN.toLocaleString()}</b> real hook events and <b class="mono">${simEvents.toLocaleString()}</b> simulated (${(simShare * 100).toFixed(0)}%). Simulated agents carry a SIMULATED badge in the app.</p>
     <div class="rv">
       <div class="real"><h4>Real</h4><ul>
         <li>Claude Code agents, via HTTP hooks</li><li>Spawning + prompting via Superset</li><li>GBrain memory reads/writes (the sun)</li>
         <li>Token spend + context from transcripts</li><li>AI summaries + commander (headless Claude)</li><li>River-trained Sentinel, base vs trained eval</li><li>Memorable recall → charted routes</li></ul></div>
       <div class="sim"><h4>Simulated</h4><ul>
-        <li>The scale shot (hundreds of units)</li><li>The galaxy of companies</li><li>Mines we can't meter (entered by hand)</li><li>Factory ticks while the scheduler is paused</li></ul></div>
+        <li>The scale shot (hundreds of agents)</li><li>A system of many companies</li><li>Credits we can't meter (entered by hand)</li><li>Factory ticks while the scheduler is paused</li></ul></div>
     </div>
   </section>
 </div>
