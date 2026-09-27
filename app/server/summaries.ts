@@ -51,7 +51,7 @@ export function periodicSummaries(ctx: Ctx) {
   const now = Date.now();
   for (const u of ctx.world.units.values()) {
     if (u.status === "dead" || u.status === "done") continue;
-    const stale = !u.summaryAt || now - u.summaryAt > PERIODIC_MS;
+    const stale = !u.summary || !u.summaryAt || now - u.summaryAt > PERIODIC_MS; // subagents inherit summaryAt from the mothership
     if (!stale) continue;
     if (u.simulated) { summarize(u, ctx, "tick"); continue; }
     if (u.status === "working" || u.status === "acting" || u.status === "attacking" || !u.summary) summarize(u, ctx, "tick");

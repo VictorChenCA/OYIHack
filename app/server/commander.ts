@@ -100,8 +100,8 @@ Prefer the fewest actions that achieve the order. If nothing should be done, ret
 FOUNDER'S ORDER: ${text}
 
 Reply with ONLY strict JSON: {"reply":"<=40 words, confident RTS-officer voice","actions":[<Command objects>]}`;
-    let j: any = await claudeJson(prompt, { model: "sonnet", timeoutMs: 60_000, noCache: true });
-    if (!j) j = await claudeJson(prompt, { model: "haiku", timeoutMs: 40_000, noCache: true });
+    let j: any = await claudeJson(prompt, { model: "sonnet", timeoutMs: 60_000, noCache: true, urgent: true });
+    if (!j) j = await claudeJson(prompt, { model: "haiku", timeoutMs: 40_000, noCache: true, urgent: true });
     if (!j) { ctx.broadcast({ type: "commander", text: "Commander offline (LLM call failed). Try again." }); return; }
     const done: string[] = [], skipped: string[] = [];
     for (const raw of (Array.isArray(j.actions) ? j.actions : []).slice(0, 12)) {

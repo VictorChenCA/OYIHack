@@ -1,16 +1,21 @@
 // S3 Brains: headless Claude Code on the user's subscription (no API key).
 // Every call runs `claude -p` from os.tmpdir() with hooks disabled, no MCP servers, no tools, no session
 // persistence, so these calls never show up as units on the map and never load project MCP servers.
-// Measured latency (haiku, tiny prompt): see LAST_LATENCY / kb notes; ~4-8s cold per call.
+// Measured latency on the subscription (2026-09-27): haiku tiny prompt 2.3s; haiku classify/summary ~3-8s;
+// sonnet commander (~3k-token digest) ~13.5s. GET /api/brains/stats shows live counts + last latency.
 import { tmpdir } from "node:os";
 
 export type ModelAlias = "haiku" | "sonnet" | "opus";
-export interface LlmOpts { model?: ModelAlias; json?: boolean; timeoutMs?: number; system?: string; noCache?: boolean }
+export interface LlmOpts { model?: ModelAlias; json?: boolean; timeoutMs?: number; system?: string; noCache?: boolean; urgent?: boolean }
 
 const MAX_CONCURRENT = 3;
 let active = 0;
 const waiters: (() => void)[] = [];
-const acquire = () => new Promise<void>((res) => { if (active < MAX_CONCURRENT) { active++; res(); } else waiters.push(() => { active++; res(); }); });
+const acquire = (urgent = false) => new Promise<void>((res) => {
+  if (active < MAX_CONCURRENT) { active++; res(); return; }
+  const w = () => { active++; res(); };
+  if (urgent) waiters.unshift(w); else waiters.push(w); // commander / classification jump the summary queue
+});
 const release = () => { active--; const w = waiters.shift(); if (w) w(); };
 
 const CACHE_MAX = 200;
@@ -28,7 +33,7 @@ export async function claude(prompt: string, opts: LlmOpts = {}): Promise<string
   const key = `${model}|${opts.system ?? ""}|${prompt}`;
   if (!opts.noCache) { const hit = cacheGet(key); if (hit !== undefined) { stats.cacheHits++; return hit; } }
   if (disabled) throw new Error("claude CLI unavailable");
-  await acquire();
+  await acquire(opts.urgent);
   const t0 = Date.now();
   try {
     const args = [
