@@ -45,3 +45,9 @@ Side quest criteria per sponsor: `kb/EVENT.md#prizes`.
 - `kb/repos/*` are read-only references. Build the product in `app/` (or a new top-level dir), not inside `kb/`.
 - New learnings (gotchas, working commands, sponsor answers) go in the relevant `kb/sponsors/*.md`,
   so parallel agents benefit.
+
+## Headless Claude (C&C's LLM calls; there's no Anthropic API key)
+`claude -p --model haiku --output-format json --strict-mcp-config --mcp-config '{"mcpServers":{}}' --settings '{"disableAllHooks":true}' --tools "" --no-session-persistence`
+- Pass the prompt on stdin, because `--mcp-config` is variadic.
+- Run from `os.tmpdir()` so the calls don't fire this repo's hooks.
+- Latency is 2–40s, depending on subscription load. See `app/server/llm.ts`.

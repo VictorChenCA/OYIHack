@@ -111,3 +111,10 @@ to zero after the demo, because GPU-hours bill from create to delete.
 - Reasoning models can spend `max_tokens` on thinking. Give headroom.
 - Sessions free their models on exit. Keep training and sampling inside the `with client.session()` block.
 - Training cost and latency are real. Budget ONE small SFT/RL run and have a pre-baked checkpoint as a fallback.
+
+## Our result (Sep 27, 15:30): the C&C Sentinel
+- Qwen3.5-9B + LoRA (rank 16), 100 SFT steps on 880 blocker examples labeled by C&C's triage policy (`app/river/policy.md`).
+- On unseen blockers (n=260: held-out vendors, tasks, phrasings): **mean accuracy 0.545 → 0.916**, macro-F1 0.494 → 0.926, ECE 0.087 → 0.048,
+  and all 5 fields exactly right in 0.054 → 0.673 of cases. Details: `app/river/eval.md`, `app/river/card.json`.
+- Live latency: about 4.0s p50 for 10 blockers × 5 fields in one batched call. River spend was about $1.3 (estimated from tokens).
+- One-token label codes plus `logprobs` gave calibrated class probabilities. The sidecar (`app/river/sidecar.py`, :7788) serves trained, base or fast engines.

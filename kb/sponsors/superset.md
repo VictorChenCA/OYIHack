@@ -70,3 +70,10 @@ Host must be online (relay tunnel) for workspace ops. Reference: grep `sdk/refer
 A webhook, issue, or Slack message goes through the Superset SDK and spawns N agents in worktrees.
 Memorable captures each successful run as a procedure. GBrain holds project knowledge. Automations
 make it recurring.
+
+## Gotchas found while building C&C (Sep 27)
+- **The CLI's login is separate from the desktop app's.** With the app signed in and its host running, `superset auth whoami` still says
+  "Not logged in" until you run `superset auth login` (or pass a real `sk_live_` key).
+- **The CLI auto-loads `.env` from the current directory.** A placeholder `SUPERSET_API_KEY` in the repo `.env` gives "Invalid API key".
+  Run the CLI from outside the repo, or fix the key.
+- `superset pages publish … --page <id>` versions the same link.
