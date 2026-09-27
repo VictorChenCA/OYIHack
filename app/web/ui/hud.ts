@@ -1,7 +1,7 @@
 // Hover tooltip, top bar, toasts.
 import type { Store, Target } from "../store";
-import type { WorldState } from "../../shared/types";
-import { el, esc, live, delegate, kfmt, usd, dur, bar, shortName, TIER_COLOR, QUAD_COLOR, QUAD_LABEL, KIND_LABEL, GOLD, STATUS_COLOR } from "./util";
+import type { DeptId, WorldState } from "../../shared/types";
+import { el, esc, live, delegate, usd, dur, TIER_COLOR, QUAD_COLOR, GOLD, STATUS_COLOR, MODE_LABEL } from "./util";
 import { tierGlyph, kindGlyph } from "./glyphs";
 
 export function createTooltip(root: HTMLElement, store: Store) {
@@ -26,29 +26,29 @@ export function createTooltip(root: HTMLElement, store: Store) {
       const ctx = u.contextWindow ? Math.round((u.contextUsed / u.contextWindow) * 100) : 0;
       return `<div class="tt-h">${tierGlyph(u.tier, 16)}<b>${esc(u.label)}</b><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span></div>
         <div class="tt-l">${esc(u.summary ?? u.task ?? "no task")}</div>
-        <div class="tt-f num"><span style="color:${TIER_COLOR[u.tier]}">${esc(u.tier)}</span><span>ctx ${ctx}%</span><span>${usd(u.costUsd)}</span><span>${u.charted && u.etaMs != null ? "ETA " + dur(Math.max(0, u.startedAt + u.etaMs - s.now)) : "? frontier"}</span></div>`;
+        <div class="tt-f num"><span style="color:${TIER_COLOR[u.tier]}">${esc(u.model ?? u.tier)}</span><span>${esc(MODE_LABEL[u.permissionMode])}</span><span>ctx ${ctx}%</span>${u.siteLabel ? `<span>→ ${esc(u.siteLabel)}</span>` : ""}<span>${u.charted && u.etaMs != null ? "ETA " + dur(Math.max(0, u.startedAt + u.etaMs - s.now)) : "first time"}</span></div>`;
     }
     if (t.kind === "enemy") {
       const e = store.enemy(t.id); if (!e || store.isHidden("enemy", e.id)) return "";
       const c = e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant];
-      return `<div class="tt-h">${kindGlyph(e.kind, c, 16)}<b>${esc(e.title)}</b>${e.humanOnly ? `<span class="badge gold">!</span>` : ""}</div><div class="tt-l">${esc(e.reason)}</div>
-        <div class="tt-f num"><span style="color:${c}">${esc(KIND_LABEL[e.kind])} · ${esc(QUAD_LABEL[e.quadrant])}</span><span>${e.blocked.length} blocked</span><span>${e.attackers.length} attacking</span></div>`;
+      return `<div class="tt-h">${kindGlyph(e.kind, c, 16)}<b>${esc(e.title)}</b></div><div class="tt-l">${esc(e.reason)}</div>
+        <div class="tt-f num"><span style="color:${c}">${e.humanOnly ? "needs you" : "blocker"}</span><span>${e.blocked.length} agents waiting</span>${e.attackers.length ? `<span>${e.attackers.length} resolving</span>` : ""}</div>`;
     }
     if (t.kind === "planet") {
       const p = s.planets.find((x) => x.id === t.id); if (!p || store.isHidden("planet", p.id)) return "";
       const n = s.units.filter((u) => u.planetId === p.id).length, en = s.enemies.filter((e) => e.planetIds.includes(p.id)).length;
-      return `<div class="tt-h"><i class="dot" style="background:${p.color};color:${p.color}"></i><b>${esc(p.name)}</b></div><div class="tt-l">${esc(p.cycle.label)} · ${Math.round(p.progress * 100)}% · ${dur(p.cycle.endAt - s.now)} left</div><div class="tt-f num"><span>${n} units</span><span>${en} enemies</span><span>${p.knowledge} pages</span></div>`;
+      return `<div class="tt-h"><i class="dot" style="background:${p.color};color:${p.color}"></i><b>${esc(p.name)}</b></div><div class="tt-l">${esc(p.summary ?? `${n} agents · ${en} blockers`)}</div><div class="tt-f num"><span>${n} agents</span><span>${en} blockers</span><span>${esc(p.cycle.label)} · ${dur(p.cycle.endAt - s.now)} left</span></div>`;
     }
     if (t.kind === "factory") {
       const f = s.factories.find((x) => x.id === t.id); if (!f) return "";
-      return `<div class="tt-h"><b>⚙ ${esc(f.label)}</b></div><div class="tt-f num"><span>every ${dur(f.cadenceMs)}</span><span>${f.paused ? "paused" : "next " + dur(f.nextRunAt - s.now)}</span><span>${f.runs} runs</span></div>`;
+      return `<div class="tt-h"><b>${esc(f.label)}</b></div><div class="tt-f num"><span>every ${dur(f.cadenceMs)}</span><span>${f.paused ? "paused" : "next " + dur(f.nextRunAt - s.now)}</span><span>${f.runs} runs</span></div>`;
     }
     if (t.kind === "mine") {
       const m = s.mines.find((x) => x.id === t.id); if (!m) return "";
-      return `<div class="tt-h"><i class="dot" style="background:${m.color};color:${m.color}"></i><b>${esc(m.label)}</b></div><div class="tt-f num"><span>${usd(m.remaining)} / ${usd(m.total)}</span><span>${usd(m.burnPerDay)}/day</span><span>${m.measured ? "measured" : "manual"}</span></div>`;
+      return `<div class="tt-h"><i class="dot" style="background:${m.color};color:${m.color}"></i><b>${esc(m.label)}</b></div><div class="tt-f num"><span>${usd(m.remaining)} / ${usd(m.total)}</span><span>${usd(m.burnPerDay)}/day</span></div>`;
     }
-    if (t.kind === "research") { const r = s.research; return `<div class="tt-h">${tierGlyph("river", 16)}<b>Research Center</b></div><div class="tt-f num"><span>${r.models.length} models</span><span>${r.runs.length} runs</span><span>${r.corrections} corrections</span><span>${esc(r.engine)}</span></div>`; }
-    if (t.kind === "sun") { const k = s.knowledge; return `<div class="tt-h"><b>☀ Memory</b></div><div class="tt-f num"><span>${k.pages} pages</span><span>${k.facts} facts</span><span>${k.procedures} procedures</span></div>`; }
+    if (t.kind === "research") { const r = s.research; return `<div class="tt-h">${tierGlyph("river", 16)}<b>Research Center</b></div><div class="tt-f num"><span>${r.models.length} models</span><span>${r.runs.length} runs</span><span>${r.corrections} corrections</span></div>`; }
+    if (t.kind === "sun") { const k = s.knowledge; return `<div class="tt-h"><b>Memory</b></div><div class="tt-f num"><span>${k.pages} pages</span><span>${k.facts} facts</span><span>${k.procedures} procedures</span></div>`; }
     return "";
   }
   store.on("hover", (h) => { cur = h; render(); });
@@ -57,34 +57,25 @@ export function createTooltip(root: HTMLElement, store: Store) {
 
 const DOT = `<span class="sep">›</span>`;
 export function createTopBar(root: HTMLElement, store: Store) {
-  const top = el("header", "topbar glass"); top.setAttribute("aria-label", "Resources");
-  top.innerHTML = `<div class="tb-left"></div><div class="tb-mines"></div><div class="tb-right"></div>`;
+  const top = el("header", "topbar glass"); top.setAttribute("aria-label", "Navigation");
+  top.innerHTML = `<div class="tb-left"></div><div class="tb-right"></div>`;
   root.appendChild(top);
-  const left = live(top.querySelector(".tb-left")!); const mines = live(top.querySelector(".tb-mines")!); const right = live(top.querySelector(".tb-right")!);
+  const left = live(top.querySelector(".tb-left")!); const right = live(top.querySelector(".tb-right")!);
   function render() {
     const s = store.state; if (!s) return;
     const m = store.mode;
     const planet = m.kind === "planet" ? s.planets.find((p) => p.id === m.planetId) : undefined;
-    const crumbs = [`<button class="crumb" data-act="mode" data-k="galaxy">Galaxy</button>`, `<button class="crumb${m.kind === "system" ? " on" : ""}" data-act="mode" data-k="system">${esc(s.company)}</button>`];
-    if (planet) crumbs.push(`<span class="crumb on" style="color:${planet.color}">${esc(planet.name)}</span>`);
-    if (m.kind === "memory") crumbs.push(`<span class="crumb on" style="color:#FFD166">Memory</span>`);
-    const cyc = planet ?? [...s.planets].filter((p) => !store.isHidden("planet", p.id)).sort((a, b) => a.cycle.endAt - b.cycle.endAt)[0];
-    left.set(`<span class="brand">C<span>&amp;</span>C</span><nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(DOT)}</nav>
-      ${cyc ? `<div class="tb-cycle" title="${esc(cyc.name)} · ${esc(cyc.cycle.label)}"><span class="lbl trunc">${esc(cyc.cycle.label)}</span>${bar(cyc.progress, cyc.color)}<span class="num dim">${dur(cyc.cycle.endAt - s.now)}</span></div>` : ""}`);
-    mines.set(s.mines.filter((x) => !store.isHidden("mine", x.id)).map((x) => `<button class="mine" data-act="focus-mine" data-id="${esc(x.id)}" title="${esc(x.label)} · ${usd(x.remaining)} / ${usd(x.total)} · −${usd(x.burnPerDay)}/day · ${x.measured ? "measured" : "manual"}">
-      <span class="mine-l"><i class="dot" style="background:${x.color};color:${x.color}"></i>${esc(shortName(x.label))}</span>
-      <span class="mine-v num">${usd(x.remaining)}<small>−${usd(x.burnPerDay)}/d</small></span>${bar(x.total ? x.remaining / x.total : 0, x.color)}</button>`).join(""));
-    const tok = s.units.reduce((a, u) => a + u.tokens.input + u.tokens.output + u.tokens.cacheRead + u.tokens.cacheWrite, 0);
-    const cost = s.units.reduce((a, u) => a + u.costUsd, 0);
-    const k = s.knowledge;
-    right.set(`<div class="stat tokens"><span class="lbl">Tokens</span><b class="num">${kfmt(tok)}</b></div><div class="stat"><span class="lbl">Spend</span><b class="num">${usd(cost)}</b></div>
-      <button class="stat knowledge" data-act="focus-sun" title="GBrain pages · facts · Memorable procedures"><span class="lbl">Knowledge</span><b class="num">${k.pages}<i>·</i>${k.facts}<i>·</i>${k.procedures}</b></button>
-      ${s.simulated ? `<span class="badge sim" title="Some of this world is simulated">Simulated</span>` : ""}`);
+    const atGalaxy = m.kind === "system" || m.kind === "galaxy";
+    const crumbs = [`<button class="crumb${atGalaxy ? " on" : ""}" data-act="galaxy">Galaxy</button>`];
+    if (planet) crumbs.push(`<span class="crumb on"><i class="dot" style="background:${planet.color};color:${planet.color}"></i>${esc(planet.name)}</span>`);
+    if (m.kind === "memory") crumbs.push(`<span class="crumb on">Memory</span>`);
+    const names = atGalaxy ? `<nav class="tb-planets" aria-label="Departments">${s.planets.filter((p) => !store.isHidden("planet", p.id)).map((p) => `<button class="pl-link" data-act="planet" data-id="${esc(p.id)}" title="${esc(p.summary ?? p.name)}">${esc(p.name)}</button>`).join(`<span class="mid">·</span>`)}</nav>` : "";
+    left.set(`<span class="brand">C<span>&amp;</span>C</span><nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(DOT)}</nav>${names ? `<span class="sep">›</span>${names}` : ""}`);
+    right.set(s.simulated ? `<span class="badge sim" title="Some of this world is simulated">Simulated</span>` : "");
   }
   delegate(top, {
-    mode: (t) => { const k = t.dataset.k; store.setMode(k === "galaxy" ? { kind: "galaxy" } : { kind: "system" }); },
-    "focus-mine": (t) => store.setFocus({ kind: "mine", id: t.dataset.id! }),
-    "focus-sun": () => store.setFocus({ kind: "sun", id: "sun" }),
+    galaxy: () => { store.setFocus(null); store.setMode({ kind: "system" }); },
+    planet: (t) => { store.setMode({ kind: "planet", planetId: t.dataset.id as DeptId }); store.setFocus({ kind: "planet", id: t.dataset.id as DeptId }); },
   });
   store.on("state", render); store.on("mode", render);
 }

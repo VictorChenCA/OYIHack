@@ -34,7 +34,7 @@ export function createOrders(parent: HTMLElement, store: Store) {
     const s = store.state; if (!s) return;
     seg.set((["manual", "assist", "auto"] as Autonomy[]).map((a) => `<button role="radio" aria-checked="${s.autonomy === a}" class="${s.autonomy === a ? "on" : ""}" data-act="autonomy" data-v="${a}">${a}</button>`).join(""));
     const adv = [...s.advice].sort((a, b) => b.priority - a.priority);
-    list.set(adv.map((a) => `<li><button class="quest p${a.priority >= 8 ? "hi" : a.priority >= 4 ? "mid" : "lo"}" data-act="advice" data-id="${esc(a.id)}"><i></i><span>${esc(a.text)}</span>${a.action ? `<span class="go">${esc(a.action.type)}</span>` : ""}</button></li>`).join("") || `<li class="dim pad">All clear, commander.</li>`);
+    list.set(adv.map((a) => `<li><button class="quest p${a.priority >= 8 ? "hi" : a.priority >= 4 ? "mid" : "lo"}" data-act="advice" data-id="${esc(a.id)}"><i></i><span>${esc(a.text)}</span></button></li>`).join("") || `<li class="dim pad">All clear.</li>`);
   }
   delegate(box, {
     autonomy: (t) => {
@@ -65,7 +65,7 @@ function runAdvice(store: Store, a: Advice) {
 }
 
 // ── Visibility: layer toggles + Hide… tree ──
-const LAYERS: [Layer, string][] = [["units", "Units"], ["tethers", "Tethers"], ["enemies", "Enemies"], ["factories", "Factories"], ["mines", "Mines"], ["paths", "Paths"], ["beams", "Beams"], ["fog", "Fog"], ["labels", "Labels"], ["orbits", "Orbits"], ["research", "Research"]];
+const LAYERS: [Layer, string][] = [["units", "Agents"], ["tethers", "Tethers"], ["enemies", "Blockers"], ["factories", "Factories"], ["mines", "Credits"], ["paths", "Paths"], ["beams", "Beams"], ["fog", "Fog"], ["labels", "Labels"], ["orbits", "Orbits"], ["research", "Research"]];
 
 export function createFilter(parent: HTMLElement, store: Store) {
   const box = el("section", "vis glass"); box.setAttribute("aria-label", "Visibility");
@@ -93,7 +93,7 @@ export function createFilter(parent: HTMLElement, store: Store) {
           ${unitsNoProj.map((u) => cb("units", u.id, fl.units.includes(u.id), u.label, tierGlyph(u.tier, 12))).join("")}</div>` : ""}</div>`;
     }).join("");
     const eo = open.has("enemies");
-    const enemies = `<div class="tr-grp"><div class="tr-top"><button class="tw" data-act="tw" data-id="enemies">${eo ? "▾" : "▸"}</button><span class="tr-h">Enemies (${s.enemies.length})</span></div>${eo ? `<div class="tr-kids">${s.enemies.map((e) => cb("enemies", e.id, fl.enemies.includes(e.id), e.title, `<i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]};color:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i>`)).join("")}</div>` : ""}</div>`;
+    const enemies = `<div class="tr-grp"><div class="tr-top"><button class="tw" data-act="tw" data-id="enemies">${eo ? "▾" : "▸"}</button><span class="tr-h">Blockers (${s.enemies.length})</span></div>${eo ? `<div class="tr-kids">${s.enemies.map((e) => cb("enemies", e.id, fl.enemies.includes(e.id), e.title, `<i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]};color:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i>`)).join("")}</div>` : ""}</div>`;
     const any = fl.planets.length + fl.projects.length + fl.units.length + fl.enemies.length + fl.layers.length;
     return planets + enemies + (any ? `<button class="btn sm ghost showall" data-act="showall">Show everything (${any} hidden)</button>` : "");
   }
@@ -108,7 +108,7 @@ export function createFilter(parent: HTMLElement, store: Store) {
 }
 
 export function createViewTabs(root: HTMLElement, store: Store) {
-  const tabs = el("nav", "views"); tabs.setAttribute("aria-label", "Views"); root.appendChild(tabs);
+  const tabs = el("nav", "views glass"); tabs.setAttribute("aria-label", "Views"); root.appendChild(tabs);
   const l = live(tabs);
   store.on("state", (s) => {
     l.set(s.views.map((v) => `<button class="vtab${v.id === s.activeViewId ? " on" : ""}${v.source === "commander" ? " cmdr" : ""}" data-act="view" data-id="${esc(v.id)}" aria-pressed="${v.id === s.activeViewId}">${v.source === "commander" ? "✦ " : ""}${esc(v.name)}</button>`).join(""));
@@ -129,7 +129,7 @@ export function createGroups(root: HTMLElement, store: Store) {
       const blocked = us.filter((u) => u.status === "blocked").length;
       return `<div class="grp glass${sel ? " on" : ""}"><button class="grp-key" data-act="select" data-g="${g}" title="Select group ${g} (key ${g})"><b class="num">${g}</b><span class="grp-icons">${us.slice(0, 5).map((u) => tierGlyph(u.tier, 12)).join("")}</span><span class="num">${us.length}</span>${blocked ? `<i class="grp-bad" style="background:${STATUS_COLOR.blocked}" title="${blocked} blocked"></i>` : ""}</button>
         <select data-act="stance" data-g="${g}" aria-label="Stance for group ${g}">${(["hold", "auto_attack", "assist"] as Stance[]).map((x) => `<option value="${x}" ${x === st ? "selected" : ""}>${x === "auto_attack" ? "Auto-attack" : x[0]!.toUpperCase() + x.slice(1)}</option>`).join("")}</select></div>`;
-    }).join("") : `<div class="grp-hint">Ctrl/⌘+1–9 assigns the selection to a group · 1–9 selects it</div>`);
+    }).join("") : "");
   }
   delegate(strip, { select: (t) => selectGroup(Number(t.dataset.g)) });
   strip.addEventListener("change", (e) => {
@@ -146,7 +146,7 @@ export function createGroups(root: HTMLElement, store: Store) {
   }
   function assign(g: number) {
     const ids = [...store.selection];
-    if (!ids.length) { store.toast("Select units first, then Ctrl/⌘+" + g, "warn"); return; }
+    if (!ids.length) { store.toast("Select agents first, then Ctrl/⌘+" + g, "warn"); return; }
     if (store.fixture && store.state) {
       for (const u of store.state.units) { const cur = local.groups[u.id] ?? u.groups; local.groups[u.id] = ids.includes(u.id) ? [...new Set([...cur, g])] : cur.filter((x) => x !== g); }
       emitLocal(store);
