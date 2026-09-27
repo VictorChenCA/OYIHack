@@ -1,6 +1,26 @@
 // Flat hologram silhouettes (SVG) for tiers and enemy kinds.
-import type { Tier, EnemyKind } from "../../shared/types";
-import { TIER_COLOR } from "./util";
+import type { Tier, EnemyKind, Quadrant } from "../../shared/types";
+import { TIER_COLOR, QUAD_COLOR, GOLD } from "./util";
+
+/** ONE blocker visual language: shape + color = type (Eisenhower quadrant) only. Gold ring = needs a person.
+ *  Do now = diamond, Schedule = square, Delegate = triangle, Drop = circle. The kind is text, never a sprite. */
+const QUAD_SHAPE: Record<Quadrant, string> = {
+  do_now: `<path d="M32 12 L52 32 L32 52 L12 32 Z"/>`,
+  schedule: `<rect x="17" y="17" width="30" height="30" rx="3"/>`,
+  delegate: `<path d="M32 13 L52 49 L12 49 Z"/>`,
+  drop: `<circle cx="32" cy="32" r="15"/>`,
+};
+export function blockerGlyph(q: Quadrant, humanOnly: boolean, size = 22) {
+  const c = QUAD_COLOR[q] ?? QUAD_COLOR.drop;
+  return `<svg class="glyph bk-glyph" width="${size}" height="${size}" viewBox="0 0 64 64" style="color:${c};fill:${c}" aria-hidden="true">${QUAD_SHAPE[q] ?? QUAD_SHAPE.drop}${humanOnly ? `<circle cx="32" cy="32" r="27" fill="none" stroke="${GOLD}" stroke-width="3.5"/>` : ""}</svg>`;
+}
+
+export const QUAD_WHY: Record<Quadrant, string> = {
+  do_now: "Urgent and important. Handle first.",
+  schedule: "Important, not urgent. Plan it.",
+  delegate: "Urgent, but an agent can take it.",
+  drop: "Neither. Safe to ignore.",
+};
 
 const TIER_PATH: Record<Tier, string> = {
   // haiku: a small dart
