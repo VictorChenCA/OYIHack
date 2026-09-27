@@ -20,8 +20,8 @@ function sprite(name: TexName, opts: { tint?: number; add?: boolean; size?: numb
 }
 const setSize = (s: Sprite, size: number) => s.scale.set(size / Math.max(1, s.texture.width));
 
-interface UnitView { glow: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
-interface EnemyView { c: Container; title: Text; aura: Sprite; hull: Sprite; halo: Sprite; badge: Text; drones: Sprite[]; smoke: Sprite; x: number; y: number; seen: number; kind: string; last: Enemy }
+interface UnitView { glow: Sprite; trail: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
+interface EnemyView { c: Container; title: Text; aura: Sprite; hull: Sprite; halo: Sprite; badge: Text; drones: Sprite[]; smoke: Sprite; x: number; y: number; seen: number; kind: string; last: Enemy; born: number }
 interface PlanetView { c: Container; base: Sprite; dept: Sprite; lights: Sprite[]; ring: Graphics; dish: Sprite; name: Text; cycle: Text }
 interface Fx { s: Sprite; t: number; dur: number; from: number; to: number; alpha: number }
 
@@ -171,7 +171,8 @@ export function createScene(app: Application, store: Store) {
     c.addChild(aura, smokeS, halo, hull, badge);
     L.enemies.addChild(c);
     const title = label("", 13, 0xffffff, "Rajdhani", "700"); L.labels.addChild(title);
-    v = { c, title, aura, hull, halo, badge, drones, smoke: smokeS, x: e.pos.x, y: e.pos.y, seen: 0, kind: e.kind, last: e };
+    v = { c, title, aura, hull, halo, badge, drones, smoke: smokeS, x: e.pos.x, y: e.pos.y, seen: 0, kind: e.kind, last: e, born: frame > 30 ? time : -10 };
+    if (frame > 30) spawnFx("circle_02", e.pos.x, e.pos.y, QUAD_COLOR[e.quadrant] ?? 0xff4d4d, 300, 30, 0.6, 0.8); // warp-in
     enemyViews.set(e.id, v);
     return v;
   }
@@ -181,9 +182,11 @@ export function createScene(app: Application, store: Store) {
     let v = unitViews.get(u.id);
     if (v) { if (v.texName !== texName) { v.ship.texture = tex[texName]; v.texName = texName; } return v; }
     const glow = sprite("circle_05", { alpha: 0.35 });
+    const trail = sprite("star_04", { alpha: 0 });
     const ship = sprite(texName);
-    L.unitGlow.addChild(glow); L.units.addChild(ship);
-    v = { glow, ship, x: u.pos.x, y: u.pos.y, rot: 0, texName, seen: 0 };
+    L.unitGlow.addChild(glow, trail); L.units.addChild(ship);
+    if (frame > 30) spawnFx("star_08", u.pos.x, u.pos.y, 0xe8f6ff, 20, 160, 0.5, 1); // warp-in flash
+    v = { glow, trail, ship, x: u.pos.x, y: u.pos.y, rot: 0, texName, seen: 0 };
     unitViews.set(u.id, v);
     return v;
   }
@@ -408,13 +411,17 @@ export function createScene(app: Application, store: Store) {
       v.ship.alpha = (u.status === "idle" || u.status === "done" ? 0.55 : 1) * da;
       v.glow.tint = u.status === "blocked" ? 0xff4d4d : col; setSize(v.glow, size * 2.4); v.glow.position.set(v.x, v.y);
       v.glow.alpha = (u.status === "acting" ? 0.3 + 0.25 * Math.sin(time * 12) : 0.3) * da;
+      const moving = u.status === "working" || u.status === "acting" || u.status === "attacking";
+      const back = v.rot + Math.PI / 2; // ships face up; exhaust sits behind the nose
+      v.trail.visible = moving && u.role !== "sentinel";
+      if (v.trail.visible) { v.trail.tint = col; setSize(v.trail, size * (0.9 + 0.25 * Math.sin(time * 30 + hash(u.id) * 9))); v.trail.position.set(v.x + Math.cos(back) * size * 0.55, v.y + Math.sin(back) * size * 0.55); v.trail.alpha = 0.55 * da; }
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
       v.ship.filters = focused && glowSel ? [glowSel] : null;
       if (store.layerOn("labels") && (cam.scale > 0.55 || focused || sel0.has(u.id)) && u.role !== "subagent") {
         const t = tmpText(`unit:${u.id}`, u.label, 12, col, "IBM Plex Sans"); t.position.set(v.x, v.y + size * 0.85); t.scale.set(ui * 0.9); t.alpha = da;
       }
     }
-    for (const [id, v] of unitViews) if (v.seen !== frame) { v.ship.destroy(); v.glow.destroy(); unitViews.delete(id); }
+    for (const [id, v] of unitViews) if (v.seen !== frame) { v.ship.destroy(); v.glow.destroy(); v.trail.destroy(); unitViews.delete(id); }
 
     // enemies
     const showEnemies = store.layerOn("enemies");
@@ -424,7 +431,8 @@ export function createScene(app: Application, store: Store) {
       const v = enemyView(e); v.seen = frame; v.last = e;
       v.x += (e.pos.x - v.x) * lerpK; v.y += (e.pos.y - v.y) * lerpK;
       const qc = QUAD_COLOR[e.quadrant] ?? 0xff4d4d;
-      const size = (46 + 14 * Math.min(8, e.strength)) * ui;
+      const age = time - v.born, grow = age >= 0.6 ? 1 : 1 - Math.pow(1 - age / 0.6, 3) * Math.cos(age * 9);
+      const size = (46 + 14 * Math.min(8, e.strength)) * ui * Math.max(0.05, grow);
       enemyPos.set(e.id, { x: v.x, y: v.y, r: size * 0.6 });
       const drift = e.quadrant === "drop" ? Math.sin(time * 0.5 + hash(e.id) * 6) * 12 : 0;
       v.c.position.set(v.x + drift, v.y + drift * 0.5);
