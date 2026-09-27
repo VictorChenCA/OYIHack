@@ -556,9 +556,9 @@ export function createScene(app: Application, store: Store) {
         if (u.role !== "mothership" || parked.has(u.id)) continue;
         const col = projectColor(s, u.projectId), k = emph(u.id);
         const hx = u.home.x, hy = u.home.y, tx = u.target.x, ty = u.target.y;
-        if (u.charted) {
-          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 6 * ui, color: col, alpha: 0.05 * k });
-          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 1.5 * ui, color: col, alpha: 0.55 * k });
+        if (u.charted) { // dotted time line: home → where the task is expected to end
+          dashed(pg, hx, hy, tx, ty, 1.5 * ui, 9 * ui);
+          pg.stroke({ width: 2 * ui, color: col, alpha: 0.5 * k, cap: "round" });
         } else {
           const N = 6;
           for (let j = 0; j < N; j++) {
@@ -639,6 +639,23 @@ export function createScene(app: Application, store: Store) {
           tg.moveTo(a.x, a.y).lineTo(ep.x, ep.y);
         }
         if (e.attackers.length) tg.stroke({ width: 1.4 * ui, color: 0x5cf2b0, alpha: 0.7 });
+      }
+    }
+
+    // dependency graph for the hovered / focused agent: its dependsOn agents, same-project agents (thin), memory writes → sun
+    {
+      const t = store.hover?.kind === "unit" ? store.hover : store.focus?.kind === "unit" ? store.focus : null;
+      const u = t ? byId.get(t.id) : undefined;
+      const a = u ? disp.get(u.id) : undefined;
+      if (u && a) {
+        const col = projectColor(s, u.projectId);
+        for (const id of u.dependsOn ?? []) { const d = disp.get(id); if (!d) continue; dashed(tg, a.x, a.y, d.x, d.y, 4 * ui, 5 * ui); tg.stroke({ width: 1.6 * ui, color: 0xd6dde8, alpha: 0.8 }); }
+        for (const q of visUnits) if (q.id !== u.id && q.role === "mothership" && q.projectId === u.projectId && q.parentId !== u.id) { const d = disp.get(q.id); if (d) tg.moveTo(a.x, a.y).lineTo(d.x, d.y); }
+        tg.stroke({ width: 0.8 * ui, color: col, alpha: 0.3 });
+        for (const k of visUnits) if (k.parentId === u.id) { const d = disp.get(k.id); if (d) tg.moveTo(a.x, a.y).lineTo(d.x, d.y); }
+        tg.stroke({ width: 1.2 * ui, color: col, alpha: 0.7 });
+        const wrote = (s.knowledge?.recent ?? []).some((m) => m.kind === "write" && m.unitId === u.id);
+        if (wrote) { dashed(tg, a.x, a.y, 0, 0, 2 * ui, 10 * ui); tg.stroke({ width: 1 * ui, color: 0xffd27a, alpha: 0.35 }); }
       }
     }
 
