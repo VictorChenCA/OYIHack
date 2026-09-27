@@ -80,7 +80,7 @@ export function createConsole(root: HTMLElement, store: Store) {
       detailTimer = setInterval(() => { if (!document.hidden) loadDetail(id); }, 4000);
     } else detailFor = "";
     const pl = store.focus?.kind === "planet" ? store.state?.planets.find((p) => p.id === store.focus!.id) : undefined;
-    ta.placeholder = k === "commander" ? "Ask the commander anything…  (Enter to send)" : k === "squad" ? `Message ${store.selection.length} selected agents…` : k.startsWith("side:planet") ? `Start a new agent in ${pl?.name ?? "this department"}…  (Enter to spawn)` : k.startsWith("side:") ? "Ask the commander…  (Esc to go back)" : "Prompt this agent…  (Enter to send · Esc to go back)";
+    ta.placeholder = k === "commander" ? "Ask the commander anything…  (Enter to send)" : k === "squad" ? `Message ${store.selection.length} selected agents…` : k.startsWith("side:planet") ? `Start an agent in ${pl?.name ?? "this team"}…  (Enter to start)` : k.startsWith("side:") ? "Ask the commander…  (Esc to go back)" : "Prompt this agent…  (Enter to send · Esc to go back)";
     render(); renderLog(true);
   }
 
@@ -108,11 +108,11 @@ export function createConsole(root: HTMLElement, store: Store) {
     const kids = u.role === "mothership" ? s.units.filter((x) => x.parentId === u.id && x.status !== "dead") : [];
     head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(statusWord(u))}</span>
         ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}</div>
-      <div class="c-stats num"><span title="Cost">${usd(u.costUsd)}</span><span title="Tool calls">${u.toolCount} tools</span></div>`);
-    const eta = u.charted && u.etaMs != null ? `ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : "first time — ETA unknown";
+`);
+    const eta = u.charted ? `known route${u.etaMs != null ? ` · ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : ""}` : "first time · into the unknown";
     const blk = u.blockedBy ? store.enemy(u.blockedBy) : undefined;
     now.set(`<div class="now-row"><span class="lbl">Doing</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : u.task ? `<span class="now-sum">${esc(u.task)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
-      <div class="now-row"><span class="lbl">Going to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
+      <div class="now-row"><span class="lbl">Going to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num${u.charted ? "" : " fog-t"}">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
       ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}">${tierGlyph(k.tier, 11)}${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
     hint.textContent = `→ ${u.label}`;
   }
@@ -120,7 +120,7 @@ export function createConsole(root: HTMLElement, store: Store) {
   function renderSide(s: WorldState) {
     const f = store.focus!;
     let icon = ""; let col = "#8A96A8"; let sub = "";
-    if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); col = p?.color ?? col; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "department"; }
+    if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); col = p?.color ?? col; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "team"; }
     else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : "#FF6B6B"; icon = e ? kindGlyph(e.kind, col, 40) : ""; sub = e?.humanOnly ? "needs you" : "blocker"; }
     else if (f.kind === "mine") { const m = s.mines.find((x) => x.id === f.id); col = m?.color ?? col; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "credits"; }
     else if (f.kind === "research") { col = "#40E0D0"; icon = tierGlyph("river", 40); sub = "research"; }
@@ -149,13 +149,11 @@ export function createConsole(root: HTMLElement, store: Store) {
     const working = vis.filter((u) => u.status === "working" || u.status === "acting" || u.status === "attacking").length;
     const ens = s.enemies.filter((e) => !e.resolved && !store.isHidden("enemy", e.id));
     const human = ens.filter((e) => e.humanOnly);
-    const depts = s.planets.filter((p) => !store.isHidden("planet", p.id));
-    const computed = `${working} agents working across ${depts.filter((p) => vis.some((u) => u.planetId === p.id)).length} departments · ${ens.length} blocker${ens.length === 1 ? "" : "s"}${human.length ? ` · ${human.length} need${human.length === 1 ? "s" : ""} you` : ""}`;
-    left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Company</b><span class="dim num">${vis.length} agents</span></div>`);
-    head.set(`<div class="ov">${s.overview ? `<span class="ov-ai">${esc(s.overview)}</span><span class="ov-sub num">${esc(computed)}</span>` : `<span class="ov-ai">${esc(computed)}</span>`}</div>`);
-    now.set(`<div class="depts">${depts.map((p) => { const n = vis.filter((u) => u.planetId === p.id).length; const b = ens.filter((e) => e.planetIds.includes(p.id)).length;
-      return `<button class="dept" data-act="focus-planet" data-id="${esc(p.id)}"><b style="color:${p.color}">${esc(p.name)}</b><span class="trunc">${esc(p.summary ?? `${n} agent${n === 1 ? "" : "s"}${b ? ` · ${b} blocker${b === 1 ? "" : "s"}` : ""}`)}</span></button>`; }).join("")}</div>
-      ${ens.length ? `<div class="now-row needs"><span class="lbl">${human.length ? "Needs you" : "Blockers"}</span>${(human.length ? human : ens).slice(0, 4).map((e) => `<button class="chip${e.humanOnly ? " gold" : ""}" data-act="focus-enemy" data-id="${esc(e.id)}">${esc(e.title)}</button>`).join("")}</div>` : ""}`);
+    const teams = s.planets.filter((p) => !store.isHidden("planet", p.id));
+    const computed = `${working} agents working · ${ens.length} blocker${ens.length === 1 ? "" : "s"}${human.length ? ` · ${human.length} need${human.length === 1 ? "s" : ""} you` : ""}`;
+    left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Company</b></div>`);
+    head.set(`<div class="ov"><span class="ov-ai">${esc(s.overview ?? computed)}</span></div>`);
+    now.set(`<div class="depts">${teams.map((p) => `<button class="dept" data-act="focus-planet" data-id="${esc(p.id)}"><i class="dot" style="background:${p.color};color:${p.color}"></i><b>${esc(p.name)}</b><span class="trunc">${esc(p.summary ?? "")}</span></button>`).join("")}</div>`);
     hint.textContent = "→ commander";
   }
 
