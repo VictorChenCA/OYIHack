@@ -57,14 +57,15 @@ export function createTopBar(root: HTMLElement, store: Store) {
     const m = store.mode;
     const planet = m.kind === "planet" ? s.planets.find((p) => p.id === m.planetId) : undefined;
     const atGalaxy = m.kind === "system" || m.kind === "galaxy";
-    const crumbs = [`<button class="crumb${atGalaxy ? " on" : ""}" data-act="galaxy">System</button>`];
+    const crumbs = [`<button class="crumb${atGalaxy ? " on" : ""}" data-act="galaxy">Galaxy view (C&amp;C)</button>`];
     if (planet) crumbs.push(`<span class="crumb on"><i class="dot" style="background:${planet.color};color:${planet.color}"></i>${esc(planet.name)}</span>`);
     if (m.kind === "memory") crumbs.push(`<span class="crumb on">Company memory</span>`);
-    const names = atGalaxy ? `<nav class="tb-planets" aria-label="Teams">${s.planets.filter((p) => !store.isHidden("planet", p.id)).map((p) => `<button class="pl-link" data-act="planet" data-id="${esc(p.id)}" title="${esc(p.summary ?? p.name)}">${esc(p.name)}</button>`).join(`<span class="mid">·</span>`)}</nav>` : "";
-    left.set(`<span class="brand">C<span>&amp;</span>C</span><nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(DOT)}</nav>${names}`);
+    const names = (atGalaxy || m.kind === "home") ? `<nav class="tb-planets" aria-label="Teams">${s.planets.filter((p) => !store.isHidden("planet", p.id)).map((p) => `<button class="pl-link" data-act="planet" data-id="${esc(p.id)}" title="${esc(p.summary ?? p.name)}">${esc(p.name)}</button>`).join(`<span class="mid">·</span>`)}</nav>` : "";
+    left.set(`<button class="brand" data-act="home" title="All companies">C<span>&amp;</span>C</button><nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(DOT)}</nav>${names}`);
     right.set(s.simulated ? `<span class="badge sim" title="Some of this world is simulated">Simulated</span>` : "");
   }
   delegate(top, {
+    home: () => { store.setFocus(null); store.setMode({ kind: "home" }); },
     galaxy: () => { store.setFocus(null); store.setMode({ kind: "system" }); },
     planet: (t) => { store.setMode({ kind: "planet", planetId: t.dataset.id as DeptId }); store.setFocus({ kind: "planet", id: t.dataset.id as DeptId }); },
   });
@@ -76,7 +77,7 @@ export function createToasts(root: HTMLElement, store: Store) {
   store.on("toast", (t) => {
     const n = el("div", `toast ${t.level}`, `<i></i><span>${esc(t.text)}</span>`);
     const kill = () => { n.classList.add("out"); setTimeout(() => n.remove(), 250); };
-    let left = t.level === "alert" ? 9000 : 8500; let t0 = Date.now(); let timer = setTimeout(kill, left);
+    let left = 9000; let t0 = Date.now(); let timer = setTimeout(kill, left);
     n.addEventListener("pointerenter", () => { clearTimeout(timer); left -= Date.now() - t0; });
     n.addEventListener("pointerleave", () => { t0 = Date.now(); timer = setTimeout(kill, Math.max(1500, left)); });
     n.addEventListener("click", () => n.remove());
