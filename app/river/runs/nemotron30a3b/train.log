@@ -70,3 +70,14 @@
 {"step": 68, "loss": 0.17705219984054565, "elapsed_s": 619.0}
 {"step": 69, "loss": 0.11943824589252472, "elapsed_s": 627.0}
 {"step": 70, "loss": 0.24079708755016327, "elapsed_s": 634.8}
+{"step": 71, "loss": 0.17836545035243034, "elapsed_s": 646.3}
+{"step": 72, "loss": 0.16087891906499863, "elapsed_s": 654.2}
+{"step": 73, "loss": 0.11406295746564865, "elapsed_s": 661.9}
+{"step": 74, "loss": 0.06870686821639538, "elapsed_s": 669.4}
+{"step": 75, "loss": 0.08081714436411858, "elapsed_s": 677.0}
+{"step": 76, "loss": 0.11082934588193893, "elapsed_s": 689.2}
+{"step": 77, "loss": 0.15736906975507736, "elapsed_s": 697.1}
+{"step": 78, "loss": 0.028752369806170464, "elapsed_s": 704.7}
+{"step": 79, "loss": 0.014490187168121338, "elapsed_s": 711.9}
+{"step": 80, "loss": 0.14480052143335342, "elapsed_s": 719.7, "checkpoint": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s080-inf", "val_acc": 0.915}
+{"event": "done", "best": {"step": 80, "inference": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s080-inf", "training": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/weights/sentinel-nemotron30a3b-s080-train", "val_acc": 0.915, "val_per_field": {"kind": 0.9916666666666667, "quadrant": 0.9083333333333333, "human_only": 0.9833333333333333, "department": 0.9916666666666667, "tier": 0.7}}, "elapsed_s": 751.0}

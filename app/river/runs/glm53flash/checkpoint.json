@@ -2,16 +2,16 @@
   "base": "zai-org/GLM-5.3-Flash",
   "name": "sentinel-glm53flash",
   "best": {
-    "step": 40,
-    "inference": "river://1f961282-acb7-496e-bf46-6863f3e0b966/sampler_weights/sentinel-glm53flash-s040-inf",
-    "training": "river://1f961282-acb7-496e-bf46-6863f3e0b966/weights/sentinel-glm53flash-s040-train",
-    "val_acc": 0.9400000000000001,
+    "step": 80,
+    "inference": "river://1f961282-acb7-496e-bf46-6863f3e0b966/sampler_weights/sentinel-glm53flash-s080-inf",
+    "training": "river://1f961282-acb7-496e-bf46-6863f3e0b966/weights/sentinel-glm53flash-s080-train",
+    "val_acc": 0.9783333333333333,
     "val_per_field": {
-      "kind": 1.0,
-      "quadrant": 0.9583333333333334,
-      "human_only": 0.95,
-      "department": 0.9916666666666667,
-      "tier": 0.8
+      "kind": 0.9916666666666667,
+      "quadrant": 0.9916666666666667,
+      "human_only": 1.0,
+      "department": 0.975,
+      "tier": 0.9333333333333333
     }
   },
   "checkpoints": [
@@ -26,6 +26,19 @@
         "human_only": 0.95,
         "department": 0.9916666666666667,
         "tier": 0.8
+      }
+    },
+    {
+      "step": 80,
+      "inference": "river://1f961282-acb7-496e-bf46-6863f3e0b966/sampler_weights/sentinel-glm53flash-s080-inf",
+      "training": "river://1f961282-acb7-496e-bf46-6863f3e0b966/weights/sentinel-glm53flash-s080-train",
+      "val_acc": 0.9783333333333333,
+      "val_per_field": {
+        "kind": 0.9916666666666667,
+        "quadrant": 0.9916666666666667,
+        "human_only": 1.0,
+        "department": 0.975,
+        "tier": 0.9333333333333333
       }
     }
   ],

@@ -1,0 +1,67 @@
+[
+  {
+    "base": "Qwen/Qwen3.5-9B (served)",
+    "arch": "dense 9B",
+    "steps": 100,
+    "checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf",
+    "val_acc": 0.9733333333333333,
+    "test_acc_trained": 0.9161,
+    "test_acc_base": 0.5454,
+    "test_all5": 0.6731,
+    "lora_p50_ms": 3175,
+    "lora_p95_ms": 4301,
+    "base_p50_ms": 2496
+  },
+  {
+    "base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+    "arch": "hybrid Mamba-Transformer MoE, 3B active",
+    "steps": 80,
+    "checkpoint": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s080-inf",
+    "val_acc": 0.915,
+    "test_acc_trained": 0.8631,
+    "test_acc_base": 0.4162,
+    "test_all5": 0.4308,
+    "lora_p50_ms": 3375,
+    "lora_p95_ms": 3501,
+    "base_p50_ms": 2903
+  },
+  {
+    "base": "zai-org/GLM-5.3-Flash",
+    "arch": "GLM MoE",
+    "steps": 80,
+    "checkpoint": "river://1f961282-acb7-496e-bf46-6863f3e0b966/sampler_weights/sentinel-glm53flash-s080-inf",
+    "val_acc": 0.9783333333333333,
+    "test_acc_trained": null,
+    "test_acc_base": null,
+    "test_all5": null,
+    "lora_p50_ms": 7274,
+    "lora_p95_ms": 9976,
+    "base_p50_ms": 6416
+  },
+  {
+    "base": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "arch": "DeepSeek MoE",
+    "steps": 80,
+    "checkpoint": "river://92b6361c-a442-4258-97e5-871094b763d1/sampler_weights/sentinel-dsv4flash-s080-inf",
+    "val_acc": 0.9800000000000001,
+    "test_acc_trained": null,
+    "test_acc_base": null,
+    "test_all5": null,
+    "lora_p50_ms": 5419,
+    "lora_p95_ms": 6292,
+    "base_p50_ms": 2776
+  },
+  {
+    "base": "Qwen/Qwen3.6-35B-A3B-FP8",
+    "arch": "Qwen MoE, 3B active",
+    "steps": 80,
+    "checkpoint": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s040-inf",
+    "val_acc": 0.8966666666666667,
+    "test_acc_trained": null,
+    "test_acc_base": null,
+    "test_all5": null,
+    "lora_p50_ms": null,
+    "lora_p95_ms": null,
+    "base_p50_ms": null
+  }
+]

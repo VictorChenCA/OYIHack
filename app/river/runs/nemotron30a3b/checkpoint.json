@@ -2,16 +2,16 @@
   "base": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
   "name": "sentinel-nemotron30a3b",
   "best": {
-    "step": 40,
-    "inference": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s040-inf",
-    "training": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/weights/sentinel-nemotron30a3b-s040-train",
-    "val_acc": 0.8566666666666667,
+    "step": 80,
+    "inference": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s080-inf",
+    "training": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/weights/sentinel-nemotron30a3b-s080-train",
+    "val_acc": 0.915,
     "val_per_field": {
-      "kind": 1.0,
-      "quadrant": 0.85,
-      "human_only": 0.9416666666666667,
-      "department": 0.95,
-      "tier": 0.5416666666666666
+      "kind": 0.9916666666666667,
+      "quadrant": 0.9083333333333333,
+      "human_only": 0.9833333333333333,
+      "department": 0.9916666666666667,
+      "tier": 0.7
     }
   },
   "checkpoints": [
@@ -26,6 +26,19 @@
         "human_only": 0.9416666666666667,
         "department": 0.95,
         "tier": 0.5416666666666666
+      }
+    },
+    {
+      "step": 80,
+      "inference": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s080-inf",
+      "training": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/weights/sentinel-nemotron30a3b-s080-train",
+      "val_acc": 0.915,
+      "val_per_field": {
+        "kind": 0.9916666666666667,
+        "quadrant": 0.9083333333333333,
+        "human_only": 0.9833333333333333,
+        "department": 0.9916666666666667,
+        "tier": 0.7
       }
     }
   ],

@@ -1,0 +1,8 @@
+{
+  "kind": 1.0,
+  "quadrant": 2.3131,
+  "human_only": 2.3131,
+  "department": 1.749,
+  "tier": 4.0456,
+  "_checkpoint": "river://5271b646-d0ff-4f2d-9f7b-60792f32947b/sampler_weights/sentinel-nemotron30a3b-s080-inf"
+}

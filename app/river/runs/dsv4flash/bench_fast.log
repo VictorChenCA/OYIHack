@@ -1,2 +1,5 @@
 {"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "create_model_s": 17.8}
 {"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "path": "model.sample in-memory LoRA", "items": 10, "poll_s": 0.05, "p50_ms": 6589, "p95_ms": 9153, "all": [5199, 5798, 6092, 6121, 7058, 7320, 8128, 9153]}
+{"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "path": "model.sample in-memory LoRA", "items": 1, "poll_s": 0.05, "p50_ms": 5607, "p95_ms": 7942, "all": [4429, 4629, 4649, 5497, 5717, 7346, 7896, 7942]}
+{"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "path": "session.sample(checkpoint)", "items": 10, "poll_s": 0.05, "p50_ms": 5419, "p95_ms": 6292, "all": [5304, 5342, 5382, 5383, 5455, 5900, 5998, 6292]}
+{"base": "deepseek-ai/DeepSeek-V4-Flash-0731", "path": "client.sample base", "items": 10, "poll_s": 0.05, "p50_ms": 2776, "p95_ms": 3071, "all": [2352, 2492, 2680, 2762, 2790, 2844, 2899, 3071]}

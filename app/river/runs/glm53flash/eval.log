@@ -1,0 +1,2 @@
+[transformers] PyTorch was not found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+{"trained_mean": {"acc": 0.9392, "macro_f1": 0.9227, "ece": 0.0364, "brier": 0.0946, "nll": 0.1829}}
