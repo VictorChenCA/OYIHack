@@ -207,4 +207,5 @@ export function createMemory(root: HTMLElement, store: Store) {
     if (show) { view = "feed"; page = null; input.value = ""; lastQ = ""; hits = []; primed = false; seen.clear(); render(); setTimeout(() => input.focus(), 0); }
   };
   onMode(store.mode); store.on("mode", onMode);
+  if (new URLSearchParams(location.search).has("memory")) setTimeout(() => store.setMode({ kind: "memory" }), 0); // ?memory deep link
 }

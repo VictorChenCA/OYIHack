@@ -91,4 +91,5 @@ export function createHome(root: HTMLElement, store: Store) {
     if (m.kind === "home") { render(true); setTimeout(() => (grid.querySelector(".hm-card.live") as HTMLElement | null)?.focus(), 0); }
   };
   onMode(store.mode); store.on("mode", onMode);
+  if (new URLSearchParams(location.search).has("home")) setTimeout(() => store.setMode({ kind: "home" }), 0); // ?home deep link
 }
