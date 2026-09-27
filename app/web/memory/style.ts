@@ -1,6 +1,6 @@
 // Scoped styles for the memory explorer (#memory). Injected once by createMemory.
 export const CSS = `
-#memory.mem-root { position: fixed; inset: 0; z-index: 5; background: #05040A; overflow: hidden; font-family: var(--sans, "IBM Plex Sans", sans-serif); color: #D7E0EA; --amber: #FFC47A; --line: rgba(255,196,122,.18); --glass: rgba(12,9,14,.78); }
+#memory.mem-root { position: fixed; inset: 0; background: #05040A; overflow: hidden; font-family: var(--sans, "IBM Plex Sans", sans-serif); color: #D7E0EA; --amber: #FFC47A; --line: rgba(255,196,122,.18); --glass: rgba(12,9,14,.78); }
 #memory[hidden] { display: none !important; }
 #memory .mem-canvas { position: absolute; inset: 0; cursor: grab; touch-action: none; }
 #memory .mem-canvas:active { cursor: grabbing; }

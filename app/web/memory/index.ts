@@ -51,7 +51,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   const pulses: Pulse[] = [];
   const seenEv = new Set<string>(); let primed = false;
   const hiddenGroups = new Set<string>();
-  let W = 0, H = 0, dpr = 1; let openedAt = 0;
+  let W = 0, H = 0, dpr = 1; let openedAt = 0; let autoFit = false; let autoFitAt = 0;
   let refetchTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ── graph loading ──────────────────────────────────────────────────────
@@ -130,7 +130,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   function fitView() {
     if (!sim.nodes.length) return;
     let R = 0; for (const n of sim.nodes) if (nodeVisible(n)) R = Math.max(R, Math.hypot(n.x, n.y));
-    camTarget = { x: 0, y: 0, s: Math.max(0.12, Math.min(1.4, (Math.min(W, H) * 0.46) / Math.max(200, R))) };
+    camTarget = { x: 0, y: 0, s: Math.max(0.12, Math.min(1.4, (Math.min(W, H) * 0.48) / Math.max(200, R))) };
   }
   function focusNode(n: SNode, zoom = true) {
     const c = Math.cos(cam.rot), s = Math.sin(cam.rot);
@@ -164,14 +164,20 @@ export function createMemory(root: HTMLElement, store: Store) {
   let fakeTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── render loop ────────────────────────────────────────────────────────
+  const groupR = new Map<string, number>(); let groupRAt = 0;
   function frame(t: number) {
     raf = requestAnimationFrame(frame);
     sim.step();
+    if (t - groupRAt > 500) {
+      groupRAt = t; groupR.clear();
+      for (const n of sim.nodes) { const gr = sim.groups.find((g) => g.key === n.group); if (!gr?.planet) continue; const proj = n.x * Math.cos(gr.angle) + n.y * Math.sin(gr.angle); if (proj > (groupR.get(n.group) ?? 0)) groupR.set(n.group, proj); }
+    }
     if (camTarget) {
       cam.x += (camTarget.x - cam.x) * 0.12; cam.y += (camTarget.y - cam.y) * 0.12; cam.s += (camTarget.s - cam.s) * 0.12;
       if (Math.abs(camTarget.s - cam.s) < 0.002 && Math.abs(camTarget.x - cam.x) < 0.5 && Math.abs(camTarget.y - cam.y) < 0.5) camTarget = null;
     }
     if (!hover && !dragNode && !selected && !panning) cam.rot += 0.00035; // slow orbit
+    if (autoFit && t - autoFitAt > 250) { autoFitAt = t; if (t - openedAt > 5000) autoFit = false; else fitView(); }
     draw(t);
   }
 
@@ -202,8 +208,8 @@ export function createMemory(root: HTMLElement, store: Store) {
       for (const gr of sim.groups) {
         if (!gr.planet || planetHidden(gr.planet) || hiddenGroups.has(gr.key)) continue;
         if (!sim.nodes.some((n) => n.group === gr.key)) continue;
-        const R = 150; const [lx, ly] = toScreen(Math.cos(gr.angle) * R, Math.sin(gr.angle) * R);
-        c.fillStyle = gr.color; c.globalAlpha = 0.55; c.fillText(gr.label.toUpperCase().split("").join(" "), lx, ly);
+        const R = (groupR.get(gr.key) ?? 300) + 36; const [lx, ly] = toScreen(Math.cos(gr.angle) * R, Math.sin(gr.angle) * R);
+        c.fillStyle = gr.color; c.globalAlpha = 0.7; c.fillText(gr.label.toUpperCase().split("").join(" "), lx, ly);
       }
       c.restore();
     }
@@ -233,7 +239,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     }
     const eA = dimOthers ? 0.45 : 1;
     c.setLineDash([2, 4]); c.strokeStyle = `rgba(170,190,220,${0.13 * eA})`; c.stroke(structural);
-    c.setLineDash([]); c.strokeStyle = `rgba(255,210,150,${0.28 * eA})`; c.stroke(links);
+    c.setLineDash([]); c.strokeStyle = `rgba(255,210,150,${0.15 * eA})`; c.stroke(links);
     c.lineWidth = 1.4; c.strokeStyle = "rgba(255,230,190,0.75)"; c.stroke(hot);
     c.restore();
 
@@ -308,7 +314,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     return best;
   }
   canvas.addEventListener("pointerdown", (e) => {
-    canvas.setPointerCapture(e.pointerId); downAt = [e.clientX, e.clientY]; moved = false;
+    autoFit = false; canvas.setPointerCapture(e.pointerId); downAt = [e.clientX, e.clientY]; moved = false;
     const n = pick(e.clientX, e.clientY);
     if (n) { dragNode = n; n.pinned = true; } else panning = true;
     camTarget = null;
@@ -337,7 +343,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   canvas.addEventListener("pointerleave", () => { if (!downAt) { hover = null; tip.style.display = "none"; } });
   canvas.addEventListener("dblclick", (e) => { if (!pick(e.clientX, e.clientY)) fitView(); });
   canvas.addEventListener("wheel", (e) => {
-    e.preventDefault(); camTarget = null;
+    e.preventDefault(); camTarget = null; autoFit = false;
     const [wx0, wy0] = toWorld(e.clientX, e.clientY);
     cam.s = Math.max(0.08, Math.min(6, cam.s * Math.exp(-e.deltaY * 0.0015)));
     const [wx1, wy1] = toWorld(e.clientX, e.clientY);
@@ -368,6 +374,7 @@ export function createMemory(root: HTMLElement, store: Store) {
       content = p?.content || (p?.error ? `> Could not load page: ${p.error}` : "> Could not load page.");
     }
     if (my !== pageReq) return;
+    content = content.replace(/^\s*#\s+(.+)\n/, (m, t1) => (t1.trim().toLowerCase() === n.n.title.trim().toLowerCase() ? "" : m));
     dBody.innerHTML = `<article class="md">${renderMarkdown(content)}</article>${related}`;
   }
   function closeDrawer() { drawer.classList.remove("open"); selected = null; }
@@ -378,6 +385,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     if (a) { e.preventDefault(); gotoSlug(a.dataset.slug!); }
   });
   function gotoSlug(slug: string) {
+    autoFit = false;
     const n = sim.byId.get(slug) ?? sim.nodes.find((x) => x.id.endsWith("/" + slug) || x.id.endsWith(slug));
     if (n) { hiddenGroups.delete(n.n.planetId ?? "ref"); focusNode(n); openNode(n); }
     else store.toast(`Page not in graph: ${slug}`, "warn");
@@ -433,7 +441,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     resize(); flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
     if (store.state) primeEvents(store.state.knowledge?.recent ?? []);
     const wasEmpty = !graph;
-    load().then(() => { if (wasEmpty || cam.s === 0.8) fitView(); });
+    load().then(() => { if (wasEmpty) { cam.s = 0.25; openedAt = performance.now(); autoFit = true; } });
     if (graph) fitView();
     renderStats(); cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
     if (store.fixture && !fakeTimer) fakeTimer = setInterval(() => {
