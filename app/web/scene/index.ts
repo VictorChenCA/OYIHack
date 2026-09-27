@@ -593,6 +593,14 @@ export function createScene(app: Application, store: Store) {
         for (let k = 0; k < 3; k++) { const t = (time * 0.8 + k / 3) % 1; ov.circle(w.x, w.y, w.r * (1 + t * 3)).stroke({ width: 2 * ui, color: 0x9fe8ff, alpha: (1 - t) * 0.8 }); }
       }
     }
+    // hover ring
+    if (hov) {
+      const w = hov.kind === "unit" ? (() => { const d = disp.get(hov.id); const u = d && s.units.find((q) => q.id === hov.id); return d && u ? { ...d, r: unitSize(u) * 0.75 } : undefined; })()
+        : hov.kind === "enemy" ? enemyPos.get(hov.id)
+        : hov.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === hov.id); return p ? { ...p.pos, r: PLANET_R * 1.1 } : undefined; })()
+        : hov.kind === "sun" ? { x: 0, y: 0, r: SUN_R * 1.1 } : undefined;
+      if (w) ov.circle(w.x, w.y, w.r * 1.25 + 4 * ui).stroke({ width: 1.2 * ui, color: 0xe8f6ff, alpha: 0.55 });
+    }
     // focus ring for non-unit focus
     const fo = store.focus;
     if (fo && fo.kind !== "unit") {
