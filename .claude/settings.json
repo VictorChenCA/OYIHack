@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -x \"/Users/victor/.memorable/bin/memorable\" ]; then \"/Users/victor/.memorable/bin/memorable\" hook user-prompt --environment 'c8241748-81a9-4dd3-b4aa-60d456355a4a'; else printf '{}\\n'; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "MEMORABLE_ENVIRONMENT_ID": "c8241748-81a9-4dd3-b4aa-60d456355a4a"
+  }
+}
