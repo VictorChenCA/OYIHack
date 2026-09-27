@@ -36,6 +36,22 @@ Garry Tan's production brain: 155K pages.
   `skills/<name>/SKILL.md` (frontmatter: name, version, description, triggers, mutating,
   writes_pages, writes_to) plus optional `routing-eval.jsonl`. There are 87 examples in `kb/repos/gbrain/skills/`.
 
+## Product brain: gbrain.io hosted workspace (created Sep 27, ~14:35)
+- **Two brains, two jobs:**
+  - **Dev brain:** local, `gbrain` MCP, `127.0.0.1:3131`. Hackathon KB and sponsor docs, for our coding agents.
+  - **Product brain:** hosted gbrain.io workspace "Victor's workspace", **`gbrain-cloud`** MCP. The demo company's
+    memory, i.e. the RTS center. It started empty (1 page).
+- Endpoint `https://gbrain.io/mcp`, header `Authorization: Bearer ${GBRAIN_IO_TOKEN}`. It's a read+write "Access token"
+  client, and the token is in `.env` only. Claude sessions need `GBRAIN_IO_TOKEN` exported before launch (`set -a; . ./.env; set +a`).
+- Engine is **Postgres** (server v0.48), so there's no single-writer lock and any number of agents can write concurrently.
+- **108 tools**, including the 7 memory verbs, pages, graph (`traverse_graph`, `get_links`, `get_backlinks`), timeline,
+  `takes_*`, `think`, `schedule_create/list/run/remove` (recurring jobs the workspace runs itself), `open_loops`
+  ("who is waiting on you"), `workspace_files/read/write`, `get_brain_identity` (page/chunk counters), plus
+  Gmail/Calendar and research tools (Perplexity, X, LinkedIn, company and investor lookup), all on the $50 credit.
+- `host_resources` / `host_billing` don't answer for this client type ("not_a_workspace"). Check credit in the web UI.
+- Raw MCP over curl works statelessly: POST JSON-RPC to the endpoint with `accept: application/json, text/event-stream`.
+- The client can be revoked in the web UI under Settings → Clients ("Access token").
+
 ## Free hackathon workspace (hosted, https://gbrain.io/gratis/own-your-intelligence)
 Mirrored at `kb/raw/gbrain-hackathon.md`.
 - **Free hosted GBrain for 2 weeks, with $50 of AI credit. No card needed.** Sign in, and it's running in about 2 min.

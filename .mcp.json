@@ -17,6 +17,13 @@
     "superset": {
       "type": "http",
       "url": "https://api.superset.sh/mcp"
+    },
+    "gbrain-cloud": {
+      "type": "http",
+      "url": "https://gbrain.io/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GBRAIN_IO_TOKEN}"
+      }
     }
   }
 }

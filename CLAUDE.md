@@ -22,6 +22,8 @@ Side quest criteria per sponsor: `kb/EVENT.md#prizes`.
   over the whole KB + sponsor repos (1,640 pages), plus memory (`remember`, `recall`, `put_page`, `think`, …).
   **Don't run `gbrain serve`, `import`, `sync` or other CLI writes yourself**: the server holds PGLite's single-writer
   lock. Use the MCP tools. If it's down (`curl 127.0.0.1:3131/health`), ask the human to restart it (see `kb/sponsors/gbrain.md`).
+- `gbrain-cloud`: the **product/company brain** (hosted gbrain.io, Postgres, 108 tools incl. memory, graph, schedules, open loops,
+  Gmail/Calendar). Needs `GBRAIN_IO_TOKEN` from `.env`. Use this for anything the demo company should remember; use `gbrain` for dev/KB lookups.
 - `memorable`: read-only procedure recall (`memorable_recall`, `memorable_show`, …). Recording happens via CLI hooks, not MCP.
 - `superset`: tasks, workspaces, launching parallel agents, terminals, automations (OAuth).
 
