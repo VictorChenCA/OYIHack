@@ -48,7 +48,7 @@ export function makeFixture(now: number): WorldState {
     knowledge: { pages: 68, facts: 31, procedures: 4, recent: [{ at: now - (now % 9000), op: "remember", kind: "write", planetId: "engineering", unitId: "fx-engineering-0", text: "PR #1412 is safe to merge after the test fix" }] },
     sunPulse: 0.1, overview: "10 agents working across 3 teams · 1 blocker needs you (GitHub token) · 31 memories today",
     feed: [{ at: now, text: "fixture world", level: "info" }],
-    advice: [{ id: "a1", text: "3 units blocked by “Needs GITHUB_TOKEN”: resolve first", priority: 10 }, { id: "a2", text: "Worker idle on Arts: assign a task", priority: 5 }],
+    advice: [{ id: "a1", text: "Needs you: 3 agents blocked by “Needs GITHUB_TOKEN”", priority: 10 }, { id: "a2", text: "1 agent idle in Marketing: assign a task", priority: 5 }],
     views: [{ id: "default", name: "Default", source: "default", highlight: [], hide: [], pings: [], createdAt: now }], activeViewId: "default",
     filter: { planets: [], projects: [], units: [], enemies: [], layers: [] }, autonomy: "assist", stances: { 1: "assist" }, simulated: true, systemRadius: 1900,
   };
