@@ -43,7 +43,7 @@ No preamble, no quotes, one sentence.
 Agent label: ${u.label}${u.task ? `\nCurrent task: ${u.task}` : ""}
 Transcript tail:
 ${digest}`;
-  claude(prompt, { model: "haiku", timeoutMs: 45_000 })
+  claude(prompt, { model: "haiku", timeoutMs: 60_000 })
     .then((text) => { const s = clean(text); if (s) ctx.world.setSummary(u.id, s); })
     .catch((e) => { console.warn(`[brains] summary ${u.label} (${why}): ${String(e?.message ?? e).slice(0, 120)}`); if (!u.summary) ctx.world.setSummary(u.id, templateSummary(u, u.parentId ? ctx.world.units.get(u.parentId)?.task : undefined)); })
     .finally(() => inflight.delete(u.id));

@@ -24,7 +24,7 @@ export function digest(ctx: Ctx, maxUnits = 40): string {
   const enemies = s.enemies.filter((e) => !e.resolved).map((e) =>
     `- ${e.id} "${e.title}" kind=${e.kind} quadrant=${e.quadrant}${e.humanOnly ? " GOLD(human-only)" : ""} blocked=${e.blocked.length} [${e.blocked.join(",")}] attackers=${e.attackers.length} depts=${e.planetIds.join(",")}`).join("\n");
   const factories = s.factories.map((f) => `- ${f.id} "${f.label}" planet=${f.planetId} ${f.paused ? "paused" : "running"} runs=${f.runs}`).join("\n");
-  const mines = s.mines.map((m) => `${m.label}: $${m.remaining.toFixed(0)}/${m.total}`).join("; ");
+  const mines = s.mines.map((m) => `${m.label}: $${m.remaining.toFixed(0)} of $${m.total} left (${Math.round((100 * m.remaining) / (m.total || 1))}%)`).join("; ");
   const projects = s.projects.map((p) => `${p.id}(${p.planetId})`).join(", ");
   return `Planets: ${planets}
 Projects: ${projects}
@@ -100,7 +100,7 @@ Prefer the fewest actions that achieve the order. If nothing should be done, ret
 FOUNDER'S ORDER: ${text}
 
 Reply with ONLY strict JSON: {"reply":"<=40 words, confident RTS-officer voice","actions":[<Command objects>]}`;
-    let j: any = await claudeJson(prompt, { model: "sonnet", timeoutMs: 60_000, noCache: true, urgent: true });
+    let j: any = await claudeJson(prompt, { model: "sonnet", timeoutMs: 75_000, noCache: true, urgent: true });
     if (!j) j = await claudeJson(prompt, { model: "haiku", timeoutMs: 40_000, noCache: true, urgent: true });
     if (!j) { ctx.broadcast({ type: "commander", text: "Commander offline (LLM call failed). Try again." }); return; }
     const done: string[] = [], skipped: string[] = [];
@@ -145,9 +145,9 @@ export async function refreshAdvice(ctx: Ctx): Promise<void> {
 WORLD STATE:
 ${digest(ctx, 30)}
 
-Give at most 3 strategic RTS-style one-line suggestions (<=10 words each), e.g. "Marketing idle: expand to TikTok", "Build a factory for PR triage", "Scout the frontier: no one on new work". Prioritize what unblocks the most or grows the company.
+Give at most 3 strategic RTS-style one-line suggestions (<=10 words each), e.g. "Marketing idle: expand to TikTok", "Build a factory for PR triage", "Scout the frontier: no one on new work". Prioritize what unblocks the most or grows the company. Base every suggestion strictly on facts in WORLD STATE; never invent problems (e.g. only mention credits if a mine is below 20%). Do not repeat blockers the founder must clear personally (GOLD); those are already shown.
 Reply ONLY strict JSON: {"suggestions":[{"text":"...","priority":2-6}]}`;
-    const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 40_000, noCache: true });
+    const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 90_000, noCache: true });
     const list = Array.isArray(j?.suggestions) ? j.suggestions : [];
     if (!list.length) return;
     const advice: Advice[] = list.slice(0, 3).filter((s: any) => typeof s?.text === "string" && s.text.trim()).map((s: any, i: number) => ({

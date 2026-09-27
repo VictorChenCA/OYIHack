@@ -72,7 +72,7 @@ ${lines}
 
 Score each candidate 0-100 for fit (relevant context from its summary, same dept/project, right tier, free capacity). Reply ONLY strict JSON:
 {"entries":[{"unitId":"<id>","score":0-100,"reason":"<=12 words"}]}`;
-    const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 30_000 });
+    const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 45_000 });
     const ids = new Set(top.map((r) => r.unitId));
     const entries: RankEntry[] = (j?.entries ?? []).filter((x: any) => ids.has(x?.unitId)).map((x: any) => ({
       unitId: x.unitId, score: Math.max(0, Math.min(100, Math.round(Number(x.score) || 0))), reason: String(x.reason ?? "").split(/\s+/).slice(0, 12).join(" "),

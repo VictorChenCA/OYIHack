@@ -107,7 +107,7 @@ ${others}
 Reply with ONLY strict JSON:
 {"kind":"credential|account|approval|rate_limit|billing|missing_info|dependency|failure","quadrant":"do_now|schedule|delegate|drop","humanOnly":true|false,"department":"engineering|marketing|product_design|arts","tier":"haiku|sonnet|opus|fable","title":"<=5 words, e.g. Needs GITHUB_TOKEN","reason":"<=15 words why units are blocked","causeKey":"kind:short-canonical-cause (reuse an existing key above if it is the SAME root cause)","confidence":0.0-1.0}`;
   const t0 = Date.now();
-  const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 30_000, urgent: true });
+  const j: any = await claudeJson(prompt, { model: "haiku", timeoutMs: 45_000, urgent: true });
   if (!j) return null;
   const p = Math.max(0.05, Math.min(1, Number(j.confidence ?? 0.7) || 0.7));
   const kind = pick(j.kind, KINDS, e.kind);
