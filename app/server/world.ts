@@ -286,7 +286,12 @@ export class World implements WorldApi {
     const tool = ev.tool_name ?? "";
     const input = ev.tool_input ? short(String((ev.tool_input as any).command ?? (ev.tool_input as any).file_path ?? (ev.tool_input as any).url ?? (ev.tool_input as any).query ?? (ev.tool_input as any).slug ?? JSON.stringify(ev.tool_input)), 90) : "";
     switch (ev.hook_event_name) {
-      case "UserPromptSubmit": this.unblock(u); this.startTask(u, ev.prompt ?? "task"); break;
+      case "UserPromptSubmit": {
+        this.unblock(u);
+        // system notifications (a background subagent finished, a peer message…) continue the current task, they don't start a new one
+        if (/^\s*<(task-notification|system-reminder|cross-session-message|local-command)/.test(ev.prompt ?? "") && u.task && !u.task.startsWith("↻")) { u.status = "working"; break; }
+        this.startTask(u, ev.prompt ?? "task"); break;
+      }
       case "SubagentStart": { u.task = ev.agent_type ?? "subagent"; u.status = "working"; u.startedAt = Date.now(); const sibs = [...this.units.values()].filter((x) => x.parentId === u.parentId).length; this.offsets.set(u.id, { angle: sibs * 0.9 + hash(u.id) * 0.4, dist: 55 + (sibs % 3) * 22 }); u.siteLabel = `${ev.agent_type ?? "subagent"} task`; break; }
       case "PreToolUse": {
         this.unblock(u); if (u.status !== "attacking") u.status = "acting"; u.toolCount++; u.lastTool = tool; u.lastToolInput = input;
