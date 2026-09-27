@@ -125,7 +125,7 @@ export class World implements WorldApi {
       progress: 0, pos: { x: 0, y: 0 }, colonization: 0, knowledge: 0, memTraffic: 0,
     }));
     this.mines = cfg.mines.map((m, i) => ({ ...m, remaining: m.total, burnPerDay: 0, pos: polar(360, Math.PI / 2 + (i - (cfg.mines.length - 1) / 2) * 0.42) }));
-    this.research = { pos: polar(210, -Math.PI / 2 + 0.55), models: [], runs: [], corrections: 0, sidecarUp: false, engine: "haiku" };
+    this.research = { pos: polar(210, -Math.PI / 2 + 0.55), models: [], runs: [], corrections: 0, sidecarUp: false, engine: "sentinel" };
     this.tickPlanets(Date.now());
   }
 

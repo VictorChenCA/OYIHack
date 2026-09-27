@@ -1,4 +1,4 @@
-// S3 Brains: blocker classification. River Sentinel sidecar first (3s timeout), Haiku fallback, rules for simulated.
+// S3 Brains: blocker classification. River Sentinel sidecar first (12s timeout; ~4s measured), Haiku fallback, rules for simulated.
 // Also improves enemy title/reason and merges enemies whose canonical causeKey matches (Haiku path).
 import type { Classification, DeptId, Enemy, EnemyKind, Quadrant, Tier } from "../shared/types";
 import type { Ctx } from "./plugin";
@@ -57,7 +57,7 @@ export async function sentinel(ctx: Ctx, items: { id: string; text: string }[], 
   const t0 = Date.now();
   try {
     const res = await fetch(`${ctx.cfg.sentinelUrl}/classify${q}`, {
-      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ items }), signal: AbortSignal.timeout(3000),
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ items }), signal: AbortSignal.timeout(12_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const j: any = await res.json();

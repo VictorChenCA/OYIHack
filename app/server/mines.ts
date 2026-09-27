@@ -32,8 +32,8 @@ export function updateMines(ctx: Ctx, now = Date.now()) {
     if (!firstCost.has(k)) firstCost.set(k, c);
     if (c > (seenCost.get(k) ?? 0)) seenCost.set(k, c);
   }
-  let spent = 0, burned = 0;
-  for (const [id, v] of seenCost) { spent += v; burned += v - (firstCost.get(id) ?? v); }
+  let burned = 0;
+  for (const [id, v] of seenCost) burned += v - (firstCost.get(id) ?? v);
   samples.push({ t: now, spent: burned });
   while (samples.length > 2 && now - samples[1].t > 15 * 60_000) samples.shift();
   const first = samples[0];
@@ -41,10 +41,9 @@ export function updateMines(ctx: Ctx, now = Date.now()) {
   const burn = dt > 20_000 ? ((burned - first.spent) / dt) * 86_400_000 : 0;
   for (const m of ctx.world.mines) {
     if (m.id === "claude") {
-      m.remaining = Math.max(0, Math.round((m.total - spent) * 100) / 100);
+      m.remaining = Math.max(0, Math.round((m.total - burned) * 100) / 100); // spend since C&C started watching (pre-existing session cost isn't burn)
       m.burnPerDay = Math.round(burn * 100) / 100;
       m.measured = true;
-      if (!/API rates/.test(m.label)) m.label = `${m.label.replace(/\s*\(.*\)$/, "")} (subscription usage at API rates)`;
     } else if (m.id === "river") {
       const s = riverSpend(ctx);
       m.remaining = Math.max(0, Math.round((m.total - s) * 100) / 100);

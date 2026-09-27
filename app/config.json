@@ -7,7 +7,7 @@
   "sentinelUrl": "http://127.0.0.1:7788",
   "supersetProjectId": "",
   "mines": [
-    { "id": "claude", "label": "Claude (subscription usage)", "color": "#D97757", "total": 50, "measured": true },
+    { "id": "claude", "label": "Claude usage (subscription, at API rates)", "color": "#D97757", "total": 50, "measured": true },
     { "id": "river", "label": "River credits", "color": "#40E0D0", "total": 500, "measured": false },
     { "id": "gbrain", "label": "GBrain credit", "color": "#FFD166", "total": 50, "measured": false }
   ],
