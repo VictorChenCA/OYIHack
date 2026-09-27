@@ -7,6 +7,23 @@ The submission draft in `kb/SUBMISSION.md` follows this spec. Inputs: the conver
 River, telemetry and GBrain, plus the requirements and feasibility critiques
 (`/private/tmp/…/tasks/w838eqbrv.output`).
 
+
+> **Design decisions from the founder's review (15:30, these override older text below):**
+> - **Views:** **System view** is the whole company (solar system); **Team view** is one team. There are **3 teams**:
+>   Engineering, Product Design, Marketing (Arts folded into Marketing).
+> - **Wording:** say "agents" and "blockers", never units/enemies. Titles and names stay clean, and nothing is listed or labeled just for theme.
+> - **Everything in space means something:**
+>   - Distance from the sun = distance from what the company knows. Teams drift inward as their GBrain knowledge grows.
+>   - A team's angle = progress through its cycle. Orbit rings aren't drawn; the cycle shows in the Team bar.
+>   - Known work sits sunward of its team. First-time work flies outward into the fog of war (the unknown).
+>   - Credits are small spinning asteroid clusters close to the sun.
+>   - Blockers sit at the system's edge (friction from outside).
+> - **The sun is calm:** one pulse per memory write, with a short caption of what was added, and it's clearly clickable to open memory.
+> - **Layout:**
+>   - top bar = folder navigation only;
+>   - Orders and Visibility in a tuck-in left drawer;
+>   - the bottom bar is fully contextual, with the company overview when nothing is selected, and an agent's model and permission mode under its icon.
+
 ## 1. Pitch and vision
 - **You control as much as you want, as often as you want, and the system scales to the controller.** A beginner lets the
   assistant and autonomy do more; an expert micro-manages. When you fall behind, Assist mode offers more autonomy
