@@ -23,13 +23,37 @@ function recompute(ctx: Ctx, f: Factory) {
   f.creditsPerDay = Math.round(avg * f.outputsPerDay * 100) / 100;
 }
 
+/** Next wall-clock time at hour:minute (optionally on weekday 0=Sun..6=Sat). */
+function nextAt(hour: number, minute = 0, weekday?: number): number {
+  const d = new Date(); d.setSeconds(0, 0); d.setHours(hour, minute);
+  if (weekday !== undefined) { const add = (weekday - d.getDay() + 7) % 7; d.setDate(d.getDate() + add); }
+  if (d.getTime() <= Date.now()) d.setDate(d.getDate() + (weekday !== undefined ? 7 : 1));
+  return d.getTime();
+}
+function cron(ctx: Ctx, planetId: DeptId, label: string, schedule: string, prompt: string, cadenceMs: number, next: number): Factory {
+  const f = make(ctx, planetId, label, prompt, cadenceMs, false); // scheduled (runs at its time; none before 18:00 today)
+  f.schedule = schedule; f.nextRunAt = next; return f;
+}
+
+/** Recurring jobs (shown as moons around their team). Real schedules, real prompts. */
 export function seedFactories(ctx: Ctx) {
   if (ctx.world.factories.length) return;
+  const WEEK = 7 * DAY;
   ctx.world.factories.push(
-    make(ctx, "engineering", "Nightly GBrain PR triage",
-      "Triage GBrain's 10 oldest open PRs (read-only): for each give a verdict, risk and next step. Remember the triage table in GBrain under company/engineering/gbrain-pr-triage/<date> with provenance.", DAY),
-    make(ctx, "operations", "Daily Sync (GBrain skill)",
-      "Run the sprint-retro GBrain skill: recall this week's company/* pages, write what shipped, what blocked us and what to change, and remember it under company/product-design/retros/<date>.", 7 * DAY),
+    cron(ctx, "engineering", "Nightly GBrain PR triage", "Daily · 02:00",
+      "Triage GBrain's 10 oldest open PRs (read-only): for each give a verdict, risk and next step. Remember the triage table in GBrain under company/engineering/pr-triage/<date> with provenance.", DAY, nextAt(2)),
+    cron(ctx, "engineering", "CI and dependency health", "Weekly · Mon 08:00",
+      "Check CI status, failing tests and outdated dependencies in this repo; write a short health report to company/engineering/health/<date>.md and remember the top risks in GBrain.", WEEK, nextAt(8, 0, 1)),
+    cron(ctx, "product", "Roadmap review", "Weekly · Mon 10:00",
+      "Recall this week's company/* memory and draft the roadmap update: what shipped, what's next, what to cut. Save to company/product/roadmap/<date>.md and remember decisions in GBrain.", WEEK, nextAt(10, 0, 1)),
+    cron(ctx, "design", "Site design QA", "Weekly · Wed 14:00",
+      "Review company/design/site for broken layout, contrast and copy issues; fix small ones and list the rest in company/design/qa/<date>.md.", WEEK, nextAt(14, 0, 3)),
+    cron(ctx, "marketing", "Daily launch posts", "Daily · 09:00",
+      "Draft today's launch posts (X thread, LinkedIn, one short video script) from the latest company memory into company/marketing/daily/<date>/. Do not post; if posting needs an account, say exactly what's needed.", DAY, nextAt(9)),
+    cron(ctx, "operations", "Daily Sync", "Daily · 18:00",
+      "Run the Daily Sync: recall today's company/* pages, commits and blockers; write what shipped, what's blocked and what's next to company/operations/daily-sync/<date>.md and remember the summary in GBrain.", DAY, nextAt(18)),
+    cron(ctx, "operations", "Weekly spend report", "Weekly · Fri 16:00",
+      "Summarize this week's credit spend (Claude, River, GBrain) and agent hours per team into company/operations/spend/<date>.md.", WEEK, nextAt(16, 0, 5)),
   );
 }
 

@@ -2,7 +2,7 @@
 import type { Command, CommandResult, DeptId, RankEntry, ServerMsg, Unit, WorldState, Enemy } from "../shared/types";
 import { makeFixture } from "./fixture";
 
-export type Mode = { kind: "system" } | { kind: "planet"; planetId: DeptId } | { kind: "memory" } | { kind: "galaxy" };
+export type Mode = { kind: "system" } | { kind: "planet"; planetId: DeptId } | { kind: "memory" } | { kind: "galaxy" } | { kind: "home" }; // system = the company ("Galaxy view (C&C)"); home = company switcher
 export type Target =
   | { kind: "unit"; id: string } | { kind: "enemy"; id: string } | { kind: "planet"; id: DeptId } | { kind: "sun"; id: "sun" }
   | { kind: "factory"; id: string } | { kind: "mine"; id: string } | { kind: "research"; id: "research" };

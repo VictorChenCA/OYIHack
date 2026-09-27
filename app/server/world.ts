@@ -203,7 +203,9 @@ export class World implements WorldApi {
     this.sigExample.set(u.taskSig, short(task, 48));
     const hist = this.durations[u.taskSig] ?? [];
     u.charted = u.charted || hist.length > 0;
-    u.etaMs = hist.length ? median(hist) : null;
+    const hist2 = hist.filter((x) => x >= 8000);
+    u.charted = u.charted || hist2.length > 0;
+    u.etaMs = hist2.length ? Math.max(20_000, median(hist2)) : null;
     u.startedAt = Date.now(); u.progress = 0; u.hp = 1; u.failCount = 0; u.status = "working";
     // the task's SITE: stable per (planet, task signature), so a repeated task flies the same charted route
     this.offsets.set(u.id, { angle: (hash(u.planetId + u.taskSig) - 0.5) * 1.3, dist: 190 + hash(u.taskSig + "d") * 170 });
@@ -214,7 +216,7 @@ export class World implements WorldApi {
   finishTask(u: Unit) {
     if (!this.replaying && u.task && u.taskSig && (u.status === "working" || u.status === "acting" || u.status === "attacking")) {
       const took = Date.now() - u.startedAt;
-      (this.durations[u.taskSig] ??= []).push(took);
+      if (took >= 8000) (this.durations[u.taskSig] ??= []).push(took); // ignore instant stops (notifications, aborted turns)
       try { writeFileSync(DURATIONS, JSON.stringify(this.durations)); } catch {}
       this.log(`${u.label} ✓ ${short(u.task, 50)} in ${Math.round(took / 1000)}s`, { unitId: u.id });
     }
@@ -447,6 +449,11 @@ export class World implements WorldApi {
       enemies: [...this.enemies.values()], factories: this.factories, mines: this.mines, research: this.research, knowledge: this.knowledge,
       sunPulse: this.sunPulse, overview: this.overview, feed: this.feed.slice(0, 60), advice: this.advice(), views: this.views, activeViewId: this.activeViewId,
       filter: this.filter, autonomy: this.autonomy, stances: this.stances, simulated: units.some((u) => u.simulated), systemRadius: SYSTEM_R,
+      companies: [
+        { id: "cc", name: this.cfg.company, agents: units.filter((u) => u.status !== "dead").length, blockers: [...this.enemies.values()].filter((e) => !e.resolved).length, live: true },
+        { id: "acme", name: "Acme Robotics", agents: 42, blockers: 3, live: false },
+        { id: "lumen", name: "Lumen Health", agents: 17, blockers: 1, live: false },
+      ],
     };
   }
 }

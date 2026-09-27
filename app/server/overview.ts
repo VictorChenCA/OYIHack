@@ -13,7 +13,7 @@ function computed(ctx: Ctx) {
   const blockers = [...w.enemies.values()].filter((e) => !e.resolved);
   const needYou = blockers.filter((e) => e.humanOnly).length;
   const depts = w.planets.filter((p) => units.some((u) => u.planetId === p.id)).length;
-  const parts = [`${working} agent${working === 1 ? "" : "s"} working across ${depts} department${depts === 1 ? "" : "s"}`];
+  const parts = [`${working} agent${working === 1 ? "" : "s"} working across ${depts} team${depts === 1 ? "" : "s"}`];
   if (blockers.length) parts.push(`${blockers.length} blocker${blockers.length === 1 ? "" : "s"}${needYou ? ` (${needYou} need you)` : ""}`);
   else parts.push("no blockers");
   const facts = w.knowledge.recent.filter((m) => m.kind === "write" && Date.now() - m.at < 15 * 60_000).length;

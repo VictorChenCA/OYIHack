@@ -142,6 +142,7 @@ export interface Factory {
   outputsPerDay: number;
   creditsPerDay: number;
   lastOutput?: string;
+  schedule?: string;        // human cron label, e.g. "Daily 09:00", "Weekly · Mon"
   pos: Vec;
   hidden?: boolean;
 }
@@ -206,6 +207,7 @@ export interface WorldState {
   stances: Record<number, Stance>; // control group → stance
   simulated: boolean;
   systemRadius: number;     // world units to the frontier edge
+  companies?: { id: string; name: string; agents: number; blockers: number; live: boolean }[]; // home page company switcher
 }
 
 /** Claude Code hook payload (subset). Field names per code.claude.com/docs/en/hooks. */
