@@ -27,7 +27,7 @@ export function sendFilter(store: Store, f: HideFilter) {
 // ── Orders + autonomy ──
 export function createOrders(parent: HTMLElement, store: Store) {
   const box = el("section", "orders glass"); box.setAttribute("aria-label", "Orders");
-  box.innerHTML = `<header class="p-head"><span class="p-title">Orders</span><span class="dim small" style="margin-left:auto">Autonomy</span><div class="seg" role="radiogroup" aria-label="Autonomy: how much C&amp;C acts on its own"></div></header><ul class="aut-help"></ul><ol class="quests"></ol>`;
+  box.innerHTML = `<header class="p-head"><span class="p-title">Orders</span></header><div class="aut"><div class="aut-l">Autonomy</div><div class="seg aut-seg" role="radiogroup" aria-label="Autonomy: how much C&amp;C acts on its own"></div><ul class="aut-help"></ul></div><ol class="quests"></ol>`;
   parent.appendChild(box);
   const seg = live(box.querySelector(".seg")!); const list = live(box.querySelector(".quests")!); const help = live(box.querySelector(".aut-help")!);
   const AUT_HELP: Record<Autonomy, string> = {

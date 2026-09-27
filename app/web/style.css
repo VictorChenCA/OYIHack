@@ -567,3 +567,22 @@ body.readonly select[data-act="engine"] { pointer-events: none; opacity: 0.6; }
 .legend-panel .lr li { grid-template-columns: 22px 74px minmax(0, 1fr); white-space: nowrap; }
 .legend-panel .lr span { overflow: hidden; text-overflow: ellipsis; }
 .legend-panel .lr-ic svg { display: block; }
+
+/* L1: Orders + Visibility as separate left drawers (wider, nothing cut off) */
+.drawer { --left-w: 360px; }
+.drawer-vis .drawer-tab { top: 118px; }
+.drawer.open { z-index: 16; }
+.drawer .leftcol { display: flex; flex-direction: column; gap: 0; }
+.drawer .leftcol > .orders, .drawer .leftcol > .vis { flex: 1 1 auto; max-height: none; min-height: 0; }
+.orders .aut { flex-shrink: 0; padding: 2px 12px 10px; border-bottom: 1px solid var(--line); }
+.orders .aut-l { font: 600 10px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 2px 0 6px; }
+.orders .aut-seg { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; box-sizing: border-box; }
+.orders .aut-seg button { padding: 8px 4px; text-align: center; white-space: nowrap; }
+.orders .aut-help { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; font: 400 12px/1.35 var(--sans); color: var(--muted); }
+.orders .aut-help li { padding: 3px 6px; border-radius: 4px; }
+.orders .aut-help li.on { color: var(--text); background: rgba(79, 209, 255, 0.08); }
+.orders .quests { flex: 1 1 auto; }
+.orders .quest span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
+/* With one drawer open, the other drawer's tab rides along the open panel's edge so it stays clickable. */
+.drawer-any .drawer:not(.open) { transform: none; }
+.drawer-any .drawer:not(.open) .leftcol { visibility: hidden; transition: none; }
