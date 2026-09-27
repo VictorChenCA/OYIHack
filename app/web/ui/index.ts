@@ -8,6 +8,7 @@ import { applyFixtureOverrides, createOrders, createFilter, createViewTabs, crea
 import { setModalHost } from "./modal";
 
 export function createUI(root: HTMLElement, store: Store) {
+  (window as unknown as { __cc: Store }).__cc = store; // devtools handle
   applyFixtureOverrides(store);
   setModalHost(root);
   createTopBar(root, store);
