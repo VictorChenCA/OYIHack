@@ -276,7 +276,10 @@ export function createScene(app: Application, store: Store) {
     sunCaption.visible = captionT < 4.5;
     if (sunCaption.visible) {
       sunCaption.alpha = Math.min(1, captionT / 0.4) * Math.min(1, Math.max(0, (4.5 - captionT) / 0.8)) * 0.9;
-      sunCaption.scale.set(ui * 0.95); sunCaption.position.set(0, -sunR - 22 * ui);
+      // sit above the sun, clear of the research station when it is right there
+      const rp = s.research?.pos; let capY = -sunR - 22 * ui;
+      if (rp && !pm && store.layerOn("research") && Math.abs(rp.x) < 160 * ui && Math.abs(capY - rp.y) < 34 * ui) capY = rp.y - 34 * ui;
+      sunCaption.scale.set(ui * 0.95); sunCaption.position.set(0, capY);
     }
     sunHint.visible = store.hover?.kind === "sun"; sunHint.scale.set(ui * 0.9); sunHint.position.set(0, sunR + 20 * ui);
 
