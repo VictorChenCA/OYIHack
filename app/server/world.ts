@@ -486,7 +486,7 @@ export class World implements WorldApi {
       sunPulse: this.sunPulse, overview: this.overview, feed: this.feed.slice(0, 60), advice: this.advice(), views: this.views, activeViewId: this.activeViewId,
       filter: this.filter, autonomy: this.autonomy, stances: this.stances, simulated: units.some((u) => u.simulated), systemRadius: SYSTEM_R,
       sentinel: (() => { const ms = this.sentinelLog.map((x) => x.ms).filter((x): x is number => typeof x === "number").sort((a, b) => a - b);
-        return { pos: polar(215, Math.PI - 0.55), up: this.research.sidecarUp, engine: this.research.engine, ...this.sentinelInfo, classified: this.sentinelCount, p50Ms: ms.length ? ms[Math.floor(ms.length / 2)] : undefined, recent: this.sentinelLog }; })(),
+        return { pos: polar(210, -Math.PI / 2 - 0.55), up: this.research.sidecarUp, engine: this.research.engine, ...this.sentinelInfo, classified: this.sentinelCount, p50Ms: ms.length ? ms[Math.floor(ms.length / 2)] : undefined, recent: this.sentinelLog }; })(),
       companies: [
         { id: "cc", name: this.cfg.company, agents: units.filter((u) => u.status !== "dead").length, blockers: [...this.enemies.values()].filter((e) => !e.resolved).length, live: true },
         { id: "acme", name: "Acme Robotics", agents: 42, blockers: 3, live: false },

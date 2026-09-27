@@ -33,6 +33,7 @@ export function createSide(root: HTMLElement, store: Store) {
     else if (f.kind === "factory") { const x = s.factories.find((q) => q.id === f.id); html = x && !store.isHidden("factory", x.id, { planetId: x.planetId }) ? factoryHtml(s, x) : gone("Factory"); }
     else if (f.kind === "mine") { const m = s.mines.find((q) => q.id === f.id); html = m && !store.isHidden("mine", m.id) ? mineHtml(s, m) : gone("Credits"); }
     else if (f.kind === "research") html = researchHtml(s);
+    else if (f.kind === "sentinel") html = sentinelHtml(s);
     else if (f.kind === "sun") html = sunHtml(s);
     panel.hidden = false;
     body.set(html);
@@ -186,6 +187,19 @@ export function createSide(root: HTMLElement, store: Store) {
       ${cardRows.length ? `<section><h3>Eval card</h3><dl class="stats num">${cardRows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(fmtV(v))}</dd>`).join("")}</dl></section>` : ""}
       <section><h3>Training runs <span class="num dim">${r.runs.length}</span></h3><ul class="runs">${r.runs.slice(-5).reverse().map((t) => { const last = t.steps[t.steps.length - 1]; return `<li><div><b class="mono">${esc(t.id)}</b> <span class="badge" style="--c:${t.status === "done" ? "#5CF2B0" : t.status === "failed" ? "#FF4D4D" : "#FFB020"}">${t.status}</span><div class="dim small num">${last ? `step ${last.step} · loss ${last.loss.toFixed(3)}` : "no steps"}${t.costUsd != null ? ` · ${usd(t.costUsd)}` : ""}</div>${t.message ? `<div class="dim small trunc">${esc(t.message)}</div>` : ""}</div>${sparkline(t.steps.map((x) => x.loss), 110, 30, "#40E0D0")}</li>`; }).join("") || `<li class="dim">No runs yet.</li>`}</ul></section>
       <section class="retrain"><div><b class="big num">${r.corrections}</b> <span class="dim">new corrections</span></div><button class="btn primary" data-act="retrain">Retrain</button></section>`;
+  }
+
+  function sentinelHtml(s: WorldState) {
+    const sn = s.sentinel;
+    if (!sn) return gone("Sentinel");
+    const ms = (v?: number) => v == null ? "–" : v >= 1000 ? (v / 1000).toFixed(1) + "s" : Math.round(v) + "ms";
+    const quad = (q: string): Quadrant => (QUADS as string[]).includes(q) ? q as Quadrant : "drop";
+    const rows = sn.recent.slice(0, 8).map((r) => `<li><div style="display:flex;align-items:center;gap:8px;min-width:0">${blockerSvg(quad(r.quadrant), r.humanOnly, 7)}<div style="min-width:0"><b class="trunc" style="display:block">${esc(r.title)}</b><div class="dim small">${esc(KIND_LABEL[r.kind as EnemyKind] ?? r.kind)}</div></div></div><span class="num small" style="white-space:nowrap">${Math.round(r.p * 100)}% <span class="dim">· ${esc(ms(r.ms))} · ${esc(ago(r.at, s.now))}</span></span></li>`).join("");
+    return `<header class="s-head" style="--c:#2DD4BF"><div class="s-icon">${tierSvg("river", "#2DD4BF", 17)}</div><div class="s-titles"><h2>Sentinel · River-trained blocker classifier</h2><div class="s-badges"><span class="st-word" style="--c:${sn.up ? "#5CF2B0" : "#7C8594"}">${sn.up ? "Live" : "Offline"}</span></div></div></header>
+      <section><h3>Accuracy on unseen blockers (base → trained)</h3><div class="big num">${esc(sn.unseenAccuracy ?? "–")}</div></section>
+      <dl class="stats num"><dt>Model</dt><dd>${esc(sn.model ?? "–")}</dd><dt>Engine</dt><dd>${esc(sn.engine)}</dd><dt>Classified</dt><dd>${sn.classified}</dd><dt>p50 latency</dt><dd>${esc(ms(sn.p50Ms))}</dd></dl>
+      ${sn.checkpoint ? `<div class="dim small mono trunc" title="${esc(sn.checkpoint)}">${esc(sn.checkpoint)}</div>` : ""}
+      <section><h3>Recent classifications <span class="num dim">${sn.recent.length}</span></h3>${rows ? `<ul class="runs">${rows}</ul>` : `<div class="dim">No blockers classified since the server started.</div>`}</section>`;
   }
 
   function sunHtml(s: WorldState) {

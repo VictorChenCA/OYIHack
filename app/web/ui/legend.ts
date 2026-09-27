@@ -34,6 +34,7 @@ export function createLegend(root: HTMLElement) {
     <ul class="lr">${row(dots, "Dotted line", "Time elapsed (brighter = done before)")}
       ${row(ring("#B8F34A"), "Moons", "Recurring jobs")}
       ${row(orb("#FFD166", 7), "Sun", "Company memory")}
+      ${row(gem, "Sentinel", "Our River-trained classifier")}
       ${row(rock, "Credits / Resources", "Budgets")}</ul>`);
   box.append(tab, panel); root.appendChild(box);
   let open = false; try { open = localStorage.getItem(KEY) === "1"; } catch { /* storage unavailable */ }

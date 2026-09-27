@@ -43,6 +43,7 @@ export function createTooltip(root: HTMLElement, store: Store) {
     if (t.kind === "factory") { const f = s.factories.find((x) => x.id === t.id); return f ? line(f.label, `Recurring job · ${(f as { schedule?: string }).schedule ?? "every " + dur(f.cadenceMs)}${f.paused ? " · paused" : ""}`) : ""; }
     if (t.kind === "mine") { const m = s.mines.find((x) => x.id === t.id); return m ? line(m.label, `Credits · ${usd(m.remaining)} left`, m.color) : ""; }
     if (t.kind === "research") return line("Research", "trains the blocker classifier");
+    if (t.kind === "sentinel") { const sn = s.sentinel; return sn ? line("Sentinel", `River-trained blocker classifier · ${sn.up ? "live" : "offline"} · ${sn.classified} classified`, sn.up ? "#5CF2B0" : "#7C8594") : ""; }
     if (t.kind === "sun") return line("Company memory", "click to open", "#FFD166");
     return "";
   }

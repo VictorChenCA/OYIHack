@@ -53,7 +53,7 @@ export function createScene(app: Application, store: Store) {
   // ---------- layers ----------
   const L = {
     orbits: new Graphics(), belt: new Container(), beams: new Graphics(), packets: new Container(), paths: new Graphics(),
-    sun: new Container(), research: new Container(), planets: new Container(), factories: new Container(), mines: new Container(),
+    sun: new Container(), research: new Container(), sentinel: new Container(), planets: new Container(), factories: new Container(), mines: new Container(),
     tethers: new Graphics(), enemies: new Container(), unitGlow: new Container(), units: new Container(), overlay: new Graphics(),
     fx: new Container(), labels: new Container(),
   };
@@ -64,6 +64,9 @@ export function createScene(app: Application, store: Store) {
   const bgFill = new Graphics();
   const sun = {} as { core: Sprite; l1: Sprite; l2: Sprite; halo: Sprite; ring: Sprite; flash: number };
   const research = {} as { gem: Graphics; glow: Sprite; name: Text };
+  /** Sentinel: the deployed River-trained blocker classifier, a service attached to company memory (left of the sun). */
+  const sentinel = {} as { link: Graphics; body: Container; gem: Graphics; ring: Graphics; glow: Sprite; name: Text; up: boolean | null; lx: number; ly: number };
+  const SENT_R = 58, SENT_G = 40; // ring radius, gem half-height (world units)
   const planetViews = new Map<string, PlanetView>();
   const unitViews = new Map<string, UnitView>();
   const enemyViews = new Map<string, EnemyView>();
@@ -160,6 +163,23 @@ export function createScene(app: Application, store: Store) {
     research.name = setPrio(label("RESEARCH", 13, 0x9fffef), 2);
     L.research.addChild(research.glow, research.gem);
     L.labels.addChild(research.name);
+
+    // sentinel: River gem (TIER_HULL.river, pointing up) in the Custom (River-trained) teal, a thin status ring, a faint link to the sun
+    sentinel.link = new Graphics(); sentinel.body = new Container();
+    sentinel.glow = sprite("circle_05", { tint: 0x2dd4bf, add: true, size: 190, alpha: 0.12 });
+    sentinel.gem = new Graphics();
+    {
+      const g = sentinel.gem, pts = TIER_HULL.river.flatMap(([x, y]) => [y * SENT_G, -x * SENT_G]); // rotate -90°: nose up
+      const inner = TIER_HULL.river.flatMap(([x, y]) => [y * SENT_G * 0.52, -x * SENT_G * 0.52]);
+      g.poly(pts).fill({ color: 0x2dd4bf, alpha: 0.95 }).stroke({ width: 1.4, color: 0xd8fffa, alpha: 0.8, join: "round" });
+      g.poly(inner).fill({ color: 0xa7f3e8, alpha: 0.75 });
+      g.moveTo(0, -SENT_G).lineTo(0, SENT_G).stroke({ width: 1, color: 0x0f766e, alpha: 0.6 });
+    }
+    sentinel.ring = new Graphics(); sentinel.up = null; sentinel.lx = NaN; sentinel.ly = NaN;
+    sentinel.body.addChild(sentinel.glow, sentinel.ring, sentinel.gem);
+    L.sentinel.addChild(sentinel.link, sentinel.body);
+    sentinel.name = setPrio(label("SENTINEL", 13, 0x9fffef), 2);
+    L.labels.addChild(sentinel.name);
 
     vignette.texture = vignetteTexture();
 
@@ -409,6 +429,30 @@ export function createScene(app: Application, store: Store) {
     research.gem.filters = running && glowGem ? [glowGem] : null;
     research.name.position.set(rpos.x, rpos.y + 78 + 14 * ui); research.name.scale.set(ui);
 
+    // sentinel (River-trained classifier) next to the sun
+    const sn = s.sentinel;
+    L.sentinel.visible = !!sn && !pm;
+    sentinel.name.visible = L.sentinel.visible && store.layerOn("labels");
+    if (sn && !pm) {
+      const { x: sx, y: sy } = sn.pos;
+      if (sentinel.up !== sn.up) {
+        sentinel.up = sn.up;
+        sentinel.ring.clear().circle(0, 0, SENT_R).stroke({ width: 1.3, color: sn.up ? 0x5cf2b0 : 0x7c8594, alpha: sn.up ? 0.6 : 0.4 });
+      }
+      if (sentinel.lx !== sx || sentinel.ly !== sy) {
+        sentinel.lx = sx; sentinel.ly = sy;
+        const d = Math.hypot(sx, sy) || 1, ux = sx / d, uy = sy / d;
+        sentinel.link.clear().moveTo(ux * SUN_R * 1.05, uy * SUN_R * 1.05).lineTo(sx - ux * (SENT_R + 4), sy - uy * (SENT_R + 4))
+          .stroke({ width: 1.2, color: 0x2dd4bf, alpha: 0.28 });
+      }
+      sentinel.body.position.set(sx, sy);
+      const hotS = isHot("sentinel", "sentinel");
+      sentinel.glow.alpha = (sn.up ? 0.1 + 0.03 * Math.sin(time * 0.8) : 0.05) + (hotS ? 0.08 : 0); // very subtle breathing only
+      sentinel.gem.alpha = sn.up ? 1 : 0.6;
+      sentinel.gem.filters = hotS && glowGem ? [glowGem] : null;
+      sentinel.name.position.set(sx, sy + SENT_R + 14 * ui); sentinel.name.scale.set(ui);
+    }
+
     // factories
     L.factories.visible = store.layerOn("factories");
     const seenF = new Set<string>();
@@ -497,6 +541,11 @@ export function createScene(app: Application, store: Store) {
     };
     const focusSet = (pm && store.focus?.kind === "planet") ? null : family(store.focus) ?? (store.selection.length ? new Set(store.selection) : null);
     const hoverSet = family(store.hover);
+    // selecting a mothership (or one of its subagents) lights up the whole family: every subagent gets a ring and a bright tether
+    const lit = new Set<string>();
+    for (const id of [...store.selection, ...(store.focus?.kind === "unit" ? [store.focus.id] : [])]) {
+      const q = byId.get(id); if (!q) continue; const root = q.parentId ?? q.id; lit.add(root); for (const c of kids.get(root) ?? []) lit.add(c.id);
+    }
     const emph = (id: string) => focusSet ? (focusSet.has(id) ? 1 : hoverSet?.has(id) ? 0.6 : 0.25) : hoverSet ? (hoverSet.has(id) ? 1 : 0.55) : 1;
     const order = [...s.units].sort((a, b) => (a.role === "subagent" ? 1 : 0) - (b.role === "subagent" ? 1 : 0));
     for (const u of order) {
@@ -519,7 +568,7 @@ export function createScene(app: Application, store: Store) {
       const hcol = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
       drawHull(v.hull, u, size / 2, hcol, ui, u.role !== "subagent" && kids.has(u.id));
       v.hull.position.set(v.x, v.y); v.hull.rotation = v.rot;
-      v.hull.alpha = (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * (u.historical ? 0.85 : 1) * k;
+      v.hull.alpha = lit.has(u.id) ? 1 : (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * (u.historical ? 0.85 : 1) * k;
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
       const uHot = focused || sel0.has(u.id) || (store.hover?.kind === "unit" && store.hover.id === u.id);
       if (store.layerOn("labels") && (uHot || (cam.scale > 0.9 && u.role !== "subagent"))) {
@@ -592,9 +641,9 @@ export function createScene(app: Application, store: Store) {
       // subagent sub-lanes + sub-site dots
       for (const u of visUnits) {
         const me = disp.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
-        if (!me || !par || u.status === "done") continue;
-        const col = projectColor(s, u.projectId), k = emph(u.id);
-        pg.moveTo(par.x, par.y).lineTo(me.x, me.y).stroke({ width: 1 * ui, color: col, alpha: 0.22 * k }); // faint mothership → subagent link
+        if (!me || !par || (u.status === "done" && !lit.has(u.id))) continue;
+        const col = projectColor(s, u.projectId), k = emph(u.id), on = lit.has(u.id);
+        pg.moveTo(par.x, par.y).lineTo(me.x, me.y).stroke({ width: (on ? 1.5 : 1) * ui, color: on ? 0x7dffb2 : col, alpha: on ? 0.7 : 0.22 * k }); // faint mothership → subagent link
       }
       // task-site markers: diamond beacon; label only when selected/hovered or zoomed in
       for (const [key, st] of sites) {
@@ -684,6 +733,7 @@ export function createScene(app: Application, store: Store) {
       }
       if (u.status === "blocked") ov.circle(p.x, p.y, r * 1.35).stroke({ width: 1.2 * ui, color: 0xff5a5a, alpha: 0.6 * da });
       if (u.status === "acting") ov.circle(p.x + r * 0.9, p.y - r * 0.9, 2.5 * ui).fill({ color: 0xffffff, alpha: 0.9 * da });
+      if (lit.has(u.id) && !sel.has(u.id)) ov.circle(p.x, p.y, r * 1.5).stroke({ width: 1.3 * ui, color: 0x7dffb2, alpha: 0.75 });
       if (sel.has(u.id)) {
         ov.circle(p.x, p.y, r * 1.6).stroke({ width: 1.8 * ui, color: 0x7dffb2, alpha: 0.9 });
       }
@@ -806,6 +856,7 @@ export function createScene(app: Application, store: Store) {
     if (store.layerOn("factories")) for (const f of s.factories) if (!f.hidden && !store.isHidden("factory", f.id, { planetId: f.planetId }) && (!pm || f.planetId === pm)) { const mp = moonPos.get(f.id); if (mp) consider({ kind: "factory", id: f.id }, mp.x, mp.y, 16 * cam.ui); }
     if (store.layerOn("mines")) for (const m of s.mines) { const c = minePos.get(m.id); if (c && mineViews.has(m.id)) consider({ kind: "mine", id: m.id }, c.x, c.y, 70); }
     if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 70);
+    if (s.sentinel && !pm) consider({ kind: "sentinel", id: "sentinel" }, s.sentinel.pos.x, s.sentinel.pos.y, SENT_R);
     if (best) return best;
     consider({ kind: "sun", id: "sun" }, 0, 0, SUN_R * (pm ? 0.55 : 1.1));
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * planetK() * 1.1);

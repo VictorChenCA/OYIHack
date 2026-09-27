@@ -136,6 +136,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : e ? QUAD_COLOR[e.quadrant] : col; icon = e ? blockerSvg(e.quadrant, e.humanOnly, 20) : ""; sub = e ? `${QUAD_LABEL[e.quadrant]} · blocking ${e.blocked.length}` : "blocker"; }
     else if (f.kind === "mine") { const m = s.mines.find((x) => x.id === f.id); col = m?.color ?? col; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "credits"; }
     else if (f.kind === "research") { col = "#40E0D0"; icon = tierGlyph("river", 40); sub = "research"; }
+    else if (f.kind === "sentinel") { col = "#2DD4BF"; icon = tierSvg("river", col, 20); sub = "sentinel"; }
     else if (f.kind === "sun") { col = "#FFD166"; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "memory"; }
     else if (f.kind === "factory") { col = "#B8F34A"; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "factory"; }
     left.set(`<div class="ag side-ic" style="--c:${col}"><div class="ag-ic">${icon}</div><div class="ag-model">${esc(sub)}</div><button class="btn sm ghost" data-act="back">← Galaxy view</button></div>`);
