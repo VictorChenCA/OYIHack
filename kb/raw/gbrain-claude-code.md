@@ -19,25 +19,9 @@ Source: https://gbrain.io/works-with/claude-code
 
  GBrain
 
- Features
-
- Skills
-
- Pricing
-
- About
-
  Get Started
 
  Menu
-
- Features
-
- Skills
-
- Pricing
-
- About
 
  Get Started
 
@@ -98,108 +82,4 @@ $ claude mcp add gbrain https://gbrain.io/mcp --header "Authorization: Bearer <t
  Tools
 
  explains the permission, the ceiling and the record they share.
-
- Workspace
-
- Home screen
-
- Team prompting
-
- Watch it think
-
- Threads
-
- Always on
-
- Private server
-
- Single sign-on
-
- Members and roles
-
- Model choice
-
- Tools
-
- One MCP address
-
- Command line
-
- Key custody
-
- Permission levels
-
- Circuit breakers
-
- Activity log
-
- Kill switch
-
- Memory
-
- Shared memory
-
- Markdown files
-
- Access levels
-
- Semantic search
-
- Day and person views
-
- Skills
-
- Skills directory
-
- One-click skills
-
- Scheduled runs
-
- Works with
-
- Command line
-
- Model Context Protocol
-
- GBrain workspaces
-
- Claude Code
-
- Cursor
-
- ChatGPT
-
- Codex
-
- OpenClaw
-
- Hermes
-
- Grok Bot
-
- Company
-
- About
-
- Brand
-
- Pricing
-
- Docs
-
- Models
-
- Notes
-
- Trust
-
- Support
-
- Terms
-
- Privacy
-
- Security
-
- GBrain
 

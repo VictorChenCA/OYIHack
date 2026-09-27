@@ -2,28 +2,6 @@ Source: https://qm.ycombinator.com
 
 
 
- QM documentation
-
- / Documentation
-
- /
-
- Menu
-
- About
- GitHub ↗
- Twitter ↗
-
-Start hereOverviewQuickstartArchitecture
-
-Core conceptsScopes and sharingSandboxesBackground workApps and skills
-
-ConnectModels and harnessesIntegrationsSlack and web
-
-OperateDeploymentSecurityReference
-
-Twitter ↗
-
 QM documentation
 
 A multiplayer agent harness for work
@@ -33,9 +11,9 @@ QM gives each person and shared room a durable, isolated agent workspace, while 
 
 For agents: use /agents.txt for all of this site’s documentation in one text file, or use “Copy for agents” on any page for just that page.
 
-Fastest path: tell your coding agent, 
-```
-Let's deploy https://github.com/yc-software/qm. It should follow the repository's deployment guide.
+Fastest path: tell your coding agent, Let's deploy https://github.com/yc-software/qm. It should follow the repository's deployment guide.
+
+You can also try out a 3rd-party hosted version of QM from Agent37.
 
  Deploy QM →Initialize an organization-owned deployment for Fly.io or AWS.
  Understand the system →Core, Postgres, surfaces, and one durable computer per scope.
@@ -58,7 +36,7 @@ Harness-agnosticPi, OpenCode, Codex, and Claude Code can drive the same core.
 Operator-ownedYour deployment runs in your cloud account and uses your policies and credentials.
 Durable workComputers, files, sessions, schedules, and published apps can outlive a single turn.
 
-Based on the public QM README. QM is MIT licensed except where noted.
+QM is MIT licensed except where noted. Contact: labs at Y Combinator.
 
 Start here
 
@@ -76,8 +54,6 @@ For email sign-in, a verified sender plus Resend or SMTP credentials. You can al
 1. Initialize the deployment
 
 ```
-
-```
 npm exec --yes --package=@yc-software/qm@latest -- \
  qm init . --org <slug> --target <fly-or-aws>
 npm install
@@ -87,16 +63,9 @@ The slug is a local name derived from your organization. Provider choice happens
 
 2. Hand the runbook to an agent
 
-```
-qm init materializes 
-```
-deployment.md and 
-```
-.codex/skills/deploy-qm/. The runbook guides the agent through infrastructure, web sign-in, optional connectors and Slack, deployment, and live verification.
+qm init materializes deployment.md and .codex/skills/deploy-qm/. The runbook guides the agent through infrastructure, web sign-in, optional connectors and Slack, deployment, and live verification.
 
 3. Verify the deployment
-
-```
 
 ```
 npm exec qm -- check
@@ -106,18 +75,9 @@ npm exec qm -- up --yes
 npm exec qm -- check --live
 ```
 
-```
-check validates local configuration. 
-```
-doctor checks external prerequisites without changing them. 
-```
-check --live verifies the running system.
+check validates local configuration. doctor checks external prerequisites without changing them. check --live verifies the running system.
 
-Keep secrets out of git. Commit 
-```
-qm.config.jsonc and the lockfile. Keep secret values in the ignored 
-```
-.env and your provider's secret store.
+Keep secrets out of git. Commit qm.config.jsonc and the lockfile. Keep secret values in the ignored .env and your provider's secret store.
 
 Authoritative sources: getting started, deployment guide, and CLI reference.
 
@@ -142,11 +102,7 @@ Core
 The TypeScript core uses Fastify. It handles identity, policy, the scheduler, agent orchestration, and the fixed tool surface. Slack runs as an optional in-process plugin.
 
 Persistence
-Use 
-```
-DATABASE_URL and 
-```
-SESSION_STORE=postgres for durability. Without Postgres-backed sessions, session data lives in process memory and disappears on restart.
+Use DATABASE_URL and SESSION_STORE=postgres for durability. Without Postgres-backed sessions, session data lives in process memory and disappears on restart.
 
 Surfaces
 The web UI and admin panel share one service. The portal and optional built-in authentication broker share another. Slack and web use the same core identity and configuration.
@@ -187,9 +143,7 @@ Core concepts
 
 Sandboxes
 Copy for agentsPlain text
-The agent's 
-```
-execute tool runs commands in an isolated computer associated with its scope. Installed tools and working files can persist across turns.
+The agent's execute tool runs commands in an isolated computer associated with its scope. Installed tools and working files can persist across turns.
 
 Durable computers
 Use a durable scope computer for repository work, installed CLIs, long-running tasks, cached dependencies, and anything that must resume later.
@@ -306,8 +260,6 @@ A deployment directory is the organization-owned source of truth for configurati
 
 Directory contract
 ```
-
-```
 qm.config.jsonc
 package.json
 package-lock.json
@@ -329,8 +281,6 @@ AWSDigest-pinned ARM64 ECS Fargate services plus Lambda MicroVM agent computers.
 
 Lifecycle commands
 ```
-
-```
 qm check
 qm doctor
 qm plan
@@ -342,9 +292,7 @@ qm down --purge
 ```
 
 Upgrades
-Upgrade the exact 
-```
-@yc-software/qm dependency and lockfile deliberately. Review contract changes and generated assets, then validate, plan, deploy, and run live checks.
+Upgrade the exact @yc-software/qm dependency and lockfile deliberately. Review contract changes and generated assets, then validate, plan, deploy, and run live checks.
 
 Sources: CLI reference and deployment directory.
 
@@ -381,31 +329,13 @@ The public repository remains the authoritative reference. This site organizes t
 
 CLI commands
 CommandPurpose
-
-```
 initCreate a deployment directory.
-
-```
 checkValidate config and optionally the live deployment.
-
-```
 doctorCheck external prerequisites without changing them.
-
-```
 planRender and review the deployment plan.
-
-```
 upDeploy or update services.
-
-```
-status / 
-```
-logsInspect the running deployment.
-
-```
+status / logsInspect the running deployment.
 rollbackRestore code and configuration to a prior revision.
-
-```
 admin-loginMint a five-minute single-use administrator login URL.
 
 Detailed guides
@@ -420,3 +350,4 @@ Postgres connections
 
 Browse all documentation in github.com/yc-software/qm/docs.
 
+ 

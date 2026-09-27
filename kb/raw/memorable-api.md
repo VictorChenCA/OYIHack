@@ -1,43 +1,6 @@
 Source: https://www.memorable.sh/doc/api
 
 
-
-API Reference: Store And Recall | Memorable
-
-DOCSUSE-CASECASE STUDIES
-BOOK A CALLDASHBOARD
-
-01DOCS02USE-CASE03CASE STUDIES
-BOOK A CALL
-
-DocumentationSections
-
-Getting started
-
-OverviewQuickstartAGENTS.md
-CLI
-Command reference
-API
-Extraction API
-
-Authentication
-
-Get a key
-
-Create a procedure
-
-Embed a query
-
-Errors
-
-Rate limits
-
-Security
-Integrations
-
-Any harness
-gbrain
-QM
 Copy Page
 Extraction API
 The Extraction API converts an agent's tool-call trace into a replayable procedure. The parse is deterministic and model-free: the same trace gives the same steps, in the same order, with the same classification.
@@ -79,9 +42,7 @@ Base URL: https://memorable-extraction-api.memorable.workers.dev
  include it when reporting problems.
 ```
 
-Base URL: 
-```
-https://memorable-extraction-api.memorable.workers.dev
+Base URL: https://memorable-extraction-api.memorable.workers.dev
 Authentication
 Every request requires a bearer token in the Authorization header. Requests without a valid token return 401. Keys look like mk_… and are issued through the device flow above. The key itself is never stored: only a SHA-256 hash of it is.
 
@@ -102,13 +63,7 @@ curl -X POST https://memorable-extraction-api.memorable.workers.dev/v1/device/co
  -H "Content-Type: application/json" -d '{"hostname":"my-laptop"}'
 ```
 
-Response: user_code, verification_uri, device_code, expires_in, interval. Poll 
-```
-POST /v1/device/token with device_code every interval seconds until it returns status approved and an api_key. A bodyless or malformed request to either endpoint returns 400 invalid_json. 
-```
-POST /v1/keys is closed on this deployment: it always returns 403 anonymous_keys_disabled, sign in with memorable login instead. 
-```
-GET /v1/usage/me is internal to the CLI's own status checks, not a public endpoint.
+Response: user_code, verification_uri, device_code, expires_in, interval. Poll POST /v1/device/token with device_code every interval seconds until it returns status approved and an api_key. A bodyless or malformed request to either endpoint returns 400 invalid_json. POST /v1/keys is closed on this deployment: it always returns 403 anonymous_keys_disabled, sign in with memorable login instead. GET /v1/usage/me is internal to the CLI's own status checks, not a public endpoint.
 Create a procedure
 POST /v1/extract
 Converts a trace into a ProcedureDraft. Any harness is accepted: known harnesses (claude-code, codex, opencode) get curated activity registries; every other harness string is served by a generic tier that still infers execution from command-shaped input.
@@ -239,32 +194,3 @@ successfully: certbot renew"
  "request_id": "82886df0-..."
 }
 ```
-
-On this page
-
-Extraction API
-Authentication
-Get a key
-Create a procedure
-Embed a query
-Errors
-Rate limits
-Security
-
-memorable/ˈmɛm(ə)rəb(ə)l/adj1not to be forgotten; remarkable.2easy to remember; recalled without effort.info@memorable.sh
-
-Quick Links
-HomeDocsDashboard
-
-Use Cases
-Coding agentsBrowser agentsComputer useVoice agentsResearch agentsOps agents
-
-Company
-Case Studies
-
-Research With AI
-Ask ChatGPTAsk ClaudeAsk Perplexity
-
-© 2026 Memorable. All rights reserved.
-Website By Lumina
-Terms & ConditionsPrivacy Policy

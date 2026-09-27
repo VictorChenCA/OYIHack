@@ -11,4 +11,6 @@ curl -sL https://docs.superset.sh/llms-full.txt -o raw/superset-llms-full.txt
 curl -sL https://docs.river.ai/llms.txt -o raw/river-llms.txt
 grep -oE 'https://docs.river.ai/[^)]+\.md' raw/river-llms.txt | while read -r u; do
   curl -sL "$u" -o "raw/river/$(echo "${u#https://docs.river.ai/}" | tr / _)" & done; wait
+curl -sL https://docs.superset.sh/llms.txt -o raw/superset-llms.txt
+python3 scrape_web.py
 echo "kb refreshed"

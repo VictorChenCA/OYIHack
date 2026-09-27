@@ -1,45 +1,6 @@
 Source: https://www.memorable.sh/doc/cli
 
 
-
-CLI Reference: memorable-cli | Memorable
-
-DOCSUSE-CASECASE STUDIES
-BOOK A CALLDASHBOARD
-
-01DOCS02USE-CASE03CASE STUDIES
-BOOK A CALL
-
-DocumentationSections
-
-Getting started
-
-OverviewQuickstartAGENTS.md
-CLI
-Command reference
-
-Install
-
-Setup + Consent
-
-Remember
-
-Recall + inject
-
-Chaining
-
-Inspect
-
-MCP server
-
-Revisions + pruning
-API
-Extraction API
-Integrations
-
-Any harness
-gbrain
-QM
 Copy Page
 CLI reference
 Record how a task was done on your own machine, and recall it when a similar task returns.
@@ -134,35 +95,23 @@ Pin a version, or keep PATH untouchedCopy
 Read it before you run it: memorable.sh/install.sh. Re-running upgrades in place. To remove everything: rm -rf ~/.memorable ~/.local/bin/memorable.
 Setup + consent
 
-```
-memorable init
-```
-[gbrain]
+memorable init[gbrain]
 Picks your backend, using the key that login stored (hashes-only server side). Plain init uses the standalone local store at ~/.memorable/; init gbrain stores in your existing gbrain database (automatic session capture arrives once you run enable). Idempotent; switch anytime.
 
-```
 memorable enable
 Explicit write consent. Until you run this, nothing is ever written: consent is fail-closed, and unset means deny. On the gbrain backend it also turns on the session-end relay so finished sessions are recorded automatically.
 
-```
 memorable disable / forget
 disable makes memory read-only; forget denies everything, recall included. On the gbrain backend both also switch the relay off.
 
-```
 memorable status
 Engine, consent state, stored-procedure count, API configuration. First thing to check when something looks off.
 Remember
 
-```
-memorable record
-```
-[--session]
+memorable record[--session]
 gbrain backend: turns the newest captured session (or a named one) into a stored procedure, refusing sessions that failed the secret scan. With the relay enabled this happens automatically at session end. On the local backend, use ingest instead.
 
-```
-memorable ingest
-```
-<trace.json | ->
+memorable ingest<trace.json | ->
 The universal entry point: any agent on any harness, local or cloud, hands over its trace as plain JSON and gets a stored procedure back.
 
 Ingest from any agentCopy
@@ -180,34 +129,21 @@ JSON
 
 Recall + inject
 
-```
-memorable recall
-```
-"<task>"
+memorable recall"<task>"
 Finds stored procedures matching a new task. Exact identifier and lexical matching run locally first (zero tokens, zero network); an embedding lookup happens only on a miss, preferring the provider your gbrain already has configured.
 
-```
-memorable show
-```
-<slug>
+memorable show<slug>
 Prints one procedure rendered for injection: where the fix landed, what verified it, wrapped in a guardrail marking it as reference data, never instructions.
 
-```
 memorable install-hooks
 Adds a Claude Code prompt hook so every new prompt gets a recall check, and matches inject a short guarded pointer automatically. One injection per session; failures are always silent, so it can never break a prompt.
 Chaining
 A long task is rarely a repeat. It is usually a new arrangement of things you have each done before, and one procedure cannot express that. Recall picks between returning one procedure and assembling several into an ordered plan.
 
-```
-memorable chain
-```
-"<task>" [--render] [--json]
+memorable chain"<task>" [--render] [--json]
 Assembles several stored procedures into one ordered plan. Each step names the files the verified run wrote, the files it read first, and the command that proved it. --render prints the exact block that would be injected.
 
-```
-memorable recall
-```
-[--single | --chain]
+memorable recall[--single | --chain]
 Forces either mode. Without a flag the classifier decides: it chains when one procedure provably cannot answer, the prompt is several subgoals matching different procedures, or the best match needs a file that another stored procedure is the one that creates.
 
 A plan, including two steps you never asked forCopy
@@ -231,14 +167,10 @@ $ memorable chain "add the POST refunds endpoint and then cover it with tests"
 Chaining is per-project: dependencies only form between procedures that touched the same files, so run it where you work.
 Inspect
 
-```
 memorable doctor
 Checks every integration point and asserts on substance rather than status codes. It reports whether semantic recall is actually configured by confirming a real vector came back, not merely that the API answered 200. Prints a support bundle you can paste into an issue.
 
-```
-memorable setup
-```
-[gbrain]
+memorable setup[gbrain]
 One shot: init + enable + writes the agent instructions into AGENTS.md.
 MCP server
 memorable mcp runs a read-only MCP server over stdio: five tools (memorable_recall, memorable_show, memorable_list, memorable_status, memorable_explain_recall), each marked readOnlyHint. Nothing it exposes can write.
@@ -267,16 +199,10 @@ An empty session, or one that only read and searched without changing anything, 
 A better way does not destroy the working one
 Recording the same task twice is safe. Identical steps refresh the revision in place; a different approach is kept beside it. Recall surfaces exactly one revision per task.
 
-```
-memorable list
-```
-[--all] [--json]
+memorable list[--all] [--json]
 What is stored, which revision recall prefers, how often each was recalled, and how often the session went well afterwards.
 
-```
-memorable prune
-```
-<slug>... | --stale | --superseded [--dry-run]
+memorable prune<slug>... | --stale | --superseded [--dry-run]
 Remove procedures. --stale takes ones whose files no longer exist; --superseded takes revisions that were measured and lost. Pruning works in every consent mode, including deny.
 
 For agents
@@ -296,35 +222,3 @@ pass rate every run passed
 injected size ~293 tokens
 vs a 15,593-token skill: 0% turns
 ```
-
-On this page
-
-CLI reference
-Install
-Setup + consent
-Remember
-Recall + inject
-Chaining
-Inspect
-MCP server
-Revisions + pruning
-For agents
-Measured
-
-memorable/ˈmɛm(ə)rəb(ə)l/adj1not to be forgotten; remarkable.2easy to remember; recalled without effort.info@memorable.sh
-
-Quick Links
-HomeDocsDashboard
-
-Use Cases
-Coding agentsBrowser agentsComputer useVoice agentsResearch agentsOps agents
-
-Company
-Case Studies
-
-Research With AI
-Ask ChatGPTAsk ClaudeAsk Perplexity
-
-© 2026 Memorable. All rights reserved.
-Website By Lumina
-Terms & ConditionsPrivacy Policy

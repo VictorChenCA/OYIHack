@@ -2,59 +2,6 @@ Source: https://gbrain.io/
 
 
 
- GBrain
- · an agent that remembers for you
-
- Skip to main content
-
- GBrain
-
- One brain for the whole team, and every AI they use
-
- Everyone on a team is prompting alone. GBrain gives the team one brain to prompt together, synced to ChatGPT, Claude, Cursor or any AI they choose.
-
- gbrain.io
-
- GBrain
-
- Features
-
- Skills
-
- Pricing
-
- About
-
- Get Started
-
- Menu
-
- Features
-
- Skills
-
- Pricing
-
- About
-
- Get Started
-
- One place for the whole team; connected to every AI they already use
-
- Everyone on a team is prompting alone. GBrain gives the team one place to prompt together, synced to ChatGPT, Claude, Cursor or any AI they choose.
-
- Everyone on a team is prompting alone, each AI with its own notes
- and separate context. GBrain gives the team one place to prompt
- together, and the team syncs it to ChatGPT, Claude, Cursor or
- any AI they choose.
-
- Get started
-
- Backed by YC
- Backed by Y Combinator
-
- Built by Garry Tan
-
  A new hire asks the workspace, not the wiki
 
  One conversation everyone is in, on a server of the team's own.
@@ -65,7 +12,7 @@ Source: https://gbrain.io/
 Refunds: who owns it
 
  Marco
- Today at 6:39p
+ Today at 8:41p
 
 First week here, and I am picking up billing. Who owns refunds, and what has the team already decided about them?
 
@@ -74,13 +21,11 @@ Dana owns billing. The team settled the refund question in June, and there is a 
  being answered
 
  Maya
- Today at 6:42p
+ Today at 8:44p
 
 We moved that window to 30 days in August. Fix the note while you are in there.
 
  Read the refund decision
-
-```
 
 ```
 memory, written Jun 18
@@ -89,11 +34,7 @@ memory, written Jun 18
  Checked it against the thread
 
 ```
-
-```
 Aug 4, six replies
-```
-
 ```
 
 ```
@@ -278,107 +219,4 @@ Drive
 
  Get started
 
- Workspace
-
- Home screen
-
- Team prompting
-
- Watch it think
-
- Threads
-
- Always on
-
- Private server
-
- Single sign-on
-
- Members and roles
-
- Model choice
-
- Tools
-
- One MCP address
-
- Command line
-
- Key custody
-
- Permission levels
-
- Circuit breakers
-
- Activity log
-
- Kill switch
-
- Memory
-
- Shared memory
-
- Markdown files
-
- Access levels
-
- Semantic search
-
- Day and person views
-
- Skills
-
- Skills directory
-
- One-click skills
-
- Scheduled runs
-
- Works with
-
- Command line
-
- Model Context Protocol
-
- GBrain workspaces
-
- Claude Code
-
- Cursor
-
- ChatGPT
-
- Codex
-
- OpenClaw
-
- Hermes
-
- Grok Bot
-
- Company
-
- About
-
- Brand
-
- Pricing
-
- Docs
-
- Models
-
- Notes
-
- Trust
-
- Support
-
- Terms
-
- Privacy
-
- Security
-
- GBrain
-
+ 

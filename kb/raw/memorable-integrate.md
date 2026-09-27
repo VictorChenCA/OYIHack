@@ -2,41 +2,6 @@ Source: https://www.memorable.sh/doc/integrate
 
 
 
-Integrate Agent Memory In Any Harness | Memorable
-
-DOCSUSE-CASECASE STUDIES
-BOOK A CALLDASHBOARD
-
-01DOCS02USE-CASE03CASE STUDIES
-BOOK A CALL
-
-DocumentationSections
-
-Getting started
-
-OverviewQuickstartAGENTS.md
-CLI
-Command reference
-API
-Extraction API
-Integrations
-
-Any harness
-
-Two paths
-
-Spawn the CLI
-
-Call the API
-
-Your harness name
-
-Reading it back
-
-Consent and egress
-gbrain
-QM
-
 { Integrations }Copy Page
 Integrate any harness
 Memorable turns a finished agent session into a stored procedure, and hands that procedure back the next time a similar task comes up. Nothing about it is specific to one agent. If your harness can tell you which tools ran and whether they worked, it can use this.
@@ -59,13 +24,9 @@ then, inside Cowork or Claude CodeCopy
 >/plugin marketplace add MemorableOrg/cowork-plugin
 
 >/plugin install memorable@memorable
-Source at github.com/MemorableOrg/cowork-plugin. Every prompt gets a recall check, and the same event closes and records the piece of work before it. Nothing is stored until 
-```
-memorable enable has been run.
+Source at github.com/MemorableOrg/cowork-plugin. Every prompt gets a recall check, and the same event closes and records the piece of work before it. Nothing is stored until memorable enable has been run.
 Path A: spawn the CLI at session end
-This is what gbrain does. Write a receipt describing the session, then spawn 
-```
-memorable record detached so it never blocks your own shutdown path.
+This is what gbrain does. Write a receipt describing the session, then spawn memorable record detached so it never blocks your own shutdown path.
 
 CLI session end spawnCopy
 
@@ -113,11 +74,7 @@ curl -sS https://memorable-extraction-api.memorable.workers.dev/v1/extract \
 
 result.ok is what makes this useful. A tool call with no outcome is a guess; a call that is known to have failed and then a later one that is known to have succeeded is a procedure. Join your results onto your calls before you send them, in most transcript formats the result arrives in a later entry than the call, keyed by an id.
 Your harness name
-
-```
-harness is a free string, capped at 60 characters. There is no allowlist and nothing to register. Send 
-```
-my-agent and it works on the first call. Known names get a curated tool registry that classifies calls more precisely; anything else is served by a default tier that reads the shape of the arguments instead. The contract is universal, the registries are accelerators, not gates.
+harness is a free string, capped at 60 characters. There is no allowlist and nothing to register. Send my-agent and it works on the first call. Known names get a curated tool registry that classifies calls more precisely; anything else is served by a default tier that reads the shape of the arguments instead. The contract is universal, the registries are accelerators, not gates.
 Reading it back
 
 Reading back proceduresCopy
@@ -127,43 +84,8 @@ Reading back proceduresCopy
 >memorable show <slug># the steps
 Recall runs exact, then lexical, then a vector, and stops as soon as one clears, so a reworded ask still finds the procedure. Inject the result as reference data your agent may consult, never as instructions it must follow: it is text a past session produced, and it should be confirmed against the current task before it is applied.
 Consent and what leaves the machine
-Consent is fail-closed and gates egress, not just storage: until 
-```
-memorable enable has run, nothing is written and nothing is sent for extraction. Egress is allowlisted to twelve argument fields, commands, paths, patterns, urls, queries and ids, each cut to 4000 characters and scrubbed of home paths, emails and credential-shaped strings. Results reduce to an exit code and a boolean.
-Two things do leave and you should know them. 
-```
-task_description is the first substantive line of the prompt, scrubbed and cut to 200 characters, because that is what recall matches against. And the service stores that line together with the extracted steps, so the dashboard can render them. Edit bodies, file contents and the rest of the conversation are not sent, 
-```
-corpus goes out empty.
+Consent is fail-closed and gates egress, not just storage: until memorable enable has run, nothing is written and nothing is sent for extraction. Egress is allowlisted to twelve argument fields, commands, paths, patterns, urls, queries and ids, each cut to 4000 characters and scrubbed of home paths, emails and credential-shaped strings. Results reduce to an exit code and a boolean.
+Two things do leave and you should know them. task_description is the first substantive line of the prompt, scrubbed and cut to 200 characters, because that is what recall matches against. And the service stores that line together with the extracted steps, so the dashboard can render them. Edit bodies, file contents and the rest of the conversation are not sent, corpus goes out empty.
 
 Already on a supported harness?
 gbrain and QM have their own pages, and the CLI reference lists every command.
-
-On this page
-
-Integrate harness
-Two paths
-Claude Cowork
-Spawn the CLI
-Call the API
-Your harness name
-Reading it back
-Consent and egress
-
-memorable/ˈmɛm(ə)rəb(ə)l/adj1not to be forgotten; remarkable.2easy to remember; recalled without effort.info@memorable.sh
-
-Quick Links
-HomeDocsDashboard
-
-Use Cases
-Coding agentsBrowser agentsComputer useVoice agentsResearch agentsOps agents
-
-Company
-Case Studies
-
-Research With AI
-Ask ChatGPTAsk ClaudeAsk Perplexity
-
-© 2026 Memorable. All rights reserved.
-Website By Lumina
-Terms & ConditionsPrivacy Policy

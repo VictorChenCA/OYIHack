@@ -2,15 +2,9 @@ Source: https://river.ai
 
 
 
- River AI — Your own frontier AI lab. In one API.
-
- Skip to content
-
-River Console ↗Our VisionDocsBlogCareersContact UsConsole↗
-
  River / The frontier AI development stack
 
-Your own frontier AI lab.
+Your own frontier AI lab.
 In one API.
 
 Build models and agents that learn from experience. Use reinforcement learning to sharpen their reasoning, tool use, and ability to get things done. Train with River, then serve on River Cloud or run the model on your own GPUs.
@@ -23,6 +17,8 @@ Trusted by teams at the frontier.
  perplexity
 
  Mixedbread
+
+ Meet your lab ↓
 
 The River stack
 
@@ -68,7 +64,12 @@ Turn a trained checkpoint into a model deployment. Bring your own model’s capa
 
 Model engineering
 
-Every model, optimized and tested
+Every model, tuned.
+Every run, tested.
+
+Production inference
+
+Optimization at every step
 
 We optimize every supported open-weight model for training and inference. Our custom implementations run faster than open-source alternatives. We handle GPU topology and performance tuning, and test each model for correctness—so you can compare models and experiment with confidence.
 
@@ -171,13 +172,9 @@ to deployment
 Open model → your training run
 Distributed training from Python
 Choose an open model, configure its adapters, and start learning from your data. River handles the compute behind each training step.
-
-```
 train_step pipelines forward/backward and the optimizer update on the server. Control the learning rate, loss function, and optimizer settings.Explore the Python client ↗
 
 train.pyTokenized batch supplied by you
-```
-
 ```
 import river_client as river
 
@@ -199,13 +196,9 @@ with client.session(project="my-lab") as session:
 Experience → better weights
 Improve agents with reinforcement learning
 Let your agent attempt a task, use tools, and act in your environment. Score the outcome, then train on that feedback. You control the rewards and algorithm; River connects sampling and weight updates.
-Construct 
-```
-rl_batch from sampled tokens, log probabilities, and your reward-derived advantages. Control the loss and update schedule—or submit operations asynchronously to pipeline your loop.
+Construct rl_batch from sampled tokens, log probabilities, and your reward-derived advantages. Control the loss and update schedule—or submit operations asynchronously to pipeline your loop.
 
 improve.pyInside the same training session
-```
-
 ```
 groups = model.sample(
  prompts=prompts,
@@ -226,15 +219,9 @@ model.train_step(
 Checkpoint → deployment
 Deploy a trained checkpoint
 Save your trained weights, then create a dedicated inference deployment. Serve the model in your application as it moves from research into production.
-Use a team API key with deployment access. Set 
-```
-unified_replicas to reserve serving capacity and 
-```
-wait=True to wait until it can serve requests.
+Use a team API key with deployment access. Set unified_replicas to reserve serving capacity and wait=True to wait until it can serve requests.
 
 deploy.pyInside the same training session
-```
-
 ```
 checkpoint = model.save_weights(
  "domain-expert-v1",
@@ -254,13 +241,9 @@ print(deployment.base_url)
 Your model → your product
 Use the OpenAI client with your River model
 Connect your application to the model you trained using the OpenAI Python client. Point it at your River deployment and stream responses with a familiar API.
-Pass 
-```
-deployment.base_url directly to the OpenAI client; it already includes the API prefix. Authenticate with the same River team API key.
+Pass deployment.base_url directly to the OpenAI client; it already includes the API prefix. Authenticate with the same River team API key.
 
 serve.pyOpenAI Python SDK · After the Deploy example
-```
-
 ```
 import os
 from openai import OpenAI
@@ -307,8 +290,6 @@ Simplified research examples showing the shape of the API. Bring your own data p
 
  rl_loop.py
  Copy
-
-```
 
 ```
 import river_client as river
@@ -388,9 +369,7 @@ rl_loop.py · Kimi-K2.6-NVFP4 · GSM8K · GRPO · hover to inspect any step
  An example of a larger RL run on the
  Polaris-53K
  math dataset (filtered to difficulty ≤ 3/8), with batch-normalized advantages and the
-
-```
-cispo loss, following the ScaleRL recipe
+ cispo loss, following the ScaleRL recipe
  (Khatri et al., 2025).
  The base model can already solve some of these problems, but before fine-tuning, its
  completions run long and rarely finish within the 4,096-token budget, which is why reward
@@ -400,8 +379,6 @@ cispo loss, following the ScaleRL recipe
 
  scalerl.py
  Copy
-
-```
 
 ```
 import numpy as np
@@ -658,39 +635,4 @@ Thanks for reaching out.
 Your request is with the River team. We’ll follow up by email.
  Explore the docs ↗
 
-Intelligence that flows with you
-
-Product
-
-Platform
-
-Documentation
-
-Changelog
-
-Company
-
-Our Vision
-
-Blog
-
-Careers
-
-Support
-
-Security
-
-Contact
-
-Connect
-
-Discord
-
-X
-
-LinkedIn
-
- © 2026 River AI Inc.
-
- ≈
-
+ 
