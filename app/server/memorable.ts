@@ -42,6 +42,17 @@ export async function recallFor(ctx: Ctx, unitId: string, prompt: string) {
   }
 }
 
+// ---------- procedures counter (knowledge.procedures) ----------
+let lastList = 0, listing = false;
+export function memorableTick(ctx: Ctx, now = Date.now()) {
+  if (listing || now - lastList < 30_000) return;
+  listing = true; lastList = now;
+  void run(ctx, ["list", "--json"], undefined, 5000).then((r) => {
+    if (!r.ok) return;
+    try { const j = JSON.parse(r.out); const list = Array.isArray(j) ? j : j?.procedures ?? j?.results ?? []; ctx.world.knowledge.procedures = list.length; } catch {}
+  }).finally(() => { listing = false; });
+}
+
 // ---------- record: trace from the hook stream → `memorable ingest -` ----------
 interface Step { name: string; input: { command: string }; result?: { ok: boolean } }
 const traces = new Map<string, { task: string; steps: Step[]; byUse: Map<string, Step> }>();

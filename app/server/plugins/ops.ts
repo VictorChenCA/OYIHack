@@ -4,7 +4,7 @@ import type { Plugin } from "../plugin";
 import { handleSupersetCommand, initSuperset, supersetOnHook, supersetReady } from "../superset";
 import { pollUsage, unitDetail } from "../transcripts";
 import { gbrainTick } from "../gbrain-counts";
-import { memorableOnHook } from "../memorable";
+import { memorableOnHook, memorableTick } from "../memorable";
 import { updateMines } from "../mines";
 import { factoriesTick, handleFactoryCommand, seedFactories } from "../factories";
 import { handleResearchCommand, initResearch, researchTick } from "../research";
@@ -38,6 +38,7 @@ const plugin: Plugin = {
     if (now - lastUsage > 5_000) { lastUsage = now; try { pollUsage(ctx, now); } catch (e) { console.error("[ops] usage:", e); } }
     if (now - lastMines > 3_000) { lastMines = now; try { updateMines(ctx, now); } catch (e) { console.error("[ops] mines:", e); } }
     gbrainTick(ctx, now);
+    memorableTick(ctx, now);
     factoriesTick(ctx, now);
     researchTick(ctx, now);
   },

@@ -42,8 +42,12 @@ async function poll(ctx: Ctx) {
         if (mr.ok) { const live = modelList(await mr.json()).map(toModel); if (live.length) models = [...live, ...models.filter((m) => !live.some((l) => l.id === m.id))]; }
       }
     } catch { rs.sidecarUp = false; }
+    // checkpoints produced by our own training runs are promotable too
+    for (const r of rs.runs) if (r.status === "done" && r.checkpoint && !models.some((m) => m.checkpoint === r.checkpoint || m.id === r.id))
+      models.push({ id: r.id, checkpoint: r.checkpoint, base: "", createdAt: r.startedAt, active: false });
     // keep a promoted choice sticky if the sidecar doesn't report "active"
-    if (models.length && !models.some((m) => m.active)) { const prev = rs.models.find((m) => m.active); const keep = prev && models.find((m) => m.id === prev.id); (keep ?? models[0]).active = true; }
+    const prev = rs.models.find((m) => m.active); const keep = prev && models.find((m) => m.id === prev.id);
+    if (keep && !models.some((m) => m.active)) keep.active = true; else if (models.length && !models.some((m) => m.active) && !rs.runs.some((r) => r.id === models[0].id)) models[0].active = true;
     if (models.length) rs.models = models;
   } finally { polling = false; }
 }
