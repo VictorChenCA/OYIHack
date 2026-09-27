@@ -7,9 +7,11 @@ import { World } from "./world";
 import brains from "./plugins/brains";
 import ops from "./plugins/ops";
 import memory from "./plugins/memory";
+import history from "./plugins/history";
+import { syncTodos, completeTodo } from "./todos";
 
 const cfg: AppConfig = await Bun.file(new URL("../config.json", import.meta.url)).json();
-const plugins: Plugin[] = [ops, brains, memory];
+const plugins: Plugin[] = [history, ops, brains, memory];
 const world = new World(cfg);
 const SAVE = new URL("../data/world.json", import.meta.url).pathname;
 const LOG_PATH = () => new URL("../data/events.jsonl", import.meta.url).pathname;
@@ -45,6 +47,7 @@ async function core(cmd: Command): Promise<CommandResult | undefined> {
     case "add_view": world.views = [...world.views.filter((v) => v.id !== cmd.view.id), cmd.view]; world.activeViewId = cmd.view.id; return { ok: true, message: `View “${cmd.view.name}”` };
     case "set_view": world.activeViewId = cmd.viewId; return { ok: true, message: "" };
     case "filter": world.filter = cmd.filter; return { ok: true, message: "" };
+    case "resolve": { const e = world.enemies.get(cmd.enemyId); if (e?.kind === "todo") { completeTodo(ctx, e.id); world.resolveEnemy(e.id, cmd.note); return { ok: true, message: `Done: ${e.title}` }; } return undefined; }
   }
   return undefined;
 }
@@ -68,6 +71,9 @@ function ingest(ev: HookEvent) {
   for (const p of plugins) { try { p.onHook?.(ev, ctx); } catch (e) { console.error(`[${p.name}] onHook:`, e); } }
 }
 
+/** Anyone not on this machine (e.g. via the ngrok link) is a read-only viewer. */
+const isRemote = (req: Request) => !!req.headers.get("x-forwarded-for") || !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(req.headers.get("host") ?? "");
+const denied = () => Response.json({ ok: false, message: "View only: commands are disabled for remote viewers" }, { status: 403 });
 const routeTable = plugins.flatMap((p) => Object.entries(p.routes ?? {}).map(([k, fn]) => { const [method, path] = k.split(" "); return { method, path, fn, name: p.name }; }));
 
 const server = Bun.serve({
@@ -77,6 +83,7 @@ const server = Bun.serve({
   routes: {
     "/": index,
     "/hook": { POST: async (req) => {
+      if (isRemote(req)) return denied();
       try {
         const ev = (await req.json()) as HookEvent;
         ev._workspaceId ||= req.headers.get("x-ss-workspace") || undefined;
@@ -86,7 +93,8 @@ const server = Bun.serve({
       return Response.json({}); // no decision: agents proceed normally
     } },
     "/api/state": () => Response.json(world.snapshot()),
-    "/api/command": { POST: async (req) => Response.json(await dispatch(await req.json())) },
+    "/api/command": { POST: async (req) => (isRemote(req) ? denied() : Response.json(await dispatch(await req.json()))) },
+    "/api/session": (req) => Response.json({ readOnly: isRemote(req) }),
   },
   async fetch(req, srv) {
     const url = new URL(req.url);
@@ -94,7 +102,17 @@ const server = Bun.serve({
     for (const r of routeTable) {
       if (r.method !== req.method) continue;
       if (r.path.endsWith("/") ? url.pathname.startsWith(r.path) : url.pathname === r.path) {
-        try { return await r.fn(req, url, ctx); } catch (e: any) { return Response.json({ error: String(e?.message ?? e) }, { status: 500 }); }
+        if (req.method !== "GET" && isRemote(req)) return denied();
+        try {
+          const res = await r.fn(req, url, ctx);
+          // remote viewers see agent history without raw tool output
+          if (isRemote(req) && url.pathname.startsWith("/api/unit/") && res.headers.get("content-type")?.includes("json")) {
+            const d: any = await res.json();
+            if (Array.isArray(d.history)) d.history = d.history.filter((h: any) => h.kind !== "tool_result").map((h: any) => (h.kind === "tool_use" ? { ...h, text: String(h.text).slice(0, 80) } : h));
+            return Response.json(d);
+          }
+          return res;
+        } catch (e: any) { return Response.json({ error: String(e?.message ?? e) }, { status: 500 }); }
       }
     }
     return new Response("not found", { status: 404 });
@@ -104,6 +122,7 @@ const server = Bun.serve({
 
 setInterval(() => {
   world.tick();
+  if (Date.now() % 5000 < 260) { try { syncTodos(ctx); } catch (e) { console.error("[todos]", e); } }
   for (const p of plugins) { try { p.onTick?.(ctx); } catch (e) { console.error(`[${p.name}] onTick:`, e); } }
   broadcast({ type: "state", state: world.snapshot() });
 }, 250);

@@ -170,7 +170,7 @@ export class World implements WorldApi {
         charted: false, etaMs: null, startedAt: Date.now(), progress: 0, hp: 1, toolCount: 0, failCount: 0, lastEventAt: Date.now(),
         pos: { ...home }, home, target: { ...home }, groups: [], tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, costUsd: 0,
         contextUsed: 0, contextWindow: 200_000, transcriptPath: ev.transcript_path, workspaceId: ev._workspaceId ?? spawn?.workspaceId,
-        terminalId: ev._terminalId ?? spawn?.terminalId, simulated: sim,
+        terminalId: ev._terminalId ?? spawn?.terminalId, simulated: sim, owner: sim ? "Simulated" : this.cfg.owner ?? "Victor Chen",
       };
       this.units.set(mother.id, mother);
       this.stats(planetId).unitsEver++;
@@ -269,16 +269,15 @@ export class World implements WorldApi {
     const e = this.enemies.get(u.blockedBy); u.blockedBy = undefined;
     if (!e) return;
     e.blocked = e.blocked.filter((id) => id !== u.id);
-    if (e.blocked.length === 0 && !e.resolved) { e.resolved = true; this.log(`✓ Cleared: ${e.title}`); setTimeout(() => this.enemies.delete(e.id), 1500); }
+    if (e.blocked.length === 0 && !e.resolved && e.kind !== "todo") { e.resolved = true; e.defeatedAt = Date.now(); this.log(`✓ Cleared: ${e.title}`); }
   }
   resolveEnemy(enemyId: string, note?: string): string[] {
     const e = this.enemies.get(enemyId); if (!e) return [];
     const ids = [...e.blocked];
     for (const id of ids) { const u = this.units.get(id); if (u) { u.blockedBy = undefined; if (u.status === "blocked") u.status = "working"; } }
     for (const id of e.attackers) { const u = this.units.get(id); if (u) { u.attacking = undefined; if (u.status === "attacking") u.status = "working"; } }
-    e.blocked = []; e.resolved = true;
-    this.log(`✓ Resolved: ${e.title}${note ? ` (${short(note, 40)})` : ""}`);
-    setTimeout(() => this.enemies.delete(e.id), 1500);
+    e.blocked = []; e.resolved = true; e.defeatedAt = Date.now();
+    this.log(`✓ ${e.kind === "todo" ? "Done" : "Resolved"}: ${e.title}${note ? ` (${short(note, 40)})` : ""}`);
     return ids;
   }
   applyClassification(enemyId: string, cls: Classification) {
@@ -349,7 +348,7 @@ export class World implements WorldApi {
     this.tickPlanets(now);
     this.sunPulse *= 0.94;
     for (const u of this.units.values()) {
-      if (u.status === "dead") { if (now - u.lastEventAt > 8000) this.units.delete(u.id); continue; }
+      if (u.status === "dead") { if (u.simulated) { if (now - u.lastEventAt > 8000) this.units.delete(u.id); continue; } u.status = u.role === "subagent" ? "done" : "idle"; u.endedAt ??= u.lastEventAt; }
       u.planetId = normDept(u.planetId);
       const parent = u.parentId ? this.units.get(u.parentId) : undefined;
       const team = this.planet(u.planetId);
@@ -375,7 +374,7 @@ export class World implements WorldApi {
         u.pos = lerp(u.pos, add(team.pos, polar(70 + Math.floor(i / 5) * 24, teamA + Math.PI + (i % 5 - 2) * 0.35)), 0.02); // park slowly on the sun side
         continue;
       }
-      if (u.status === "done") { if (now - u.lastEventAt > 8000 && u.role === "subagent") this.units.delete(u.id); continue; } // done: stays put, fades
+      if (u.status === "done") { u.endedAt ??= u.lastEventAt; if (u.simulated && now - u.lastEventAt > 8000 && u.role === "subagent") this.units.delete(u.id); continue; } // done: stays as history
       const elapsed = (now - u.startedAt) / 1000;
       if (u.status !== "blocked") u.progress = Math.min(1, distUnits(elapsed) / 2);
       const budget = u.etaMs ? Math.max(60_000, u.etaMs * 1.6) : 12 * 60_000;
@@ -387,10 +386,11 @@ export class World implements WorldApi {
       u.dependsOn = dep?.dependsOnUnit ? [dep.dependsOnUnit] : undefined;
     }
     for (const e of this.enemies.values()) {
-      if (e.resolved) continue;
+      if (e.resolved || e.defeatedAt) { e.pos = this.enemyPos(e); continue; }
+      if (e.kind === "todo") { e.strength = 1 + (e.due && e.due < now ? 1 : 0); if (e.due && e.due < now) e.quadrant = "do_now"; e.pos = lerp(e.pos.x || e.pos.y ? e.pos : this.enemyPos(e), this.enemyPos(e), 0.05); continue; }
       e.blocked = e.blocked.filter((id) => this.units.get(id)?.blockedBy === e.id);
       e.attackers = e.attackers.filter((id) => this.units.get(id)?.attacking === e.id);
-      if (e.blocked.length === 0 && e.attackers.length === 0 && now - e.createdAt > 3000) { e.resolved = true; setTimeout(() => this.enemies.delete(e.id), 1500); continue; }
+      if (e.blocked.length === 0 && e.attackers.length === 0 && now - e.createdAt > 3000) { e.resolved = true; e.defeatedAt = now; continue; }
       e.strength = e.blocked.length + Math.min(3, (now - e.createdAt) / 300_000);
       if (e.blocked.length >= 3) e.quadrant = "do_now";
       e.pos = lerp(e.pos, this.enemyPos(e), 0.05);
@@ -400,7 +400,7 @@ export class World implements WorldApi {
 
   advice(): Advice[] {
     const out: Advice[] = [...this.extraAdvice];
-    const enemies = [...this.enemies.values()].filter((e) => !e.resolved);
+    const enemies = [...this.enemies.values()].filter((e) => !e.resolved && !e.defeatedAt);
     const q: Record<Quadrant, number> = { do_now: 0, schedule: 1, delegate: 2, drop: 3 };
     enemies.sort((a, b) => Number(b.humanOnly) - Number(a.humanOnly) || q[a.quadrant] - q[b.quadrant] || b.blocked.length - a.blocked.length);
     for (const e of enemies.slice(0, 3)) out.push({ id: `en:${e.id}`, priority: 10 - q[e.quadrant] + (e.humanOnly ? 1 : 0), text: `${e.humanOnly ? "Needs you: " : ""}${e.blocked.length} agent${e.blocked.length === 1 ? "" : "s"} blocked by “${e.title}”${e.humanOnly ? "" : ": send an agent"}` });
