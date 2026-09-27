@@ -2,7 +2,12 @@
 
 **Hacking 13:30 → 17:00 hard deadline.** Optimize for a working demo, not completeness.
 Submission (https://docs.google.com/forms/d/e/1FAIpQLSdiU5L7PhlkD7HQQouQKPSlm7WrobkdJuvSZLoi6O7jXRWKiQ/viewform, opens 16:00) needs a **public** GitHub URL, a **public** demo video,
-team name/emails/description, and side quest checkboxes (you can pick several). Grand prize: $5k, a 1:1 with Garry, and a YC interview.
+team name/emails/description, and side quest checkboxes (you can pick several).
+Prizes: grand prize = YC interview + a 1:1 working session with Garry; cash $5k/$2k/$1k; plus sponsor side quests.
+
+**RULES (kickoff slide): (1) every project must use GBrain; (2) no prebuilt projects or forks of existing
+projects; (3) build only during hacking hours. So write all product code after 13:30 and commit often.**
+"This isn't a pitch competition": ship working software that didn't exist this morning.
 Side quest criteria per sponsor: `kb/EVENT.md#prizes`.
 
 ## Before you do anything

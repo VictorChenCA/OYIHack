@@ -24,10 +24,39 @@ Sep 27 ~13:30, all 404), so don't search for them. Memorable's hackathon materia
 beyond what today's tools make easy. The goal is to make something **ambitious, useful, or unexpected**."
 
 ## Prizes
-**Grand prize: $5k, a 1:1 with Garry Tan, and a YC interview.**
+## Rules and goal (kickoff slide, verbatim)
+**Goal:** "Extend QM and GBrain. Push further with River AI, Memorable, Superset and UFO. Ship something that
+didn't exist this morning. **This isn't a pitch competition.**"
+
+**Rules:**
+- **Build something using GBrain.** GBrain is mandatory for every project, not just its side quest.
+- **No prebuilt projects / forks of existing projects.**
+- **Must build during hackathon hours** (13:30–17:00).
+
+What this means for us:
+- Every idea must put GBrain on the demo's critical path (a recall/remember call the demo visibly depends on).
+- Judges want working software, not slides. Demo the real thing live and keep the video as the backup.
+- `kb/` is prep and research, which is fine. **All product code must be written after 13:30** in `app/` (or a
+  new dir). Commit often so the git timestamps prove it. Don't paste in code from earlier personal projects.
+- There's tension between the "no forks" rule and the QM side quest ("Fork QM and make it do something new").
+  Our reading: the rule bans forking *your own or others' finished projects*, while forking the sponsor's QM
+  repo to extend it is explicitly invited. **Confirm with an organizer before building on a QM fork.**
+
+## Prizes (kickoff slide)
+**Grand prize: a YC interview and a 1:1 working session with Garry.**
+Cash: **1st $5,000 · 2nd $2,000 · 3rd $1,000.**
+
+Sponsor side quest prizes:
+| Sponsor | Prize |
+|---|---|
+| QM | Mac mini |
+| River | 50k / 25k / 15k River API credits (1st/2nd/3rd) |
+| Memorable | Memorable Pro, bomber jackets, AirPods, cash prizes |
+| UFO | Unlimited lifetime UFO access |
+| Superset | AirPods Max plus a year of Superset Pro |
 
 Side quests are separate sponsor prizes, and the form uses **checkboxes, so you can enter several**.
-Quoted from the kickoff slide:
+Criteria, quoted from the kickoff slide:
 
 | Sponsor | Side quest | What it takes to qualify |
 |---|---|---|

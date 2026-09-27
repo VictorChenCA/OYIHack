@@ -1,6 +1,6 @@
 # Superset: run many coding agents in parallel (superset.sh)
 
-**Side quest prize:** "Best Agent Swarm: the most impressive project built by running many coding agents in parallel with Superset. **Presented with Superset Pages.**" All tracks are in `kb/EVENT.md#prizes`.
+**Side quest prize:** "Best Agent Swarm: the most impressive project built by running many coding agents in parallel with Superset. **Presented with Superset Pages.**" **Prize: AirPods Max + a year of Superset Pro.** All tracks are in `kb/EVENT.md#prizes`.
 
 **What it is:** a macOS desktop app plus CLI that runs Claude Code, Codex, OpenCode, Cursor Agent,
 and others **in parallel, each in its own git worktree**. It has a status dashboard, diff viewer,

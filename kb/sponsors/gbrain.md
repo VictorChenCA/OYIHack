@@ -1,6 +1,7 @@
 # GBrain: memory you control (garrytan/gbrain)
 
 **Side quest prize:** "Solve tedious human problems with a new skill or memory improvement." All tracks are in `kb/EVENT.md#prizes`.
+**GBrain is also MANDATORY: the rules say "Build something using GBrain" for every project.**
 
 **What it is:** a personal or company "brain" built from markdown pages plus a DB (PGLite locally, or
 Postgres/Supabase). It serves memory to any agent over MCP. Features: hybrid search (keyword, vector,

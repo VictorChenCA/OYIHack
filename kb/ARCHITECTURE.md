@@ -1,6 +1,8 @@
 # Architecture decisions: optimized for a 3h30m build (13:30 → 17:00)
 
 ## TL;DR
+0. **GBrain is mandatory** (rule: "Build something using GBrain"), so it must be load-bearing in the demo.
+   All product code is written after 13:30 (no prebuilt code or forks of existing projects; see "Rules and goal" in `kb/EVENT.md`).
 1. **Don't build an agent harness. Extend one.** QM or UFO is the runtime, and Claude Code is the dev loop.
 2. **Integrate through MCP and CLI first, SDKs second.** GBrain, Memorable, and Superset all take one command each.
 3. **GBrain = PGLite, keyless, local.** No Postgres, no Docker, no API keys.

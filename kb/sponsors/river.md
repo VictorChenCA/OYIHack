@@ -1,6 +1,6 @@
 # River AI: "your own frontier AI lab, in one API"
 
-**Side quest prize:** "Best use of a custom model/agent (trained using River API)." (The demo has to use a model you trained with River.) All tracks are in `kb/EVENT.md#prizes`.
+**Side quest prize:** "Best use of a custom model/agent (trained using River API)." (The demo has to use a model you trained with River.) **Prize: 50k / 25k / 15k River API credits.** All tracks are in `kb/EVENT.md#prizes`.
 
 **What it is:** a Python client (`river-client`) for **SFT, RL (GRPO/ScaleRL), and distillation**
 of open-weight models on River's GPUs, with LoRA adapters. You own and can download the weights.

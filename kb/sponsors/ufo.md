@@ -1,6 +1,6 @@
 # UFO (ufo.ai): "Business agent operating system"
 
-**Side quest prize:** "Best extension, Best business automation for startups." All tracks are in `kb/EVENT.md#prizes`.
+**Side quest prize:** "Best extension, Best business automation for startups." **Prize: unlimited lifetime UFO access.** All tracks are in `kb/EVENT.md#prizes`.
 
 **What it is:** an open-source (Apache-2.0) **runtime for team AI agents**. Teammates give agents
 work in chat (web, Slack, terminal). Agents read files, run commands, browse, use connected accounts,
