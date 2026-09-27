@@ -2,7 +2,7 @@
 import type { Store, Target } from "../store";
 import type { DeptId, Enemy, EnemyKind, Factory, Mine, Planet, Quadrant, RankEntry, Tier, Unit, WorldState } from "../../shared/types";
 import { el, esc, live, delegate, kfmt, usd, dur, ago, bar, sparkline, scoreColor, TIER_COLOR, QUAD_COLOR, QUAD_LABEL, KIND_LABEL, GOLD, STATUS_COLOR, MODE_LABEL } from "./util";
-import { tierGlyph, kindGlyph } from "./glyphs";
+import { tierGlyph, blockerGlyph, QUAD_WHY } from "./glyphs";
 
 const KINDS: EnemyKind[] = ["credential", "account", "approval", "rate_limit", "billing", "missing_info", "dependency", "failure"];
 const QUADS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
@@ -49,17 +49,24 @@ export function createSide(root: HTMLElement, store: Store) {
     const blocked = e.blocked.map((id) => store.unit(id)).filter((u): u is Unit => !!u && !hiddenUnit(u));
     const ranks = rankFor(s, e);
     const conf = (label: string, v: string, p: number) => `<div class="cf"><span class="lbl">${label}</span><span class="cf-v">${esc(v)}</span>${bar(p, p > 0.8 ? "#5CF2B0" : p > 0.55 ? "#FFB020" : "#FF4D4D")}<span class="num dim">${Math.round(p * 100)}%</span></div>`;
+    const qc = QUAD_COLOR[e.quadrant];
+    const lat = c?.latencyMs != null ? (c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms") : "";
+    const pct = (p: number) => `${Math.round(p * 100)}%`;
     return `<header class="s-head" style="--c:${col}">
-        <div class="s-icon">${kindGlyph(e.kind, col, 34)}</div>
+        <div class="s-icon">${blockerGlyph(e.quadrant, e.humanOnly, 34)}</div>
         <div class="s-titles"><h2>${esc(e.title)}</h2>
-          <div class="s-badges"><span class="st-word" style="--c:${col}">${e.humanOnly ? "needs you" : esc(QUAD_LABEL[e.quadrant].toLowerCase())}</span></div>
+          <div class="s-badges"><span class="st-word" style="--c:${qc}">${esc(QUAD_LABEL[e.quadrant])}</span>${e.humanOnly ? `<span class="st-word" style="--c:${GOLD}">needs a person</span>` : ""}<span class="dim small">${esc(KIND_LABEL[e.kind] ?? e.kind)}</span></div>
         </div></header>
       <p class="s-reason">${esc(e.reason)}</p>
-      ${c ? `<p class="dim small">Classified by ${esc(src)}${c.latencyMs != null ? ` in <span class="num">${c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms"}</span>` : ""} · ${esc(KIND_LABEL[c.kind.label] ?? c.kind.label)} · ${esc(deptName(s, c.department.label))}</p>` : ""}
+      <section class="bk-why"><h3>Why this type</h3>
+        <div class="bk-type"><span class="bk-sw">${blockerGlyph(e.quadrant, false, 16)}</span><b>${esc(QUAD_LABEL[e.quadrant])}</b><span class="dim">${esc(QUAD_WHY[e.quadrant])}</span></div>
+        ${c ? `<div class="bk-cls num">${esc(KIND_LABEL[c.kind.label] ?? c.kind.label)} <span class="dim">${pct(c.kind.p)}</span> · ${esc(QUAD_LABEL[c.quadrant.label] ?? c.quadrant.label)} <span class="dim">${pct(c.quadrant.p)}</span> · ${c.humanOnly.label ? "needs a person" : "agent can do it"} <span class="dim">${pct(c.humanOnly.p)}</span> · ${esc(deptName(s, c.department.label))}</div>
+        <div class="dim small">Classified by ${esc(src)}${lat ? ` · <span class="num">${lat}</span>` : ""}. Wrong? Correct it below; corrections retrain the classifier.</div>` : `<div class="dim small">Not classified yet; type comes from rules.</div>`}
+      </section>
       ${e.dependsOnUnit && store.unit(e.dependsOnUnit) ? `<button class="blocked-by dep" data-act="focus-unit" data-id="${esc(e.dependsOnUnit)}"><span class="lbl">Waiting on</span> ${esc(store.unit(e.dependsOnUnit)!.label)}</button>` : ""}
-      ${blocked.length ? `<section><h3>Waiting</h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
-      ${e.humanOnly ? `<section class="gold-sec"><h3>Human only</h3><p class="dim small">Agents can't do this step (phone, CAPTCHA, payment, legal, secrets). Put secrets in <span class="mono">.env</span>; C&amp;C only tells agents "unblocked".</p></section>`
-        : `<section><h3>Who can resolve it</h3>
+      ${blocked.length ? `<section><h3>Blocking ${blocked.length} agent${blocked.length === 1 ? "" : "s"}</h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
+      ${e.humanOnly ? `<section class="gold-sec"><h3>What to do</h3><p class="dim small">Needs a person: agents can't do this step (keys, signups, payment, approvals). Do it, put any secret in <span class="mono">.env</span>, then Resolve below; the waiting agents are told to continue.</p></section>`
+        : `<section><h3>What to do: send an agent</h3>
         <ul class="rank">${ranks.entries.slice(0, 4).map((r) => { const u = store.unit(r.unitId)!; return `<li style="--c:${scoreColor(r.score)}">
           <label class="rk-check"><input type="checkbox" data-act="rk-check" data-id="${esc(u.id)}" ${checked.has(u.id) ? "checked" : ""} aria-label="Select ${esc(u.label)}"></label>
           <span class="rk-score num">${Math.round(r.score)}</span>
@@ -128,7 +135,7 @@ export function createSide(root: HTMLElement, store: Store) {
       ${p.summary ? `<p class="s-reason">${esc(p.summary)}</p>` : ""}
       <section class="cycle"><div class="cy-row"><span class="dim">${esc(c.label)}</span><span class="num">${esc(when)}</span></div>${bar(frac, p.color, "bar thin")}</section>
       <section><h3>Agents</h3><ul class="ulist">${ships.map((u) => unitRow(u)).join("") || `<li class="dim">No agents yet. Start one below.</li>`}</ul></section>
-      ${enemies.length ? `<section><h3>Blockers</h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0"><i class="dot" style="background:${e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]}"></i><b>${esc(e.title)}</b></li>`).join("")}</ul></section>` : ""}`;
+      ${enemies.length ? `<section><h3>Blockers</h3><ul class="ulist">${enemies.map((e) => `<li class="plain" data-act="focus-enemy" data-id="${esc(e.id)}" tabindex="0">${blockerGlyph(e.quadrant, e.humanOnly, 14)}<b>${esc(e.title)}</b><span class="dim small">${esc(QUAD_LABEL[e.quadrant])}</span></li>`).join("")}</ul></section>` : ""}`;
   }
 
   function factoryHtml(s: WorldState, f: Factory) {
@@ -239,7 +246,7 @@ export function createSide(root: HTMLElement, store: Store) {
 
   function unitRow(u: Unit) {
     const col = store.state?.projects.find((p) => p.id === u.projectId)?.color ?? TIER_COLOR[u.tier];
-    return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="${u.role === "mothership" ? "ms" : "sub"}"><i class="dot" style="background:${col}"></i><b>${esc(u.label)}</b><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status)}</span></li>`;
+    return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="${u.role === "mothership" ? "ms" : "sub"}"><i class="dot" style="background:${col}"></i><b>${esc(u.label)}</b><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status)}</span></li>`;
   }
 
   store.on("state", render);

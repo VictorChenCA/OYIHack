@@ -1,8 +1,8 @@
 // Bottom console (SPEC §7): agent mode, commander mode, squad (multi-select) mode.
 import type { Store } from "../store";
 import type { DeptId, HistoryItem, Unit, UnitDetail, WorldState } from "../../shared/types";
-import { el, esc, live, delegate, usd, dur, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL, GOLD } from "./util";
-import { tierGlyph, kindGlyph, CC_EMBLEM } from "./glyphs";
+import { el, esc, live, delegate, usd, dur, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL, GOLD, QUAD_COLOR, QUAD_LABEL } from "./util";
+import { tierGlyph, blockerGlyph, CC_EMBLEM } from "./glyphs";
 import { openModal } from "./modal";
 
 type ChatLine = { role: "me" | "cmdr"; text: string; at: number };
@@ -14,6 +14,7 @@ export function createConsole(root: HTMLElement, store: Store) {
   const wrap = el("section", "console glass");
   wrap.setAttribute("aria-label", "Console");
   wrap.innerHTML = `
+    <div class="c-resize" role="separator" aria-orientation="horizontal" aria-label="Resize bottom bar" title="Drag to resize · double-click to reset"></div>
     <div class="c-left"></div>
     <header class="c-head"></header>
     <div class="c-body">
@@ -106,14 +107,14 @@ export function createConsole(root: HTMLElement, store: Store) {
       <div class="ag-core">${tierGlyph(u.tier, 30)}<small class="num">${Math.round(frac * 100)}%</small></div></div>
       <div class="ag-model">${esc(modelName(u))}</div><div class="ag-mode${mismatch ? " warn" : ""}" title="Permission mode${mismatch ? " (differs from mothership)" : ""}">${esc(MODE_LABEL[u.permissionMode])}</div></div>`);
     const kids = u.role === "mothership" ? s.units.filter((x) => x.parentId === u.id && x.status !== "dead") : [];
-    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(statusWord(u))}</span>
+    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(statusWord(u))}</span>
         ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}</div>
 `);
-    const eta = u.charted ? `known route${u.etaMs != null ? ` · ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : ""}` : "first time · into the unknown";
+    const eta = u.charted ? `known route${u.etaMs != null ? ` · ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : ""}` : "first time · no known route";
     const blk = u.blockedBy ? store.enemy(u.blockedBy) : undefined;
     now.set(`<div class="now-row"><span class="lbl">Doing</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : u.task ? `<span class="now-sum">${esc(u.task)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
-      <div class="now-row"><span class="lbl">Going to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num${u.charted ? "" : " fog-t"}">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
-      ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}">${tierGlyph(k.tier, 11)}${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
+      <div class="now-row"><span class="lbl">Heading to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num${u.charted ? "" : " fog-t"}">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
+      ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}"><i class="dot" style="background:${col}"></i>${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
     hint.textContent = `→ ${u.label}`;
   }
 
@@ -121,7 +122,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     const f = store.focus!;
     let icon = ""; let col = "#8A96A8"; let sub = "";
     if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); col = p?.color ?? col; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "team"; }
-    else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : "#FF6B6B"; icon = e ? kindGlyph(e.kind, col, 40) : ""; sub = e?.humanOnly ? "needs you" : "blocker"; }
+    else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : e ? QUAD_COLOR[e.quadrant] : col; icon = e ? blockerGlyph(e.quadrant, e.humanOnly, 44) : ""; sub = e ? `${QUAD_LABEL[e.quadrant]} · blocking ${e.blocked.length}` : "blocker"; }
     else if (f.kind === "mine") { const m = s.mines.find((x) => x.id === f.id); col = m?.color ?? col; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "credits"; }
     else if (f.kind === "research") { col = "#40E0D0"; icon = tierGlyph("river", 40); sub = "research"; }
     else if (f.kind === "sun") { col = "#FFD166"; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "memory"; }
@@ -248,6 +249,30 @@ export function createConsole(root: HTMLElement, store: Store) {
   };
   leftEl.addEventListener("pointerenter", showPop); leftEl.addEventListener("focusin", showPop);
   leftEl.addEventListener("pointerleave", () => { pop.hidden = true; }); leftEl.addEventListener("focusout", () => { pop.hidden = true; });
+
+  // Vertical resize: drag the top edge (min 120px, max 70vh); remembered per viewer; double-click resets.
+  const grip = wrap.querySelector<HTMLElement>(".c-resize")!;
+  const RKEY = "cc.console.h";
+  const clampH = (h: number) => Math.round(Math.max(120, Math.min(window.innerHeight * 0.7, h)));
+  const applyH = (h: number | null) => {
+    if (h == null) document.documentElement.style.removeProperty("--console-h");
+    else document.documentElement.style.setProperty("--console-h", clampH(h) + "px");
+    window.dispatchEvent(new Event("resize"));
+  };
+  try { const v = Number(localStorage.getItem(RKEY)); if (v > 0) applyH(v); } catch { /* storage unavailable */ }
+  grip.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault(); wrap.classList.add("resizing");
+    const y0 = e.clientY; const h0 = wrap.getBoundingClientRect().height;
+    const move = (ev: PointerEvent) => { ev.preventDefault(); applyH(h0 + (y0 - ev.clientY)); };
+    const up = () => {
+      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      wrap.classList.remove("resizing");
+      try { localStorage.setItem(RKEY, String(Math.round(wrap.getBoundingClientRect().height))); } catch { /* ignore */ }
+    };
+    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+  });
+  grip.addEventListener("dblclick", () => { applyH(null); try { localStorage.removeItem(RKEY); } catch { /* ignore */ } });
 
   store.on("state", () => { setMode(); render(); });
   store.on("focus", () => setMode());

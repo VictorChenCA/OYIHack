@@ -1,7 +1,8 @@
 // Hover tooltip, top bar, toasts.
 import type { Store, Target } from "../store";
 import type { DeptId, WorldState } from "../../shared/types";
-import { el, esc, live, delegate, usd, dur, TIER_COLOR, QUAD_COLOR, GOLD } from "./util";
+import { el, esc, live, delegate, usd, dur, TIER_COLOR, QUAD_LABEL, KIND_LABEL } from "./util";
+import { blockerGlyph } from "./glyphs";
 
 export function createTooltip(root: HTMLElement, store: Store) {
   const tip = el("div", "tip glass"); tip.setAttribute("role", "tooltip"); tip.hidden = true; root.appendChild(tip);
@@ -28,7 +29,8 @@ export function createTooltip(root: HTMLElement, store: Store) {
     }
     if (t.kind === "enemy") {
       const e = store.enemy(t.id); if (!e || store.isHidden("enemy", e.id)) return "";
-      return line(e.title, e.reason, e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant]);
+      const n = e.blocked.length;
+      return `<div class="tt-h">${blockerGlyph(e.quadrant, e.humanOnly, 14)}<b>${esc(e.title)}</b></div><div class="tt-l">${esc(QUAD_LABEL[e.quadrant])} · ${esc(KIND_LABEL[e.kind] ?? e.kind)} · blocking ${n} agent${n === 1 ? "" : "s"}${e.humanOnly ? " · needs a person" : ""}</div>${e.reason ? `<div class="tt-l dim">${esc(e.reason)}</div>` : ""}`;
     }
     if (t.kind === "planet") {
       const p = s.planets.find((x) => x.id === t.id); if (!p || store.isHidden("planet", p.id)) return "";
