@@ -1,0 +1,258 @@
+// Bottom console (SPEC §7): agent mode, commander mode, squad (multi-select) mode.
+import type { Store } from "../store";
+import type { HistoryItem, Unit, UnitDetail, WorldState } from "../../shared/types";
+import { el, esc, live, delegate, kfmt, usd, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL } from "./util";
+import { tierGlyph, CC_EMBLEM } from "./glyphs";
+import { openModal } from "./modal";
+
+type ChatLine = { role: "me" | "cmdr"; text: string; at: number };
+type Row = { item: HistoryItem; result?: HistoryItem };
+
+const HINTS = ["show everything blocked on credentials", "send 2 sonnets to the rate limit", "hide Marketing", "who is idle?"];
+
+export function createConsole(root: HTMLElement, store: Store) {
+  const wrap = el("section", "console glass");
+  wrap.setAttribute("aria-label", "Console");
+  wrap.innerHTML = `
+    <div class="c-left"></div>
+    <header class="c-head"></header>
+    <div class="c-body">
+      <div class="c-now"></div>
+      <div class="c-log" tabindex="-1"></div>
+    </div>
+    <form class="c-input" autocomplete="off">
+      <span class="c-prompt">&gt;</span>
+      <textarea rows="1" spellcheck="false" aria-label="Prompt"></textarea>
+      <span class="c-send-hint"></span>
+    </form>
+    <div class="ctx-pop" hidden></div>`;
+  root.appendChild(wrap);
+
+  const left = live(wrap.querySelector(".c-left")!);
+  const head = live(wrap.querySelector(".c-head")!);
+  const now = live(wrap.querySelector(".c-now")!);
+  const logEl = wrap.querySelector<HTMLElement>(".c-log")!;
+  const log = live(logEl);
+  const form = wrap.querySelector<HTMLFormElement>(".c-input")!;
+  const ta = form.querySelector("textarea")!;
+  const hint = form.querySelector<HTMLElement>(".c-send-hint")!;
+  const pop = wrap.querySelector<HTMLElement>(".ctx-pop")!;
+
+  const chat: ChatLine[] = [{ role: "cmdr", text: "Commander online. Ask me to spawn, prompt, attack, group, build factories or change the view.", at: Date.now() }];
+  let detail: UnitDetail | null = null; let detailFor = ""; let detailTimer: ReturnType<typeof setInterval> | null = null;
+  let rows: Row[] = [];
+  let lastMode = "";
+
+  const consoleUnitId = (): string | null => {
+    const f = store.focus; if (store.selection.length > 1) return null;
+    if (f?.kind === "unit") return f.id;
+    return store.selection.length === 1 ? store.selection[0]! : null;
+  };
+  const squad = (): Unit[] => store.selection.length > 1 ? store.selection.map((id) => store.unit(id)).filter((u): u is Unit => !!u) : [];
+
+  function modeKey() { const s = squad(); if (s.length > 1) return "squad"; return consoleUnitId() ? "agent:" + consoleUnitId() : "commander"; }
+
+  async function loadDetail(id: string) {
+    const d = await store.api<UnitDetail>(`/api/unit/${encodeURIComponent(id)}`);
+    if (detailFor !== id) return;
+    detail = d ?? fixtureDetail(store.unit(id));
+    rows = pair(detail.history);
+    renderLog(true);
+  }
+
+  function setMode() {
+    const k = modeKey(); if (k === lastMode) return; lastMode = k;
+    wrap.dataset.mode = k.split(":")[0];
+    left.reset(); head.reset(); now.reset(); log.reset();
+    if (detailTimer) { clearInterval(detailTimer); detailTimer = null; }
+    detail = null; rows = []; pop.hidden = true;
+    const id = consoleUnitId();
+    if (id && k.startsWith("agent")) {
+      detailFor = id; loadDetail(id);
+      detailTimer = setInterval(() => { if (!document.hidden) loadDetail(id); }, 4000);
+    } else detailFor = "";
+    ta.placeholder = k === "commander" ? "Order the commander…  (Enter to send · Shift+Enter newline)" : k === "squad" ? `Broadcast to ${store.selection.length} selected units…` : "Prompt this agent…  (Enter to send · Esc back to commander)";
+    render(); renderLog(true);
+  }
+
+  function render() {
+    const s = store.state; if (!s) return;
+    const k = modeKey();
+    if (k === "squad") return renderSquad(s);
+    const id = consoleUnitId(); const u = id ? store.unit(id) : undefined;
+    if (u) return renderAgent(s, u);
+    renderCommander(s);
+  }
+
+  function renderAgent(s: WorldState, u: Unit) {
+    const frac = u.contextWindow ? Math.min(1, u.contextUsed / u.contextWindow) : 0;
+    const ringCol = frac > 0.8 ? "#FF4D4D" : frac > 0.55 ? "#FFB020" : "#4FD1FF";
+    const R = 58, C = 2 * Math.PI * R;
+    left.set(`<div class="ctx" tabindex="0" aria-label="Context window ${Math.round(frac * 100)} percent used">
+      <svg viewBox="0 0 150 150" class="ctx-ring"><circle cx="75" cy="75" r="${R}" class="ctx-track"/>
+        <circle cx="75" cy="75" r="${R}" class="ctx-val" stroke="${ringCol}" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 75 75)"/>
+        ${Array.from({ length: 40 }, (_, i) => { const a = (i / 40) * Math.PI * 2; const r1 = 68, r2 = i % 5 ? 70 : 72; return `<line x1="${75 + Math.cos(a) * r1}" y1="${75 + Math.sin(a) * r1}" x2="${75 + Math.cos(a) * r2}" y2="${75 + Math.sin(a) * r2}" class="ctx-tick"/>`; }).join("")}
+      </svg>
+      <div class="ctx-core">${tierGlyph(u.tier, 38)}<b class="num">${Math.round(frac * 100)}%</b><small class="num">${kfmt(u.contextUsed)} / ${kfmt(u.contextWindow)}</small></div>
+    </div>`);
+    const proj = s.projects.find((p) => p.id === u.projectId); const planet = s.planets.find((p) => p.id === u.planetId);
+    const parent = u.parentId ? store.unit(u.parentId) : undefined;
+    const mismatch = parent && parent.permissionMode !== u.permissionMode;
+    head.set(`<div class="c-name"><span class="c-title">${esc(u.label)}</span>
+        <span class="badge tier" style="--c:${TIER_COLOR[u.tier]}">${esc(u.tier)}${u.model ? ` · <span class="dim">${esc(u.model)}</span>` : ""}</span>
+        <span class="badge mode${mismatch ? " warn" : ""}" title="${mismatch ? `Differs from mothership (${esc(parent!.permissionMode)})` : "Permission mode"}">${mismatch ? "⚠ " : ""}${esc(MODE_LABEL[u.permissionMode])}</span>
+        ${proj ? `<span class="chip"><i class="dot" style="background:${proj.color}"></i>${esc(proj.name)}</span>` : ""}
+        ${planet ? `<span class="chip dim">${esc(planet.name)}</span>` : ""}
+        <span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span>
+        ${u.role !== "mothership" ? `<span class="chip dim">${esc(u.role)}${u.agentType ? " · " + esc(u.agentType) : ""}</span>` : ""}
+      </div>
+      <div class="c-stats num"><span title="Tokens">${kfmt(u.tokens.input + u.tokens.output + u.tokens.cacheRead + u.tokens.cacheWrite)} tok</span><span title="Cost">${usd(u.costUsd)}</span><span title="Tool calls">${u.toolCount} tools</span>${u.failCount ? `<span class="bad">${u.failCount} fail</span>` : ""}</div>`);
+    now.set(`<div class="now-row"><span class="lbl">Currently</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
+      ${u.task ? `<div class="now-task"><span class="lbl">Task</span><span>${esc(u.task)}</span></div>` : ""}`);
+    hint.textContent = `→ ${u.label}`;
+  }
+
+  function renderSquad(s: WorldState) {
+    const us = squad();
+    const tiers = new Map<string, number>(); us.forEach((u) => tiers.set(u.tier, (tiers.get(u.tier) ?? 0) + 1));
+    left.set(`<div class="squad-core"><b class="num">${us.length}</b><span>units selected</span><div class="squad-tiers">${[...tiers].map(([t, n]) => `<span>${tierGlyph(t as Unit["tier"], 18)}<i class="num">${n}</i></span>`).join("")}</div></div>`);
+    head.set(`<div class="c-name"><span class="c-title">Squad</span><span class="badge">${us.length} units</span>
+      <span class="chip dim">${usd(us.reduce((a, u) => a + u.costUsd, 0))} spent</span></div>
+      <div class="c-stats"><button class="btn ghost" data-act="clear-sel">Clear selection</button></div>`);
+    now.set(`<div class="now-row"><span class="lbl">Broadcast</span><span class="dim">Your prompt goes to every selected unit.</span></div>`);
+    log.set(`<ul class="squad-list">${us.map((u) => `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0">${tierGlyph(u.tier, 16)}<b>${esc(u.label)}</b><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span></li>`).join("")}</ul>`);
+    hint.textContent = `→ ${us.length} units`;
+    void s;
+  }
+
+  function renderCommander(s: WorldState) {
+    left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Commander</b><span class="dim">${esc(s.autonomy)} autonomy</span></div>`);
+    head.set(`<div class="c-name"><span class="c-title">Commander</span><span class="badge">${esc(s.company)}</span><span class="chip dim">${s.units.length} units · ${s.enemies.length} enemies</span></div>
+      <div class="c-hints">${HINTS.map((h) => `<button class="hint" data-act="hint" data-text="${esc(h)}">${esc(h)}</button>`).join("")}</div>`);
+    now.set("");
+    hint.textContent = "→ commander";
+  }
+
+  function renderLog(force = false) {
+    const k = modeKey();
+    if (k === "squad") return;
+    const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 30;
+    let html = "";
+    if (k === "commander") {
+      html = chat.map((c) => `<div class="msg ${c.role}"><span class="who">${c.role === "me" ? "you" : "cmdr"}</span><span class="txt">${esc(c.text)}</span><time class="num">${clock(c.at)}</time></div>`).join("");
+    } else if (!detail) {
+      html = `<div class="dim pad">Loading history…</div>`;
+    } else if (!rows.length) {
+      html = `<div class="dim pad">No history yet.</div>`;
+    } else {
+      html = rows.map((r, i) => rowHtml(r, i)).join("");
+    }
+    log.set(html, force);
+    if (atBottom || force) logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function rowHtml(r: Row, i: number) {
+    const it = r.item;
+    if (it.kind === "tool_use") {
+      const err = r.result?.isError;
+      return `<div class="hrow tool${err ? " err" : ""}" data-act="open-row" data-i="${i}" tabindex="0"><span class="who">tool</span><span class="txt"><b>${esc(it.toolName ?? "tool")}</b> <span class="dim">${esc(oneLine(it.text, 140))}</span>${r.result ? `<span class="res">↳ ${err ? "error · " : ""}${esc(oneLine(r.result.text, 90))}</span>` : `<span class="res dim">↳ running…</span>`}</span><time class="num">${clock(it.ts)}</time></div>`;
+    }
+    const cls = it.kind === "prompt" ? "prompt" : it.role === "tool" ? "tool" : "reply";
+    return `<div class="hrow ${cls}${it.isError ? " err" : ""}" data-act="open-row" data-i="${i}" tabindex="0"><span class="who">${it.kind === "prompt" ? "you" : it.role === "tool" ? "result" : "agent"}</span><span class="txt">${esc(oneLine(it.text, 260))}</span><time class="num">${clock(it.ts)}</time></div>`;
+  }
+
+  async function send() {
+    const text = ta.value.trim(); if (!text) return;
+    ta.value = ""; autosize();
+    const k = modeKey();
+    if (k === "commander") {
+      chat.push({ role: "me", text, at: Date.now() }); renderLog(true);
+      const r = await store.command({ type: "commander", text });
+      if (store.fixture) setTimeout(() => { chat.push({ role: "cmdr", text: `(fixture) Commander would act on: “${text}”`, at: Date.now() }); renderLog(true); }, 500);
+      else if (!r.ok) { chat.push({ role: "cmdr", text: `⚠ ${r.message}`, at: Date.now() }); renderLog(true); }
+    } else if (k === "squad") {
+      await store.command({ type: "prompt", unitIds: [...store.selection], text });
+    } else {
+      const id = consoleUnitId(); if (!id) return;
+      if (detail) { detail.history.push({ ts: Date.now(), role: "user", kind: "prompt", text }); rows = pair(detail.history); renderLog(true); }
+      await store.command({ type: "prompt", unitIds: [id], text });
+    }
+  }
+
+  function autosize() { ta.style.height = "auto"; ta.style.height = Math.min(88, ta.scrollHeight) + "px"; }
+  ta.addEventListener("input", autosize);
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+    else if (e.key === "Escape") { e.preventDefault(); toCommander(); }
+  });
+  form.addEventListener("submit", (e) => { e.preventDefault(); send(); });
+
+  function toCommander() { ta.value = ""; autosize(); store.select([]); if (store.focus?.kind === "unit") store.setFocus(null); ta.blur(); }
+
+  delegate(wrap, {
+    hint: (t) => { ta.value = t.dataset.text ?? ""; ta.focus(); autosize(); },
+    "clear-sel": () => store.select([]),
+    "focus-unit": (t) => store.select([t.dataset.id!]),
+    "open-row": (t) => {
+      const r = rows[Number(t.dataset.i)]; if (!r) return;
+      const parts = [`<div class="m-meta"><span class="badge">${esc(r.item.kind)}</span>${r.item.toolName ? `<b>${esc(r.item.toolName)}</b>` : ""}<time class="num dim">${new Date(r.item.ts).toLocaleTimeString()}</time></div><pre>${esc(r.item.text)}</pre>`];
+      if (r.result) parts.push(`<div class="m-meta"><span class="badge${r.result.isError ? " warn" : ""}">result${r.result.isError ? " · error" : ""}</span></div><pre>${esc(r.result.text)}</pre>`);
+      openModal(r.item.kind === "tool_use" ? `Tool · ${r.item.toolName ?? ""}` : r.item.kind === "prompt" ? "Prompt" : "Reply", parts.join(""));
+    },
+  });
+  logEl.addEventListener("keydown", (e) => { if (e.key === "Enter") (e.target as HTMLElement).click(); });
+
+  // Context hover: files + memory in context.
+  const leftEl = wrap.querySelector<HTMLElement>(".c-left")!;
+  const showPop = () => {
+    if (!lastMode.startsWith("agent")) return;
+    const d = detail;
+    pop.innerHTML = `<h4>In context</h4>${d ? `<div class="lbl">Files (${d.filesInContext.length})</div><ul>${d.filesInContext.slice(0, 14).map((f) => `<li class="mono">${esc(f)}</li>`).join("") || `<li class="dim">none read</li>`}</ul>
+      <div class="lbl">Memory (${d.memoryInContext.length})</div><ul>${d.memoryInContext.slice(0, 10).map((f) => `<li class="mono">${esc(f)}</li>`).join("") || `<li class="dim">no GBrain pages recalled</li>`}</ul>` : `<div class="dim">Loading…</div>`}`;
+    pop.hidden = false;
+  };
+  leftEl.addEventListener("pointerenter", showPop); leftEl.addEventListener("focusin", showPop);
+  leftEl.addEventListener("pointerleave", () => { pop.hidden = true; }); leftEl.addEventListener("focusout", () => { pop.hidden = true; });
+
+  store.on("state", () => { setMode(); render(); });
+  store.on("focus", () => setMode());
+  store.on("selection", () => setMode());
+  store.on("commander", (text) => { chat.push({ role: "cmdr", text, at: Date.now() }); if (modeKey() === "commander") renderLog(true); });
+
+  // Global: Enter or "/" focuses the console input when not typing elsewhere.
+  window.addEventListener("keydown", (e) => {
+    const t = e.target as HTMLElement;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+    if ((e.key === "Enter" || e.key === "/") && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ta.focus(); }
+    else if (e.key === "Escape" && !document.querySelector(".modal")) toCommander();
+  });
+
+  return { focusInput: () => ta.focus() };
+}
+
+function oneLine(s: string, n: number) { const t = (s ?? "").replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; }
+
+function pair(h: HistoryItem[]): Row[] {
+  const out: Row[] = [];
+  for (let i = 0; i < h.length; i++) {
+    const it = h[i]!;
+    if (it.kind === "tool_use") { const nx = h[i + 1]; if (nx && nx.kind === "tool_result") { out.push({ item: it, result: nx }); i++; continue; } }
+    out.push({ item: it });
+  }
+  return out;
+}
+
+/** Fixture / offline fallback so the console is demoable without /api/unit. */
+function fixtureDetail(u?: Unit): UnitDetail {
+  if (!u) return { unitId: "", history: [], filesInContext: [], memoryInContext: [] };
+  const t0 = u.startedAt;
+  const history: HistoryItem[] = [
+    { ts: t0, role: "user", kind: "prompt", text: u.task ?? "Continue the task." },
+    { ts: t0 + 4000, role: "assistant", kind: "text", text: `On it. I'll start by reading the relevant files for ${u.projectId}.` },
+    { ts: t0 + 9000, role: "assistant", kind: "tool_use", toolName: "Read", text: `{"file_path":"app/${u.projectId}/README.md"}` },
+    { ts: t0 + 9400, role: "tool", kind: "tool_result", text: `# ${u.projectId}\n\n(fixture) 120 lines…` },
+  ];
+  if (u.lastTool) history.push({ ts: u.lastEventAt - 800, role: "assistant", kind: "tool_use", toolName: u.lastTool, text: u.lastToolInput ?? "" });
+  if (u.status === "blocked") history.push({ ts: u.lastEventAt, role: "assistant", kind: "text", text: "I'm blocked and need help to continue." });
+  return { unitId: u.id, history, filesInContext: [`app/${u.projectId}/README.md`, "app/shared/types.ts"], memoryInContext: [`company/${u.planetId}/overview`] };
+}
