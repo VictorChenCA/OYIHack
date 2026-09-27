@@ -211,8 +211,9 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .spark { flex: none; }
 
 /* ── Top bar ─────────────────────────────── */
-.topbar { position: absolute; top: var(--gap); left: var(--gap); right: var(--gap); height: var(--top-h); display: flex; align-items: center; gap: 16px; padding: 0 14px; border-radius: 10px; }
-.tb-left { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 0 1 auto; }
+.topbar { position: absolute; top: var(--gap); left: var(--gap); right: var(--gap); height: var(--top-h); display: flex; align-items: center; gap: 14px; padding: 0 14px; border-radius: 10px; overflow: hidden; min-width: 0; }
+.tb-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 0 1 auto; overflow: hidden; }
+.tb-left > .brand, .tb-left > .crumbs { flex: 0 0 auto; }
 .brand { font: 700 22px/1 var(--display); letter-spacing: 0.08em; color: #F0FAFF; text-shadow: 0 0 14px rgba(79, 209, 255, 0.55); }
 .brand span { color: var(--accent); margin: 0 1px; }
 .crumbs { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
@@ -220,16 +221,16 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 button.crumb:hover { color: var(--text); }
 .crumb.on { color: #EAF6FF; }
 .sep { color: var(--dim); }
-.tb-cycle { display: grid; grid-template-columns: auto 90px auto; align-items: center; gap: 8px; white-space: nowrap; padding-left: 12px; border-left: 1px solid var(--line); }
-.tb-cycle .lbl { max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
-.tb-mines { flex: 1 1 auto; display: flex; justify-content: center; gap: 8px; min-width: 0; overflow: hidden; }
-.mine { display: grid; grid-template-columns: auto auto; gap: 1px 10px; align-items: center; padding: 4px 10px 5px; background: rgba(2, 4, 9, 0.35); border: 1px solid var(--line); border-radius: 7px; color: var(--text); cursor: pointer; font: inherit; min-width: 150px; }
+.tb-cycle { display: grid; grid-template-columns: minmax(0, auto) 70px auto; align-items: center; gap: 8px; white-space: nowrap; padding-left: 12px; border-left: 1px solid var(--line); min-width: 0; flex: 0 1 auto; }
+.tb-cycle .lbl { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; line-height: 1.2; }
+.tb-mines { flex: 1 1 0; display: flex; justify-content: center; gap: 6px; min-width: 0; overflow: hidden; }
+.mine { display: grid; grid-template-columns: auto auto; gap: 1px 10px; align-items: center; padding: 4px 10px 5px; background: rgba(2, 4, 9, 0.35); border: 1px solid var(--line); border-radius: 7px; color: var(--text); cursor: pointer; font: inherit; min-width: 0; flex: 0 1 auto; }
 .mine:hover { border-color: var(--line-2); }
-.mine-l { display: flex; align-items: center; gap: 6px; font: 600 11px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.mine-l { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; font: 600 11px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 .mine-v { text-align: right; font-size: 12.5px; white-space: nowrap; }
 .mine-v small { color: var(--dim); margin-left: 6px; font-size: 10.5px; }
 .mine .bar { grid-column: 1 / span 2; height: 2px; }
-.tb-right { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.tb-right { display: flex; align-items: center; gap: 12px; white-space: nowrap; flex: 0 0 auto; }
 .stat { display: grid; gap: 2px; background: none; border: 0; color: var(--text); padding: 0; text-align: left; font: inherit; }
 button.stat { cursor: pointer; }
 .stat b { font: 500 14px/1 var(--mono); color: #EEF6FF; }
@@ -305,12 +306,16 @@ button.stat { cursor: pointer; }
 
 #ui[data-mode=memory] .leftcol, #ui[data-mode=memory] .groups, #ui[data-mode=memory] .views, #ui[data-mode=memory] .side { display: none; }
 
+/* ── Responsive: top bar must never overflow (≥1280 fits everything important) ── */
+@media (max-width: 1480px) { .mine-v small { display: none; } .tb-cycle .lbl { max-width: 140px; } }
+
 /* ── Responsive: 1280×800 ─────────────────────────────── */
 @media (max-width: 1360px) {
   :root { --side-w: 330px; --left-w: 248px; }
   .tb-cycle .lbl { max-width: 110px; }
-  .mine { min-width: 128px; }
+  .mine { padding: 4px 8px 5px; gap: 1px 8px; }
   .mine-v small { display: none; }
+  .tb-right .stat.tokens { display: none; }
   .c-hints .hint:nth-child(n+3) { display: none; }
 }
 @media (max-height: 840px) { :root { --console-h: 210px; } .c-now { padding: 5px 14px 4px; gap: 1px; } }
