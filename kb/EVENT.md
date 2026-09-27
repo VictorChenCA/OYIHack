@@ -28,7 +28,7 @@ Quoted from the kickoff slide:
 | Sponsor | Side quest | What it takes to qualify |
 |---|---|---|
 | GBrain | "Solve tedious human problems with a new skill or memory improvement" | A new GBrain skill, or a memory improvement, aimed at a real chore |
-| QM | "Fork QM and make it do something new! Push the harness in any direction." | An actual **fork** of `yc-software/qm` with new behavior |
+| QM | "Fork QM and make it do something new! Push the harness in any direction." | An actual **fork** of `yc-software/qm` with new behavior. Slide examples: play a video game, what you wish Codex/Claude Cowork could do, swarms, RTS-style UX, multiplayer, computer use (`kb/sponsors/qm.md`) |
 | River AI | "Best use of a custom model/agent (trained using River API)" | A model you **trained with the River API** (SFT/RL/distill) that the demo uses. The River page adds: show the training data or reward signal, and compare against base on unseen tasks |
 | Memorable | "Most Memorable. The most interesting/innovative use case of Memorable." | A novel use of Memorable procedures |
 | UFO | "Best extension, Best business automation for startups." | A UFO extension, or a startup business automation built on UFO |

@@ -14,6 +14,29 @@
 - **Read locally:** `README.md`, `docs/*.md` (memory-providers, mcp-connectors, skill-registry,
   swarms, session-sharing, files-publication, composio, model-gateway), `cli/README.md`, `SECURITY.md`, `adrs/`
 
+## From the kickoff slide: "Extend QM" examples (Sep 27)
+The slide's suggested directions (repo: https://github.com/yc-software/qm):
+- **Have QM play a video game** (SimCity, Dota, Minecraft, etc.)
+- **Build what you wish Codex/Claude Cowork could do**
+- **Agent coordination/swarms**
+- **Novel UX (RTS?)**, i.e. commanding agents like units in a real-time strategy game
+- **Multiplayer**
+- **QM computer use**
+
+What the demo screenshots showed QM doing at YC (a sense of the product's "home turf"):
+- Web UI at `qm.yc*.com`: Home / Search / Browse / Create New Chat, with sessions grouped as
+  Personal, QM-Demo, QM-DEV. Chats run side by side in panes.
+- **Spreadsheet ops from chat:** "tracking invitations for the fall founder dinners in a sheet, one tab
+  per restaurant. Go through the RSVP reply threads and fill in names, emails and current status."
+  QM reconciled **234 invites** across six restaurant tabs and attached a populated CSV. Another pane
+  built a "Q2 2026 FV changes" table joined against the portfolio.
+- **Slack → instant internal web apps:** Steve asked for "the top students confirmed for Startup School
+  in these categories: the weirdest, wildest moonshot projects, and students interested in defense."
+  QM shipped **two live apps shared org-wide** ("anyone signed in at YC can open them"), e.g.
+  `qm.apps.yc/d/sus2026-moonshots/`. Two minutes later a follow-up, "can you add a filter by
+  school?", added the filter to both apps plus a "wildness" sort. **Scoped web apps, built and
+  iterated from a Slack thread, are QM's signature move**, so a hack that builds on this lands well.
+
 ## Run options (ranked by speed)
 1. **Hosted instance from the sponsor / agent37.** Ask at kickoff. You get zero-infra access to the product.
 2. **Local dev instance** (from a clone):
