@@ -68,3 +68,33 @@
 {"step": 68, "loss": 0.04904034733772278, "elapsed_s": 420.6}
 {"step": 69, "loss": 0.044085707515478134, "elapsed_s": 424.4}
 {"step": 70, "loss": 0.03972939774394035, "elapsed_s": 427.7}
+{"step": 71, "loss": 0.07135765999555588, "elapsed_s": 435.2}
+{"step": 72, "loss": 0.022289060056209564, "elapsed_s": 438.3}
+{"step": 73, "loss": 0.011646673083305359, "elapsed_s": 441.9}
+{"step": 74, "loss": 0.005808178801089525, "elapsed_s": 445.4}
+{"step": 75, "loss": 0.010472418740391731, "elapsed_s": 448.9}
+{"step": 76, "loss": 0.007595333270728588, "elapsed_s": 456.2}
+{"step": 77, "loss": 0.020057277753949165, "elapsed_s": 459.5}
+{"step": 78, "loss": 0.039764404296875, "elapsed_s": 462.9}
+{"step": 79, "loss": 0.018290935084223747, "elapsed_s": 466.1}
+{"step": 80, "loss": 0.03910649195313454, "elapsed_s": 470.1, "checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s080-inf", "val_acc": 0.9583333333333334}
+{"step": 81, "loss": 0.015523822978138924, "elapsed_s": 501.5}
+{"step": 82, "loss": 0.018135886639356613, "elapsed_s": 504.7}
+{"step": 83, "loss": 0.042526133358478546, "elapsed_s": 508.0}
+{"step": 84, "loss": 0.0058547863736748695, "elapsed_s": 511.2}
+{"step": 85, "loss": 0.010054214857518673, "elapsed_s": 514.4}
+{"step": 86, "loss": 0.04501578211784363, "elapsed_s": 521.4}
+{"step": 87, "loss": 0.005339662544429302, "elapsed_s": 524.9}
+{"step": 88, "loss": 0.04247678071260452, "elapsed_s": 528.0}
+{"step": 89, "loss": 0.023300616070628166, "elapsed_s": 531.6}
+{"step": 90, "loss": 0.026276158168911934, "elapsed_s": 535.2}
+{"step": 91, "loss": 0.022981829941272736, "elapsed_s": 542.5}
+{"step": 92, "loss": 0.008996318094432354, "elapsed_s": 545.7}
+{"step": 93, "loss": 0.007907293736934662, "elapsed_s": 549.2}
+{"step": 94, "loss": 0.03839445859193802, "elapsed_s": 552.8}
+{"step": 95, "loss": 0.03516006842255592, "elapsed_s": 559.0}
+{"step": 96, "loss": 0.01587358486669244, "elapsed_s": 562.9}
+{"step": 97, "loss": 0.030498027801513672, "elapsed_s": 566.5}
+{"step": 98, "loss": 0.045937761664390564, "elapsed_s": 570.0}
+{"step": 99, "loss": 0.009768242947757244, "elapsed_s": 573.6}
+{"step": 100, "loss": 0.01148870401084423, "elapsed_s": 577.1, "checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf", "val_acc": 0.9733333333333333}

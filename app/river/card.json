@@ -1,0 +1,581 @@
+{
+  "name": "Sentinel",
+  "tagline": "C&C's System One model: blocker text in, 5 typed, calibrated decisions out, trained on River.",
+  "base_model": "Qwen/Qwen3.5-9B",
+  "checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf",
+  "training_checkpoint": "river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/weights/sentinel-v1-s100-train",
+  "best_step": 100,
+  "lora": {
+    "rank": 16,
+    "lr": 0.0002,
+    "batch": 32
+  },
+  "dataset": {
+    "train": 880,
+    "val": 120,
+    "test_unseen": 260,
+    "training_examples": 4400,
+    "teacher": "Claude (policy.md), no Anthropic key: Claude authored the generator"
+  },
+  "examples": [
+    {
+      "text": "[19:15:45] nova-4 (sonnet) <Notification> notification_type=agent_needs_input message=\"Blocked on dependency\" | task=\"draft the LinkedIn announcement post\" | msg=\"Holding here; the backend team's search endpoint hasn't landed yet.\"",
+      "labels": {
+        "kind": "dependency",
+        "quadrant": "schedule",
+        "human_only": "no",
+        "department": "engineering",
+        "tier": "sonnet"
+      }
+    },
+    {
+      "text": "hook: StopFailure\nerror: rate_limit\nunit: nova-6 (sonnet)\ntask: crop the team photos to squares\nlast_assistant_message: \"Quota exceeded for requests-per-minute on the Reddit API; the SDK suggests waiting 2 minutes.\"",
+      "labels": {
+        "kind": "rate_limit",
+        "quadrant": "delegate",
+        "human_only": "no",
+        "department": "arts",
+        "tier": "haiku"
+      }
+    },
+    {
+      "text": "hook: Stop\nstop_reason: end_turn\nunit: echo-9 (sonnet)\ntask: add UTM tags to the launch links\nlast_assistant_message: \"Got to step 3 of the Threads onboarding; it now wants a mobile number to text a code to.\"",
+      "labels": {
+        "kind": "account",
+        "quadrant": "schedule",
+        "human_only": "yes",
+        "department": "marketing",
+        "tier": "haiku"
+      }
+    }
+  ],
+  "loss_curve": [
+    {
+      "step": 1,
+      "loss": 0.3045
+    },
+    {
+      "step": 5,
+      "loss": 0.1542
+    },
+    {
+      "step": 9,
+      "loss": 0.1196
+    },
+    {
+      "step": 13,
+      "loss": 0.1124
+    },
+    {
+      "step": 17,
+      "loss": 0.094
+    },
+    {
+      "step": 21,
+      "loss": 0.0422
+    },
+    {
+      "step": 25,
+      "loss": 0.0392
+    },
+    {
+      "step": 29,
+      "loss": 0.1052
+    },
+    {
+      "step": 33,
+      "loss": 0.0583
+    },
+    {
+      "step": 37,
+      "loss": 0.0323
+    },
+    {
+      "step": 41,
+      "loss": 0.0423
+    },
+    {
+      "step": 45,
+      "loss": 0.0537
+    },
+    {
+      "step": 49,
+      "loss": 0.0268
+    },
+    {
+      "step": 53,
+      "loss": 0.1918
+    },
+    {
+      "step": 57,
+      "loss": 0.046
+    },
+    {
+      "step": 61,
+      "loss": 0.0189
+    },
+    {
+      "step": 65,
+      "loss": 0.0299
+    },
+    {
+      "step": 69,
+      "loss": 0.0441
+    },
+    {
+      "step": 73,
+      "loss": 0.0116
+    },
+    {
+      "step": 77,
+      "loss": 0.0201
+    },
+    {
+      "step": 81,
+      "loss": 0.0155
+    },
+    {
+      "step": 85,
+      "loss": 0.0101
+    },
+    {
+      "step": 89,
+      "loss": 0.0233
+    },
+    {
+      "step": 93,
+      "loss": 0.0079
+    },
+    {
+      "step": 97,
+      "loss": 0.0305
+    },
+    {
+      "step": 100,
+      "loss": 0.0115
+    }
+  ],
+  "val_curve": [
+    {
+      "step": 20,
+      "val_acc": 0.8433
+    },
+    {
+      "step": 40,
+      "val_acc": 0.8683
+    },
+    {
+      "step": 60,
+      "val_acc": 0.8967
+    },
+    {
+      "step": 80,
+      "val_acc": 0.9583
+    },
+    {
+      "step": 100,
+      "val_acc": 0.9733
+    }
+  ],
+  "eval": {
+    "data": "test_unseen (held-out vendors, tasks, phrasings, payload format)",
+    "n": 260,
+    "trained": {
+      "kind": {
+        "acc": 0.9731,
+        "macro_f1": 0.9717,
+        "ece": 0.0166,
+        "brier": 0.0373
+      },
+      "quadrant": {
+        "acc": 0.9038,
+        "macro_f1": 0.9188,
+        "ece": 0.0432,
+        "brier": 0.1576
+      },
+      "human_only": {
+        "acc": 0.9615,
+        "macro_f1": 0.9606,
+        "ece": 0.0181,
+        "brier": 0.0412
+      },
+      "department": {
+        "acc": 0.9923,
+        "macro_f1": 0.9929,
+        "ece": 0.0145,
+        "brier": 0.009
+      },
+      "tier": {
+        "acc": 0.75,
+        "macro_f1": 0.784,
+        "ece": 0.1476,
+        "brier": 0.4157
+      },
+      "mean": {
+        "acc": 0.9161,
+        "macro_f1": 0.9256,
+        "ece": 0.048,
+        "brier": 0.1322
+      }
+    },
+    "base": {
+      "kind": {
+        "acc": 0.7154,
+        "macro_f1": 0.704,
+        "ece": 0.0946,
+        "brier": 0.4018
+      },
+      "quadrant": {
+        "acc": 0.3538,
+        "macro_f1": 0.239,
+        "ece": 0.1519,
+        "brier": 0.7029
+      },
+      "human_only": {
+        "acc": 0.7962,
+        "macro_f1": 0.7826,
+        "ece": 0.1018,
+        "brier": 0.3188
+      },
+      "department": {
+        "acc": 0.6,
+        "macro_f1": 0.5417,
+        "ece": 0.0849,
+        "brier": 0.4859
+      },
+      "tier": {
+        "acc": 0.2615,
+        "macro_f1": 0.2035,
+        "ece": 0.0007,
+        "brier": 0.7461
+      },
+      "mean": {
+        "acc": 0.5454,
+        "macro_f1": 0.4942,
+        "ece": 0.0868,
+        "brier": 0.5311
+      }
+    },
+    "exact_all5": {
+      "trained": 0.6731,
+      "base": 0.0538
+    },
+    "haiku": "not run (no ANTHROPIC_API_KEY)",
+    "fast_clf": {
+      "val": {
+        "kind": 1.0,
+        "quadrant": 0.9833,
+        "human_only": 0.9833,
+        "department": 0.9083,
+        "tier": 0.8833,
+        "mean": 0.9517
+      },
+      "test_unseen": {
+        "kind": 0.8962,
+        "quadrant": 0.7885,
+        "human_only": 0.8077,
+        "department": 0.6115,
+        "tier": 0.6269,
+        "mean": 0.7462
+      },
+      "fit_s": 0.9,
+      "latency_ms_10_items": 1.0,
+      "model_bytes": 1154505
+    }
+  },
+  "live_app_payloads": [
+    {
+      "text": "{\"hook_event_name\": \"StopFailure\", \"session_id\": \"sim-engineering-1-l0oo\", \"error\": \"authentication_failed\", \"error_details\": \"GITHUB_TOKEN missing for gh pr comment\"}",
+      "gold": {
+        "kind": "credential",
+        "quadrant": "do_now",
+        "human_only": "yes",
+        "department": "engineering",
+        "tier": "haiku"
+      },
+      "trained": {
+        "kind": {
+          "label": "credential",
+          "p": 1.0
+        },
+        "quadrant": {
+          "label": "do_now",
+          "p": 0.9939
+        },
+        "human_only": {
+          "label": "yes",
+          "p": 0.9988
+        },
+        "department": {
+          "label": "engineering",
+          "p": 0.9989
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.5693
+        }
+      },
+      "base": {
+        "kind": {
+          "label": "credential",
+          "p": 0.975
+        },
+        "quadrant": {
+          "label": "do_now",
+          "p": 0.7241
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.5622
+        },
+        "department": {
+          "label": "engineering",
+          "p": 0.9721
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.2594
+        }
+      }
+    },
+    {
+      "text": "{\"hook_event_name\": \"Stop\", \"session_id\": \"sim-marketing-0-r4n8\", \"last_assistant_message\": \"I drafted the thread. To post it I need an X account; signing up requires a phone number.\"}",
+      "gold": {
+        "kind": "account",
+        "quadrant": "schedule",
+        "human_only": "yes",
+        "department": "marketing",
+        "tier": "sonnet"
+      },
+      "trained": {
+        "kind": {
+          "label": "account",
+          "p": 0.9995
+        },
+        "quadrant": {
+          "label": "schedule",
+          "p": 0.9745
+        },
+        "human_only": {
+          "label": "yes",
+          "p": 0.938
+        },
+        "department": {
+          "label": "marketing",
+          "p": 0.9999
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.7395
+        }
+      },
+      "base": {
+        "kind": {
+          "label": "account",
+          "p": 0.8
+        },
+        "quadrant": {
+          "label": "schedule",
+          "p": 0.3377
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.6792
+        },
+        "department": {
+          "label": "marketing",
+          "p": 0.8294
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.2574
+        }
+      }
+    },
+    {
+      "text": "{\"hook_event_name\": \"StopFailure\", \"session_id\": \"sim-engineering-2-gm92\", \"error\": \"rate_limit\", \"error_details\": \"429 Too Many Requests\"}",
+      "gold": {
+        "kind": "rate_limit",
+        "quadrant": "delegate",
+        "human_only": "no",
+        "department": "engineering",
+        "tier": "haiku"
+      },
+      "trained": {
+        "kind": {
+          "label": "rate_limit",
+          "p": 1.0
+        },
+        "quadrant": {
+          "label": "delegate",
+          "p": 1.0
+        },
+        "human_only": {
+          "label": "no",
+          "p": 1.0
+        },
+        "department": {
+          "label": "engineering",
+          "p": 0.9735
+        },
+        "tier": {
+          "label": "haiku",
+          "p": 1.0
+        }
+      },
+      "base": {
+        "kind": {
+          "label": "rate_limit",
+          "p": 0.9998
+        },
+        "quadrant": {
+          "label": "drop",
+          "p": 0.3742
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.852
+        },
+        "department": {
+          "label": "engineering",
+          "p": 0.9442
+        },
+        "tier": {
+          "label": "opus",
+          "p": 0.2574
+        }
+      }
+    },
+    {
+      "text": "{\"hook_event_name\": \"Notification\", \"session_id\": \"sim-marketing-7-184i\", \"notification_type\": \"idle_prompt\", \"message\": \"Claude is waiting for your input\"}",
+      "gold": {
+        "kind": "missing_info",
+        "quadrant": "drop",
+        "human_only": "no",
+        "department": "marketing",
+        "tier": "haiku"
+      },
+      "trained": {
+        "kind": {
+          "label": "missing_info",
+          "p": 0.9998
+        },
+        "quadrant": {
+          "label": "drop",
+          "p": 0.9398
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.9999
+        },
+        "department": {
+          "label": "marketing",
+          "p": 0.9959
+        },
+        "tier": {
+          "label": "haiku",
+          "p": 1.0
+        }
+      },
+      "base": {
+        "kind": {
+          "label": "missing_info",
+          "p": 0.2727
+        },
+        "quadrant": {
+          "label": "drop",
+          "p": 0.4177
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.8355
+        },
+        "department": {
+          "label": "marketing",
+          "p": 0.8336
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.2607
+        }
+      }
+    },
+    {
+      "text": "{\"hook_event_name\": \"PermissionRequest\", \"session_id\": \"sim-product_design-6-1\", \"tool_name\": \"Bash\", \"tool_input\": {\"command\": \"git push origin HEAD\"}}",
+      "gold": {
+        "kind": "approval",
+        "quadrant": "schedule",
+        "human_only": "yes",
+        "department": "product_design",
+        "tier": "sonnet"
+      },
+      "trained": {
+        "kind": {
+          "label": "approval",
+          "p": 0.9968
+        },
+        "quadrant": {
+          "label": "schedule",
+          "p": 0.9586
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.6815
+        },
+        "department": {
+          "label": "product_design",
+          "p": 0.9939
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.5075
+        }
+      },
+      "base": {
+        "kind": {
+          "label": "approval",
+          "p": 0.4539
+        },
+        "quadrant": {
+          "label": "do_now",
+          "p": 0.4275
+        },
+        "human_only": {
+          "label": "no",
+          "p": 0.7311
+        },
+        "department": {
+          "label": "product_design",
+          "p": 0.9496
+        },
+        "tier": {
+          "label": "sonnet",
+          "p": 0.2624
+        }
+      }
+    }
+  ],
+  "latency": {
+    "trained": {
+      "p50_ms": 3989,
+      "p95_ms": 4396,
+      "batch": "10 blockers x 5 fields = 50 prompts, 1 call",
+      "runs": 10
+    },
+    "base": {
+      "p50_ms": 2559,
+      "p95_ms": 3300,
+      "batch": "10 blockers x 5 fields = 50 prompts, 1 call",
+      "runs": 10
+    }
+  },
+  "cost_per_1k_decisions_usd": 0.0433,
+  "calibration_temps": {
+    "kind": 1.0,
+    "quadrant": 1.0,
+    "human_only": 1.15,
+    "department": 1.0,
+    "tier": 1.0
+  },
+  "what_it_learned": "C&C's triage policy without ever seeing it: mean accuracy 55% -> 92% on unseen vendors/phrasings; biggest gains on quadrant (+55%) and tier (+49%), e.g. rate limits are delegated to haiku, destructive approvals are gold, a dependency belongs to the department being waited on."
+}

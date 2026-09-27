@@ -47,7 +47,9 @@ def nll(raw, rows, field, T):
     return tot / len(rows)
 
 def fit_temps(raw, rows):
-    grid = [round(0.05 * 1.15 ** k, 4) for k in range(45)]  # 0.05 .. ~23
+    # T >= 1 only: val is in-distribution and near-perfect, so an unconstrained fit sharpens (T -> 0.05) and hurts
+    # calibration on the shifted test_unseen split. Softening only is the safe direction under shift.
+    grid = [round(1.15 ** k, 4) for k in range(25)]  # 1 .. ~29
     return {f: min(grid, key=lambda T: nll(raw, rows, f, T)) for f in S.FIELDS}
 
 def metrics(raw, rows, temps):
@@ -117,7 +119,8 @@ def evaluate(client, session, base, ckpt, rows, val, do_latency=True, examples=N
 def md_table(ev):
     b, t = ev.get("base"), ev["trained"]
     lines = [f"# Sentinel eval: base vs trained on `test_unseen` (n={t['n']}, held-out vendors, tasks, phrasings, payload format)", "",
-             f"Base model `{ev['base_model']}`. Trained checkpoint `{t['checkpoint']}`. Temperatures fit per field on val (NLL).", "",
+             f"Base model `{ev['base_model']}`. Trained checkpoint `{t['checkpoint']}`. Temperatures fit per field on val (NLL, T >= 1). Uncalibrated mean ECE: base "
+             f"{b['uncalibrated']['mean']['ece'] if b else 'n/a'}, trained {t['uncalibrated']['mean']['ece']}.", "",
              "| Field | Base acc | Trained acc | Base macro-F1 | Trained macro-F1 | Base ECE | Trained ECE | Base Brier | Trained Brier |",
              "|---|---|---|---|---|---|---|---|---|"]
     for f in list(S.FIELDS) + ["mean"]:

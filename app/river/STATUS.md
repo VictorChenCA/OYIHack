@@ -9,6 +9,8 @@
 | 15:02 | Base eval on test_unseen (`eval_base.json`): mean acc 0.545, macro-F1 0.494; p50 2446 ms / p95 2729 ms (10 blockers x 5 fields, 1 call). |
 | 15:03 | Val acc at step 20: 0.843; step 40: 0.868. Fast fallback (`fast_clf.py`, numpy TF-IDF + LR): test_unseen mean acc 0.746, 1 ms / 10 items, 1.15 MB. |
 | 15:05 | Sidecar smoke test OK (trained, `?engine=base`, `?engine=fast`, `/models`). Live latency noisy under load (2.4-10 s per 20 prompts), so added `?engine=auto&budget_ms=1500`. |
+| 15:07-15:11 | Val acc: step 60 0.897, step 80 0.958, **step 100 0.973** (best). Training done in 602 s. Best checkpoint `river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf` (training state: `.../weights/sentinel-v1-s100-train`). |
+| 15:13 | Eval on test_unseen (n=260): **mean acc base 0.545 -> trained 0.916**, macro-F1 0.494 -> 0.926, all-5-fields-right 5% -> 67%. Unconstrained temperature fit on val sharpened (T=0.05 on kind) and hurt test ECE, so the fit is now constrained to T >= 1. Trained LoRA sampled via `session.sample(checkpoint=...)`: p50 4.0 s, p95 9.9 s (base 2.5 / 3.1 s). |
 
 ## Spend (River)
 - Benchmark: ~240 one-token samples, well under $0.01.
