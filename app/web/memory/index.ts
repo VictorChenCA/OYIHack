@@ -25,7 +25,7 @@ export function createMemory(root: HTMLElement, store: Store) {
 
   // ── HUD ────────────────────────────────────────────────────────────────
   const top = h("div", "mem-top"); root.appendChild(top);
-  const back = h("button", "mem-back", `<span class="k">ESC</span> Back to system`); top.appendChild(back);
+  const back = h("button", "mem-back", `<span class="k">ESC</span> Back to Galaxy view`); top.appendChild(back);
   const titleBox = h("div", "mem-title", `<div class="t1">INSIDE THE SUN</div><div class="t2">Company memory · GBrain</div>`); top.appendChild(titleBox);
   const stats = h("div", "mem-stats"); top.appendChild(stats);
 
@@ -103,7 +103,7 @@ export function createMemory(root: HTMLElement, store: Store) {
     }
     const refN = [...counts.entries()].filter(([k]) => k.startsWith("ref:")).reduce((a, [, v]) => a + v, 0);
     rows.push(`<button data-g="ref" class="${hiddenGroups.has("ref") ? "off" : ""}"><i style="--c:#8A96A8"></i>Reference<em>${refN}</em></button>`);
-    legend.innerHTML = `<div class="lh">DEPARTMENTS</div>${rows.join("")}`;
+    legend.innerHTML = `<div class="lh">TEAMS</div>${rows.join("")}`;
   }
   legend.addEventListener("click", (e) => {
     const b = (e.target as HTMLElement).closest("button[data-g]") as HTMLElement | null; if (!b) return;
