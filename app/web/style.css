@@ -537,3 +537,28 @@ button.brand { background: none; border: 0; cursor: pointer; padding: 0 4px; }
 .side .ulist li.ms > .num { margin-left: auto; }
 .side .ulist li.plain { display: flex; align-items: center; gap: 8px; }
 .side .ulist li.plain > .trunc { flex: 1 1 auto; min-width: 0; }
+
+/* ── J2: owners, outputs, to-dos, history, read-only ── */
+.owner-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: #8A96A8; white-space: nowrap; }
+.owner-chip .av { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-style: normal; font-size: 9.5px; font-weight: 700; color: #0B1220; background: #9FB8FF; letter-spacing: 0.02em; }
+.outputs { margin: 6px 0 4px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(64, 224, 208, 0.05); }
+.outputs .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; margin-bottom: 4px; }
+.out-grid { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; margin: 0; font-size: 12px; }
+.out-grid dt { opacity: 0.7; }
+.out-grid dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+.todo-sec { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; margin: 4px 0 8px; }
+.todo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 2px 0 6px; }
+.todo-row .bad { color: #FF8A8A; }
+.side .ulist li.ms.hist { opacity: 0.62; }
+.ro-badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(255, 210, 74, 0.45); color: #FFD24A; white-space: nowrap; }
+body.readonly .c-input, body.readonly .act-only, body.readonly [data-act="resolve"], body.readonly [data-act="mark-done"],
+body.readonly [data-act="send"], body.readonly [data-act="send-sel"], body.readonly [data-act="send-squad"], body.readonly [data-act="deploy"],
+body.readonly .deploy, body.readonly [data-act="spawn-ms"], body.readonly [data-act="help-agent"], body.readonly [data-act="spawn-team"],
+body.readonly .side-forms, body.readonly [data-act="autonomy"], body.readonly [data-act="retrain"], body.readonly [data-act="promote"],
+body.readonly [data-act="factory-run"], body.readonly [data-act="factory-toggle"], body.readonly .rk-check, body.readonly .rk-foot,
+body.readonly [data-act="add-group"], body.readonly [data-act="prompt-unit"], body.readonly .gold-sec { display: none !important; }
+body.readonly select[data-act="engine"] { pointer-events: none; opacity: 0.6; }
+.aut-help { margin: 6px 0 0; padding: 0; list-style: none; font-size: 11.5px; line-height: 1.4; }
+.aut-help li { opacity: 0.6; margin: 2px 0; }
+.aut-help li.on { opacity: 1; }
+.home-auth { position: absolute; top: 14px; right: 18px; z-index: 5; display: flex; align-items: center; gap: 10px; font-size: 13px; }

@@ -1,7 +1,7 @@
 // Bottom console (SPEC §7): agent mode, commander mode, squad (multi-select) mode.
 import type { Store } from "../store";
 import type { DeptId, HistoryItem, Unit, UnitDetail, WorldState } from "../../shared/types";
-import { el, esc, live, delegate, usd, dur, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL, GOLD, QUAD_COLOR, QUAD_LABEL } from "./util";
+import { el, esc, live, delegate, usd, dur, clock, ago, TIER_COLOR, STATUS_COLOR, MODE_LABEL, GOLD, QUAD_COLOR, QUAD_LABEL } from "./util";
 import { tierGlyph, blockerGlyph, CC_EMBLEM } from "./glyphs";
 import { tierSvg, blockerSvg, SUBAGENT_SCALE } from "../shapes";
 import { openModal } from "./modal";
@@ -117,8 +117,9 @@ export function createConsole(root: HTMLElement, store: Store) {
         ${sum ? `<span class="c-sum" title="${esc(sum)}">${esc(sum)}</span>` : `<span class="c-sum shimmer">summarizing…</span>`}
         ${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}
         ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}
-        <button class="btn sm ghost view-chip" data-act="help-agent" data-name="${esc(u.label)}" data-planet="${esc(u.planetId)}">+ Agent</button></div>`);
-    now.set(viewChip(s));
+        ${u.owner ? ownerChip(u.owner) : ""}${u.endedAt ? `<span class="chip dim num" title="Finished ${esc(new Date(u.endedAt).toLocaleString())}">ended ${esc(ago(u.endedAt, s.now))}</span>` : ""}
+        <button class="btn sm ghost view-chip act-only" data-act="help-agent" data-name="${esc(u.label)}" data-planet="${esc(u.planetId)}">+ Agent</button></div>`);
+    now.set(viewChip(s) + outputsHtml(u));
     hint.textContent = helpFor ? `→ new agent in ${helpFor}` : `→ ${u.label}`;
   }
 
@@ -313,6 +314,14 @@ export function createConsole(root: HTMLElement, store: Store) {
 function modelName(u: Unit) {
   const m = u.model ?? u.tier; const x = /(haiku|sonnet|opus|fable)[-\s]?(\d+(?:[.-]\d+)?)?/i.exec(m);
   if (!x) return m; const n = x[1]!; return n[0]!.toUpperCase() + n.slice(1).toLowerCase() + (x[2] ? " " + x[2].replace("-", ".") : "");
+}
+export function ownerChip(owner: string) {
+  const ini = owner.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+  return `<span class="owner-chip" title="Owner: ${esc(owner)}"><i class="av">${esc(ini)}</i><span class="dim">owner:</span> ${esc(owner)}</span>`;
+}
+export function outputsHtml(u: Unit) {
+  if (!u.outputs?.length) return "";
+  return `<div class="outputs"><div class="lbl">Outputs</div><dl class="out-grid">${u.outputs.map((o) => `<dt title="${esc(o.source ?? "")}">${esc(o.label)}</dt><dd class="mono">${esc(o.value)}</dd>`).join("")}</dl></div>`;
 }
 function statusWord(u: Unit) { return u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status; }
 
