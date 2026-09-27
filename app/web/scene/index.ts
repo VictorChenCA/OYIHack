@@ -197,7 +197,7 @@ export function createScene(app: Application, store: Store) {
   // ---------- per-frame ----------
   app.ticker.add((ticker) => {
     const dt = Math.min(0.1, ticker.deltaMS / 1000); time += dt; frame++;
-    cam.update(dt);
+    cam.update(Math.min(0.5, ticker.deltaMS / 1000)); // wall-clock so fly-tos finish even when frames are throttled
     top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
@@ -372,6 +372,7 @@ export function createScene(app: Application, store: Store) {
     const visUnits: Unit[] = [];
     const disp = new Map<string, { x: number; y: number }>();
     const lerpK = 1 - Math.exp(-dt * 6);
+    const sel0 = new Set(store.selection);
     for (const u of s.units) {
       if (!showUnits || unitHidden(u)) continue;
       visUnits.push(u);
@@ -394,6 +395,9 @@ export function createScene(app: Application, store: Store) {
       v.glow.alpha = (u.status === "acting" ? 0.3 + 0.25 * Math.sin(time * 12) : 0.3) * da;
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
       v.ship.filters = focused && glowSel ? [glowSel] : null;
+      if (store.layerOn("labels") && (cam.scale > 0.55 || focused || sel0.has(u.id)) && u.role !== "subagent") {
+        const t = tmpText(`unit:${u.id}`, u.label, 12, col, "IBM Plex Sans"); t.position.set(v.x, v.y + size * 0.85); t.scale.set(ui * 0.9); t.alpha = da;
+      }
     }
     for (const [id, v] of unitViews) if (v.seen !== frame) { v.ship.destroy(); v.glow.destroy(); unitViews.delete(id); }
 
@@ -595,7 +599,16 @@ export function createScene(app: Application, store: Store) {
     const s = store.state; if (!s) return null;
     const w = cam.toWorld(sx, sy); const tol = 14 / cam.scale;
     let best: Target | null = null, bestD = Infinity;
-    const consider = (t: Target, x: number, y: number, r: number) => { const d = Math.hypot(w.x - x, w.y - y); if (d < Math.max(r, tol) && d - r * 0.3 < bestD) { bestD = d - r * 0.3; best = t; } };
+    let strict = true; // pass 1: exact hull hits only, so a planet under a docked mothership stays clickable
+    const consider = (t: Target, x: number, y: number, r: number) => { const d = Math.hypot(w.x - x, w.y - y); if (d < (strict ? r * 0.55 : Math.max(r, tol)) && d - r * 0.3 < bestD) { bestD = d - r * 0.3; best = t; } };
+    const units = () => {
+      if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e)) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, (46 + 14 * Math.min(8, e.strength)) * cam.ui * 0.6); }
+      if (store.layerOn("units")) for (const u of s.units) { if (unitHidden(u)) continue; const v = unitViews.get(u.id); consider({ kind: "unit", id: u.id }, v?.x ?? u.pos.x, v?.y ?? u.pos.y, unitSize(u) * 0.6); }
+    };
+    units(); if (best) return best;
+    for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * 1.8);
+    if (best) return best;
+    strict = false;
     if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e)) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, (46 + 14 * Math.min(8, e.strength)) * cam.ui * 0.6); }
     if (store.layerOn("units")) for (const u of s.units) { if (unitHidden(u)) continue; const v = unitViews.get(u.id); consider({ kind: "unit", id: u.id }, v?.x ?? u.pos.x, v?.y ?? u.pos.y, unitSize(u) * 0.6); }
     if (best) return best;
@@ -616,6 +629,7 @@ export function createScene(app: Application, store: Store) {
     else if (m.kind === "memory") cam.flyTo(0, 0, cam.fitScale(420));
   }
   store.on("mode", flyToMode);
+  (window as any).__scene = { cam, pick, store }; // debug handle
 
   // ---------- input ----------
   const cv = app.canvas as HTMLCanvasElement;
