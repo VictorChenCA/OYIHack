@@ -49,11 +49,19 @@ We used C&C to run its own launch: the agents on screen built and marketed C&C t
 - [ ] **UFO**. Not used; leave unticked.
 
 ## 8. Anything else you'd like the judges / organizers to know?
-Built solo during hacking hours; the git history shows it. What's real: live Claude Code hook telemetry (sessions,
-subagents, tool calls, permission prompts, failures), GBrain as the shared memory, and agent spawning through the Superset CLI.
-What's simulated: the 300-unit scale shot, which uses the built-in simulator and is labeled on screen.
-[VERIFY] After-action report as a Superset Page: <page URL>.
-Run it: `cd app && bun install && bun run start`, then open http://localhost:7777 (`bun run sim` for synthetic load).
+**Live, read-only:** https://6310-64-71-26-103.ngrok-free.app (hosted from the builder's laptop through ngrok until judging ends). Remote viewers can look at everything but can't
+launch or prompt agents.
+
+**Everything in Galaxy view is real (only the home page's company switcher is mocked):**
+- **Agents:** every Claude Code session that worked on this company today, including the swarm that built C&C and the
+  River-training mothership with its per-step subagents. It's rebuilt from the real transcripts, and live sessions stream in through HTTP hooks.
+- **Blockers:** agents' real blockers, triaged by the River-trained Sentinel.
+- **To-dos:** the company's real to-dos from `company/todos.md`, which also show as blockers in the owning team. "Mark done" checks the box in the file.
+- **Recurring jobs** (the moons): real schedules that launch Superset agents.
+- **Memory:** GBrain, the hosted company brain.
+- **Simulated:** only the optional scale shot (`server/sim.ts`), and it's labeled SIMULATED on screen.
+
+Built solo during hacking hours; the git history shows it. Run it: `cd app && bun install && bun run start`, then open http://localhost:7777.
 
 ## Before you hit submit
 - [ ] `app/` is committed (it's all still uncommitted as of 14:35) and pushed to a **public** GitHub repo. Check it in an incognito window.
