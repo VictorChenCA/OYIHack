@@ -7,24 +7,25 @@ Anything marked **[VERIFY]** must be true in the demo before you submit. Delete 
 victor36@stanford.edu
 
 ## 2. Team Name
-Command
+C&C
 
 ## 3. Member Names + Emails
 Victor Chen, victor36@stanford.edu
 
 ## 4. Project Description
-Command is an RTS-style command center for running a swarm of coding agents from one screen. QM's team said at
-kickoff that nobody has figured out how to visualize swarms faithfully or efficiently; Command is our answer.
-Every Claude Code agent reports through HTTP hooks, and its state drives the map. Each main session is a
-mothership whose subagents launch from it and return when done. A unit's distance travelled is elapsed time over
-its ETA, and its health is its remaining time budget, which failed tool calls reduce. Blockers (permission prompts,
-missing keys, rate limits) appear as enemies tethered to every unit they block. They grow with the number of units
-held, and are ranked on an urgent/important grid, so one missing token holding six agents is one big target you
-resolve once. You spawn agents from per-project barracks through Superset worktrees, and send prompts from a
-command bar. GBrain is the HQ at the center of the map: finished work is written to it as memory.
-[VERIFY] Memorable procedures give repeat tasks a known ETA. First-time tasks head into the fog.
-[VERIFY] River: a model we trained is the Forge.
-A simulator scales the same view to 300 units, and it's labeled SIMULATED on screen.
+C&C (Command & Control) is a real-time-strategy command center for running a company made of AI agents from one
+screen. QM's team said at kickoff that nobody has figured out how to visualize swarms; C&C is our answer. The company is a solar
+system. The sun is GBrain, the company's memory: it pulses on every live read and write, and it sends energy beams to each
+department. Departments are planets that visibly colonize as agents work there. Every Claude Code agent is a real unit,
+driven by live HTTP hooks. Main sessions are motherships whose subagents fly out and dock back. A unit's distance travelled is
+elapsed time over its ETA, and its health is its remaining budget. Blockers are enemies tethered to every unit they hold.
+They're sized by how many units they block and shaped by an urgent/important grid, and human-only blockers (keys, signups,
+approvals) are gold, so one missing token holding five agents is one target you resolve once. Agents launch into
+Superset worktrees from the map.
+[VERIFY] Memorable procedures turn repeat tasks into charted lanes with a known ETA, while first-time tasks fly into the fog.
+[VERIFY] A River-trained model (the Tactician) ranks which units should take on each enemy, shown with base vs trained accuracy on unseen enemy types.
+We used C&C to run its own launch: the agents on screen built and marketed C&C today.
+The scale shot uses a simulator and is labeled SIMULATED.
 
 ## 5. Github URL
 (fill in: public repo)
