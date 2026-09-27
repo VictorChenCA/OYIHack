@@ -65,9 +65,16 @@ Mirrored at `kb/raw/gbrain-hackathon.md`.
 - **`gbrain import` refuses any path containing a `skills/` segment** ("Import cannot publish skill paths. Use the
   shared skill publisher"). It also skips dot-directories (`.claude/`, `.codex/`). To import skill docs as plain
   pages, rename those segments in a staging copy (`skills` → `skill-docs`, `.claude` → `dot-claude`).
+- **`gbrain import` silently skips files named `README.md`, `index.md` and `RESOLVER.md`**, so rename them
+  (`kb/ingest.sh` stores them as `…/readme-doc`, `…/index-doc`, `…/resolver-doc`). It also **refuses files over
+  about 1MB** (split them), and **fails on docs that contain literal `<!--- gbrain:facts:begin -->` or `takes`
+  markers** ("fence cannot be parsed losslessly"), so neutralize those markers in example docs.
+- **Staging under `$TMPDIR` (`/var/folders/...`) makes `gbrain import` exit 1 with no output.** Stage inside the
+  repo (`kb/ingest-stage/`, gitignored) or under `/private/tmp`.
+- Imports are incremental: unchanged pages are skipped by content hash, but checking ~1,600 pages still takes ~5 min.
 - Very large files trigger a content-sanity warning (for example, UFO `spec.md` at 178KB). They still import.
 - **What's in the brain:** the whole KB (notes plus `kb/raw`) under `oyihack/`, and every repo's markdown under
-  `sponsor-repos/<repo>/` (gbrain, gstack, memorable-hackathon-kit, qm, superset, ufo-core), keyword-indexed with no embeddings.
+  `sponsor-repos/<repo>/` (gbrain, gstack, memorable-hackathon-kit, qm, superset, ufo-core), keyword-indexed with no embeddings (1,640 pages, 12,296 chunks on Sep 27 at 13:58).
   Test fixtures and node_modules are excluded. Re-run: `bash kb/fetch.sh` (pull repos + `scrape.py`), then `bash kb/ingest.sh`.
 
 ## Fastest path (keyless, no server, no Docker, about 2 min)

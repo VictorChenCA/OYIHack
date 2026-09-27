@@ -4,3 +4,4 @@ kb/repos/
 node_modules/
 .DS_Store
 .venv-river/
+kb/ingest-stage/
