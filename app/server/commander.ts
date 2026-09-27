@@ -18,7 +18,7 @@ try {
 export function digest(ctx: Ctx, maxUnits = 40): string {
   const w = ctx.world;
   const s = w.snapshot();
-  const planets = s.planets.map((p) => `${p.id} (${p.name}, colonization ${p.colonization}, cycle "${p.cycle.label}" ${Math.round(p.progress * 100)}%)`).join("; ");
+  const planets = s.planets.map((p) => `${p.id} (${p.name}, ${p.knowledge} memory pages)`).join("; ");
   const units = s.units.filter((u) => u.status !== "dead").slice(0, maxUnits).map((u) =>
     `- ${u.id} ${u.label} planet=${u.planetId} project=${u.projectId} tier=${u.tier} status=${u.status}${u.groups.length ? ` groups=${u.groups.join("/")}` : ""}${u.blockedBy ? ` blockedBy=${u.blockedBy}` : ""}${u.attacking ? ` attacking=${u.attacking}` : ""}${u.summary ? ` summary="${clip(u.summary, 140)}"` : u.task ? ` task="${clip(u.task, 100)}"` : ""}`).join("\n");
   const enemies = s.enemies.filter((e) => !e.resolved).map((e) =>
