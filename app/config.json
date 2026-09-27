@@ -17,7 +17,7 @@
       "id": "claude",
       "label": "Claude usage (subscription, at API rates)",
       "color": "#D97757",
-      "total": 50,
+      "total": 200,
       "measured": true
     },
     {

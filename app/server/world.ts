@@ -107,6 +107,7 @@ export class World implements WorldApi {
   planetStats = new Map<DeptId, { unitsEver: number; tools: number }>();
   offsets = new Map<string, { angle: number; dist: number }>();
   sigExample = new Map<string, string>();
+  replaying = false;
 
   constructor(cfg: AppConfig) {
     this.cfg = cfg;
@@ -203,7 +204,7 @@ export class World implements WorldApi {
   }
 
   finishTask(u: Unit) {
-    if (u.task && u.taskSig && (u.status === "working" || u.status === "acting" || u.status === "attacking")) {
+    if (!this.replaying && u.task && u.taskSig && (u.status === "working" || u.status === "acting" || u.status === "attacking")) {
       const took = Date.now() - u.startedAt;
       (this.durations[u.taskSig] ??= []).push(took);
       try { writeFileSync(DURATIONS, JSON.stringify(this.durations)); } catch {}
@@ -403,6 +404,30 @@ export class World implements WorldApi {
     for (const m of this.mines) if (m.remaining / m.total < 0.15) out.push({ id: `mine:${m.id}`, priority: 8, text: `${m.label} credits below 15%: top up` });
     const seen = new Set<string>();
     return out.filter((a) => (seen.has(a.id) ? false : (seen.add(a.id), true))).sort((a, b) => b.priority - a.priority).slice(0, 7);
+  }
+
+  /** Survive restarts: real agents, blockers and learned state (simulated ones are skipped). */
+  persistTo(path: string) {
+    const units = [...this.units.values()].filter((u) => !u.simulated && u.status !== "dead");
+    const enemies = [...this.enemies.values()].filter((e) => !e.simulated && !e.resolved);
+    try { writeFileSync(path, JSON.stringify({ at: Date.now(), units, enemies, factories: this.factories, corrections: this.research.corrections,
+      stats: [...this.planetStats.entries()], offsets: [...this.offsets.entries()], sigExample: [...this.sigExample.entries()], knowledge: this.knowledge })); } catch {}
+  }
+  restoreFrom(path: string) {
+    try {
+      if (!existsSync(path)) return;
+      const d = JSON.parse(readFileSync(path, "utf8"));
+      if (Date.now() - d.at > 45 * 60_000) return;
+      for (const u of d.units ?? []) this.units.set(u.id, { ...u, lastEventAt: Date.now() });
+      for (const e of d.enemies ?? []) this.enemies.set(e.id, e);
+      if (d.factories?.length) this.factories = d.factories;
+      for (const [k, v] of d.stats ?? []) this.planetStats.set(k, v);
+      for (const [k, v] of d.offsets ?? []) this.offsets.set(k, v);
+      for (const [k, v] of d.sigExample ?? []) this.sigExample.set(k, v);
+      if (d.knowledge) this.knowledge = d.knowledge;
+      this.research.corrections = d.corrections ?? 0;
+      this.log(`Restored ${d.units?.length ?? 0} agents and ${d.enemies?.length ?? 0} blockers`);
+    } catch (e) { console.warn("[world] restore failed", e); }
   }
 
   snapshot(): WorldState {

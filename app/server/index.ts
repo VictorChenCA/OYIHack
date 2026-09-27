@@ -11,6 +11,20 @@ import memory from "./plugins/memory";
 const cfg: AppConfig = await Bun.file(new URL("../config.json", import.meta.url)).json();
 const plugins: Plugin[] = [ops, brains, memory];
 const world = new World(cfg);
+const SAVE = new URL("../data/world.json", import.meta.url).pathname;
+const LOG_PATH = () => new URL("../data/events.jsonl", import.meta.url).pathname;
+world.restoreFrom(SAVE);
+if (world.units.size === 0 && existsSync(LOG_PATH())) {
+  // no saved world: rebuild real agents from the last 45 min of hook events (no side effects, durations not re-recorded)
+  world.replaying = true; let n = 0;
+  const cutoff = Date.now() - 45 * 60_000;
+  for (const line of readFileSync(LOG_PATH(), "utf8").split("\n")) {
+    if (!line) continue; try { const ev = JSON.parse(line); if (ev._simulated || (ev._ts ?? 0) < cutoff) continue; world.handle(ev); n++; } catch {}
+  }
+  world.replaying = false; if (n) world.log(`Rebuilt ${world.units.size} agents from ${n} recent events`);
+}
+setInterval(() => world.persistTo(SAVE), 5000);
+for (const sig of ["SIGINT", "SIGTERM"] as const) process.on(sig, () => { world.persistTo(SAVE); process.exit(0); });
 const LOG = new URL("../data/events.jsonl", import.meta.url).pathname;
 
 // env: process env first, then <repo>/.env (values never logged)
