@@ -13,19 +13,23 @@ C&C
 Victor Chen, victor36@stanford.edu
 
 ## 4. Project Description
-C&C (Command & Control) is a real-time-strategy command center for running a company made of AI agents from one
-screen. QM's team said at kickoff that nobody has figured out how to visualize swarms; C&C is our answer. The company is a solar
-system. The sun is GBrain, the company's memory: it pulses on every live read and write, and it sends energy beams to each
-department. Departments are planets that visibly colonize as agents work there. Every Claude Code agent is a real unit,
-driven by live HTTP hooks. Main sessions are motherships whose subagents fly out and dock back. A unit's distance travelled is
-elapsed time over its ETA, and its health is its remaining budget. Blockers are enemies tethered to every unit they hold.
-They're sized by how many units they block and shaped by an urgent/important grid, and human-only blockers (keys, signups,
-approvals) are gold, so one missing token holding five agents is one target you resolve once. Agents launch into
-Superset worktrees from the map.
-[VERIFY] Memorable procedures turn repeat tasks into charted lanes with a known ETA, while first-time tasks fly into the fog.
-A River-trained model, the Sentinel (Qwen3.5-9B + LoRA, 100 SFT steps on C&C's triage policy), classifies every blocker the moment it appears: kind, urgency, human-only or not, team, and best agent tier, with calibrated confidences. On 260 unseen blockers (held-out vendors, tasks and phrasings), mean accuracy rose from 0.545 (base) to 0.916 (trained), and all five fields were right in 67% of cases, up from 5%. The Research Center in C&C lets you correct classifications and retrain on River.
-We used C&C to run its own launch: the agents on screen built and marketed C&C today.
-The scale shot uses a simulator and is labeled SIMULATED.
+C&C (Command and Control) shows a founder what their company of AI agents is doing, what's blocking it, and where to send agents
+next, on one screen. It's a tool for founders, engineers and startup teams, not a game: it borrows swarm management from real-time
+strategy games and builds on the sponsors. QM's team said at kickoff that nobody has figured out how to visualize swarms; this is our
+attempt.
+
+**How it works:** every Claude Code agent reports live through HTTP hooks.
+- **The company is a system around a sun, GBrain (company memory).** Distance from the sun is distance from what the company knows:
+  teams drift inward as their knowledge grows, known work flies sunward on routes with an ETA, and first-time work flies into the
+  fog. The sun pulses once per memory write with a caption of what was added.
+- **Agents launch into Superset worktrees from the map, and you prompt them from C&C.**
+- **Blockers come in four types (do now, schedule, delegate, drop).** Gold means it needs a person, size means how many agents it
+  holds, and each sits at the frontier of the team it concerns. One missing token holding five agents is one blocker you resolve once.
+- **A River-trained "System One" classifier (the Sentinel, Qwen3.5-9B + LoRA)** labels every blocker in about 4s. On 260 unseen blockers,
+  mean accuracy went from 0.545 (base) to 0.916 (trained). A Research Center lets you correct it and retrain.
+- **Headless Claude** writes each agent's summary, ranks agents by fit for a blocker, and powers a command bar that builds views.
+
+We used C&C to run its own launch: the agents on screen built and marketed C&C today. The scale shot uses a simulator and is labeled SIMULATED.
 
 ## 5. Github URL
 (fill in: public repo)
