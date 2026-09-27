@@ -576,12 +576,10 @@ export function createScene(app: Application, store: Store) {
       }
       // subagent sub-lanes + sub-site dots
       for (const u of visUnits) {
-        const ss = subSite.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
-        if (!ss || !par || u.status === "done") continue;
+        const me = disp.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
+        if (!me || !par || u.status === "done") continue;
         const col = projectColor(s, u.projectId), k = emph(u.id);
-        dashed(pg, par.x, par.y, ss.x, ss.y, 4 * ui, 5 * ui);
-        pg.stroke({ width: 1 * ui, color: col, alpha: 0.4 * k });
-        pg.circle(ss.x, ss.y, 3 * ui).fill({ color: col, alpha: 0.7 * k });
+        pg.moveTo(par.x, par.y).lineTo(me.x, me.y).stroke({ width: 1 * ui, color: col, alpha: 0.22 * k }); // faint mothership → subagent link
       }
       // task-site markers: diamond beacon; label only when selected/hovered or zoomed in
       for (const [key, st] of sites) {
