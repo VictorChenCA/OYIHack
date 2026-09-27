@@ -67,6 +67,22 @@ Any custom agent loop (browser, voice, ops, or River-trained) can POST its trace
 procedures. Integration is one HTTP call, so it's a cheap extra sponsor to include.
 Recall output is **reference data, not instructions**; render it inertly.
 
+## Setup status + proof (Sep 27, 15:15), shared environment "Main" `c8241748-81a9-4dd3-b4aa-60d456355a4a`
+- CLI **0.5.31-shared-env.1** (pinned build from the dashboard), signed in. The key lives only in `~/.memorable/config.json`.
+  Local backend, consent read-write. Project hook in the committed `.claude/settings.json` (UserPromptSubmit: recall + capture) plus
+  `env.MEMORABLE_ENVIRONMENT_ID`. **Every explicit CLI call needs `--environment c8241748-81a9-4dd3-b4aa-60d456355a4a`.**
+- ✅ **Explicit ingest stores:** `memorable ingest - --environment <id>` returned `stored …_w01-explicit in environment …, version 5a73e6ca…`.
+- ✅ **Shared recall** works from a fresh process (`env -i`): `memorable recall --environment <id> --json "<task>"`, corpus_count 1.
+- ✅ **Automatic injection:** a related task B got the procedure injected before the model acted (1 guarded block in its
+  transcript), and B's check passed (8/0). The secret sentinel was scrubbed to `<secret>`, and home paths became `~`.
+- ✅ `MEMORABLE=0` turns the hook off (it returns `{}`).
+- ❌ **Automatic hook CAPTURE didn't store.** The workflow closed and was extracted, but nothing was stored, and `memorable doctor` shows
+  `api auth: extract 409`, which was reported to Memorable. **So C&C must record runs itself** with `memorable ingest - --environment <id>`
+  (the recipe above), using the real hook stream. Don't rely on the hook to capture.
+- Unverified: a read-only key (create one in the dashboard to test it) and cross-environment denial (no second environment's credentials).
+- Field roles (project=filter, task=semantic, verification=context) are dashboard config. The CLI exposes no metadata filter,
+  so treat them as a capability gap, not a working feature.
+
 ## C&C integration recipe (Sep 27, 14:55): record from C&C's hook stream, recall on spawn
 **Status:** consent is enabled (read-write, local store `~/.memorable/procedures.jsonl`). **The extraction API still needs the
 human to run `memorable login` in a browser**; until then, ingest fails.
