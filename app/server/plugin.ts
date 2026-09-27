@@ -8,6 +8,7 @@ import type {
 export interface AppConfig {
   port: number;
   company: string;
+  owner?: string;                          // default owner for agents launched from this machine
   repoRoot: string;                       // absolute path of the OYIHack repo
   gbrain: { url: string; tokenEnv: string };          // product brain (gbrain-cloud) — stateless MCP over HTTP
   gbrainDev: { url: string; tokenEnv: string };       // dev KB brain (:3131)

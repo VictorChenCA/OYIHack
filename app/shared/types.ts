@@ -8,7 +8,7 @@ export type UnitRole = "mothership" | "subagent" | "sentinel";
 export type UnitStatus = "idle" | "working" | "acting" | "blocked" | "attacking" | "done" | "dead";
 /** Eisenhower 2x2 (urgent x important). */
 export type Quadrant = "do_now" | "schedule" | "delegate" | "drop";
-export type EnemyKind = "credential" | "account" | "approval" | "rate_limit" | "billing" | "missing_info" | "dependency" | "failure";
+export type EnemyKind = "credential" | "account" | "approval" | "rate_limit" | "billing" | "missing_info" | "dependency" | "failure" | "todo";
 export type Autonomy = "manual" | "assist" | "auto";
 export type Stance = "hold" | "auto_attack" | "assist";
 
@@ -91,6 +91,10 @@ export interface Unit {
   terminalId?: string;      // Superset terminal (for prompting)
   veteran?: boolean;        // charted via Memorable procedure
   dependsOn?: string[];     // agent ids this agent is waiting on (dependency links)
+  owner?: string;           // who launched / owns this agent (multiplayer ownership)
+  endedAt?: number;         // when it finished (history)
+  outputs?: { label: string; value: string; source?: string }[]; // final results (e.g. River eval: p50, p95, unseen accuracy)
+  historical?: boolean;     // reconstructed from a past transcript (finished work shown as history)
   finishDist?: number;      // world distance from home where its task is expected to end (dotted line); null ETA → the frontier
   hidden?: boolean;
   simulated?: boolean;
@@ -126,6 +130,10 @@ export interface Enemy {
   pos: Vec;                 // system edge near affected planets
   pendingPermission?: boolean;
   resolved?: boolean;       // set briefly for the explosion animation before removal
+  defeatedAt?: number;      // cleared blockers stay faintly in the background as history
+  owner?: string;           // for to-dos: who owns it
+  due?: number;             // for to-dos: due time (ms)
+  source?: string;          // where it came from, e.g. "company/todos.md", "hook"
   hidden?: boolean;
   simulated?: boolean;
 }

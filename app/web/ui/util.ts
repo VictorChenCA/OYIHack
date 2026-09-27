@@ -51,7 +51,7 @@ export const TIER_COLOR: Record<Tier, string> = { haiku: "#5CF2B0", sonnet: "#4F
 export const QUAD_COLOR: Record<Quadrant, string> = { do_now: "#FF5A5A", schedule: "#FFB547", delegate: "#A78BFA", drop: "#7C8594" };
 export const QUAD_LABEL: Record<Quadrant, string> = { do_now: "Do now", schedule: "Schedule", delegate: "Delegate", drop: "Drop" };
 export const GOLD = "#FFD24A";
-export const KIND_LABEL: Record<EnemyKind, string> = { credential: "Credential", account: "Account", approval: "Approval", rate_limit: "Rate limit", billing: "Billing", missing_info: "Missing info", dependency: "Dependency", failure: "Failure" };
+export const KIND_LABEL: Record<EnemyKind, string> = { todo: "To-do", credential: "Credential", account: "Account", approval: "Approval", rate_limit: "Rate limit", billing: "Billing", missing_info: "Missing info", dependency: "Dependency", failure: "Failure" };
 export const STATUS_COLOR: Record<UnitStatus, string> = { idle: "#8A96A8", working: "#4FD1FF", acting: "#5CF2B0", blocked: "#FF4D4D", attacking: "#FFB020", done: "#B8F34A", dead: "#555E6B" };
 export const MODE_LABEL: Record<PermissionMode, string> = { default: "default", acceptEdits: "accept edits", auto: "auto", plan: "plan", bypassPermissions: "bypass", dontAsk: "don't ask", unknown: "?" };
 

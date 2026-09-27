@@ -50,6 +50,7 @@ const KIND_PATH: Record<EnemyKind, string> = {
   missing_info: `<path d="M14 20 L30 12 L50 18 L54 36 L40 52 L20 50 L10 36 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="10 5"/><text x="32" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="currentColor">?</text>`,
   dependency: `<rect x="10" y="22" width="22" height="20" rx="2"/><rect x="36" y="22" width="18" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="3"/><path d="M30 32 H38" stroke="currentColor" stroke-width="3"/>`,
   failure: `<path d="M32 8 L58 54 L6 54 Z"/><rect x="30" y="24" width="4" height="16" fill="rgba(4,6,12,.7)"/><rect x="30" y="44" width="4" height="4" fill="rgba(4,6,12,.7)"/>`,
+  todo: "M4 6h16M4 12h16M4 18h10",
 };
 
 export function kindGlyph(kind: EnemyKind, color: string, size = 22) {
