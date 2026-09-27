@@ -5,9 +5,9 @@ import type { Store, Target } from "../store";
 import { loadTextures, tex, type TexName } from "./assets";
 import { Camera } from "./camera";
 import { GOLD, HOLO, QUAD_COLOR, arc, dashed, drawBlocker, fogTexture, hash, hex, label } from "./draw";
+import { MOTHERSHIP_SIZE, SUBAGENT_SCALE, TIER_HULL, TIER_SCALE } from "../shapes";
 
 const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", product: "planet01", design: "planet09", marketing: "planet02", operations: "planet04", product_design: "planet09", arts: "planet09" };
-const TIER_TEX: Record<string, TexName> = { haiku: "ship_A", sonnet: "ship_B", opus: "ship_E", fable: "ship_H", river: "meteor_squareLarge", unknown: "ship_B" };
 const PLANET_R = 70, SUN_R = 95;
 /** Credit belt: one small asteroid ≈ one credit chunk, clustered per mine in a tight arc south of the sun. */
 const BELT_R = 290, BELT_W = 80, ROCKS_PER_BUDGET = 40, CLUSTER_SPACING = 0.62;
@@ -29,7 +29,7 @@ const mix = (a: number, b: number, t: number) => {
   return ch(16) | ch(8) | ch(0);
 };
 
-interface UnitView { glow: Sprite; trail: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
+interface UnitView { hull: Graphics; x: number; y: number; rot: number; seen: number }
 interface EnemyView { c: Container; g: Graphics; title: Text; x: number; y: number; seen: number; last: Enemy; born: number }
 interface PlanetView { c: Container; base: Sprite; dept: Sprite; lights: Sprite[]; ring: Graphics; dish: Sprite; name: Text; cycle: Text; sum: Text }
 interface Fx { s: Sprite; t: number; dur: number; from: number; to: number; alpha: number }
@@ -67,7 +67,9 @@ export function createScene(app: Application, store: Store) {
   const unitViews = new Map<string, UnitView>();
   const enemyViews = new Map<string, EnemyView>();
   const factoryViews = new Map<string, { s: Sprite; name: Text }>();
-  const mineViews = new Map<string, { rocks: Sprite[]; glow: Sprite; name: Text }>();
+  /** Moon (recurring job) display positions by factory id. */
+  const moonPos = new Map<string, { x: number; y: number }>();
+  const mineViews = new Map<string, { rocks: Sprite[]; g: Graphics; glow: Sprite; name: Text }>();
   /** Cluster centers of the credit belt, by mine id (recomputed each frame). */
   const minePos = new Map<string, { x: number; y: number; a: number }>();
   const texts = new Map<string, { t: Text; seen: number }>(); // transient labels (cycles, squadrons, reasons)
@@ -191,16 +193,20 @@ export function createScene(app: Application, store: Store) {
   }
 
   function unitView(u: Unit): UnitView {
-    const texName: TexName = u.role === "sentinel" ? "meteor_squareLarge" : u.role === "subagent" ? "ship_sidesC" : TIER_TEX[u.tier] ?? "ship_B";
     let v = unitViews.get(u.id);
-    if (v) { if (v.texName !== texName) { v.ship.texture = tex[texName]; v.texName = texName; } return v; }
-    const glow = sprite("circle_05", { alpha: 0.35 });
-    const trail = sprite("star_04", { alpha: 0 });
-    const ship = sprite(texName);
-    L.unitGlow.addChild(glow, trail); L.units.addChild(ship);
-    v = { glow, trail, ship, x: u.pos.x, y: u.pos.y, rot: 0, texName, seen: 0 };
+    if (v) return v;
+    const hull = new Graphics();
+    L.units.addChild(hull);
+    v = { hull, x: u.pos.x, y: u.pos.y, rot: Math.atan2(u.target.y - u.pos.y, u.target.x - u.pos.x), seen: 0 };
     unitViews.set(u.id, v);
     return v;
+  }
+  /** Shared abstract hull (shapes.ts): same silhouette on the map, legend, hover and bottom bar. half = half-width in world units. */
+  function drawHull(g: Graphics, u: Unit, half: number, col: number, ui: number) {
+    const pts = TIER_HULL[u.role === "sentinel" ? "river" : u.tier] ?? TIER_HULL.unknown;
+    g.clear();
+    g.poly(pts.flatMap(([x, y]) => [x * half + half * 0.12, y * half + half * 0.12])).fill({ color: 0x000000, alpha: 0.25 }); // faint shadow
+    g.poly(pts.flatMap(([x, y]) => [x * half, y * half])).fill({ color: col }).stroke({ width: Math.max(0.8, half * 0.08), color: 0xffffff, alpha: 0.28, join: "round" });
   }
 
   function tmpText(key: string, text: string, size: number, color: number, font = "Rajdhani"): Text {
@@ -229,7 +235,9 @@ export function createScene(app: Application, store: Store) {
   /** Motherships ~3x subagents: the hierarchy should read at a glance. */
   /** Blocker radius: grows with how many agents it blocks; DROP (neither urgent nor important) stays small. */
   const blockerR = (e: Enemy, ui: number) => (16 + 5 * Math.min(8, Math.max(1, e.blocked.length))) * ui * (e.quadrant === "drop" ? 0.7 : 1);
-  const unitSize = (u: Unit) => (u.role === "subagent" ? 15 : u.role === "sentinel" ? 30 : 46) * cam.ui;
+  /** Full width in world units: MOTHERSHIP_SIZE × TIER_SCALE (subagents: same hull × SUBAGENT_SCALE). */
+  const unitHalf = (u: Unit) => MOTHERSHIP_SIZE * 0.75 * (TIER_SCALE[u.tier] ?? 1) * (u.role === "subagent" ? SUBAGENT_SCALE : 1) * cam.ui;
+  const unitSize = (u: Unit) => unitHalf(u) * 2;
 
   // ---------- per-frame ----------
   app.ticker.add((ticker) => {
@@ -238,7 +246,8 @@ export function createScene(app: Application, store: Store) {
     top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
-    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); const f = systemFrame(s); cam.x = f.x; cam.y = f.y; cam.scale = f.s; cam.update(0); }
+    if (!fitted) { fitted = true; measureInsets(); cam.minScale = 0.02; const f = systemFrame(s); cam.minScale = f.s * 0.7; cam.x = f.x; cam.y = f.y; cam.scale = f.s; cam.update(0); }
+    if (frame % 60 === 0) { const ms = cam.minScale; cam.minScale = 0.02; const f = systemFrame(s); cam.minScale = Math.max(0.02, f.s * 0.7); if (Math.abs(cam.minScale - ms) > 1e-4 && cam.scale < cam.minScale) cam.scale = cam.minScale; } // max zoom-out: whole system + frontier with a margin
     if (frame % 20 === 0 && !userMoved && (m0Kind() === "system" || m0Kind() === "planet")) {
       const t0 = cam.insetTop, b0 = cam.insetBottom; measureInsets();
       if (Math.abs(cam.insetTop - t0) > 8 || Math.abs(cam.insetBottom - b0) > 8) flyToMode();
@@ -310,10 +319,10 @@ export function createScene(app: Application, store: Store) {
       const col = hex(p.color), da = dimAlpha(p.id);
       // planet body
       v.c.position.set(p.pos.x, p.pos.y); v.c.alpha = da; v.c.scale.set(PK);
-      const stage = p.colonization ?? 0;
-      v.dept.alpha = stage / 3; v.base.alpha = 1 - (stage / 3) * 0.6;
+      const stage = 0; // clean planets: no colonization stages, rings, lights or satellites
+      v.dept.alpha = 1; v.base.alpha = 0;
       // static (no spin). Operations shares the base texture: tint it gently with the team color so it reads distinct.
-      if (p.id === "operations") { v.dept.tint = col; v.base.tint = mix(0xffffff, col, 0.35); v.dept.alpha = Math.max(0.55, v.dept.alpha); }
+      v.dept.tint = mix(0xffffff, col, 0.3);
       const away = Math.atan2(p.pos.y, p.pos.x); // night side faces away from the sun
       v.lights.forEach((l, i) => {
         l.visible = stage >= 2;
@@ -346,33 +355,31 @@ export function createScene(app: Application, store: Store) {
       seenMine.add(m.id);
       let v = mineViews.get(m.id);
       if (!v) {
-        v = { rocks: [], glow: sprite("circle_05", { add: true, alpha: 0.2 }), name: setPrio(label("", 12, 0xdbe8f5, "IBM Plex Sans", "600"), 2) };
-        L.mines.addChild(v.glow); L.labels.addChild(v.name); mineViews.set(m.id, v);
+        v = { rocks: [], g: new Graphics(), glow: sprite("circle_05", { add: true, alpha: 0 }), name: setPrio(label("", 12, 0xdbe8f5, "IBM Plex Sans", "600"), 2) };
+        L.mines.addChild(v.g); L.labels.addChild(v.name); mineViews.set(m.id, v);
       }
       const frac = m.total > 0 ? Math.max(0, Math.min(1, m.remaining / m.total)) : 0;
       const col = hex(m.color);
-      const n = m.total > 0 && m.remaining > 0 ? Math.min(ROCKS_PER_BUDGET, Math.max(1, Math.ceil(m.remaining / (m.total / ROCKS_PER_BUDGET)))) : 0;
-      while (v.rocks.length < n) { const i = v.rocks.length; const r = sprite(hash(m.id + ":t" + i) < 0.5 ? "meteor_small" : "meteor_detailedSmall"); r.rotation = hash(m.id + ":o" + i) * 6.28; L.mines.addChild(r); v.rocks.push(r); }
-      while (v.rocks.length > n) v.rocks.pop()!.destroy();
+      const n = m.remaining > 0 ? Math.max(3, Math.round(4 + 14 * frac)) : 0; // count ∝ remaining
       const c = minePos.get(m.id)!;
-      const base = 14 * Math.max(1, ui);
-      v.rocks.forEach((r, i) => {
-        const h1 = hash(m.id + ":a" + i), h1b = hash(m.id + ":b" + i), h2 = hash(m.id + ":r" + i), h3 = hash(m.id + ":s" + i), h4 = hash(m.id + ":w" + i);
-        const ang = c.a + ((h1 + h1b) / 2 - 0.5) * CLUSTER_SPACING * 0.95;
-        const rr = BELT_R + (h2 - 0.5) * BELT_W;
-        r.position.set(Math.cos(ang) * rr, Math.sin(ang) * rr);
-        setSize(r, base * (0.25 + 0.65 * h3));
-        r.rotation = h4 * 6.28; // static, varied
-        r.tint = col; r.alpha = 0.95;
-      });
-      v.glow.tint = col; setSize(v.glow, BELT_R * CLUSTER_SPACING * 1.1); v.glow.position.set(c.x, c.y); v.glow.alpha = 0.04 + 0.06 * frac;
+      const rockCol = mix(0x8d939c, col, 0.35), px = 1 / cam.scale; // world units per screen px
+      const hotM = isHot("mine", m.id);
+      v.g.clear();
+      for (let i = 0; i < n; i++) {
+        const h1 = hash(m.id + ":a" + i), h2 = hash(m.id + ":r" + i), h3 = hash(m.id + ":s" + i), h4 = hash(m.id + ":w" + i);
+        const ang = c.a + (h1 - 0.5) * CLUSTER_SPACING * 0.8, rr = BELT_R + (h2 - 0.5) * BELT_W * 0.8;
+        const x = Math.cos(ang) * rr, y = Math.sin(ang) * rr, rad = (1.5 + 3 * h3) * px; // 3–9 px across
+        const pts: number[] = [];
+        for (let j = 0; j < 7; j++) { const t = (j / 7) * Math.PI * 2 + h4 * 6.28, k = 0.72 + 0.28 * hash(m.id + ":" + i + ":" + j); pts.push(x + Math.cos(t) * rad * k, y + Math.sin(t) * rad * k); }
+        v.g.poly(pts).fill({ color: rockCol, alpha: 0.95 }).stroke({ width: 0.8 * px, color: hotM ? col : 0xffffff, alpha: hotM ? 0.9 : 0.18 });
+      }
       v.name.visible = store.layerOn("mines") && store.layerOn("labels") && (isHot("mine", m.id));
       const nm = shortMine(m.label); const title = nm.charAt(0) + nm.slice(1).toLowerCase();
-      const val = `${title} $${Math.round(m.remaining)}`; if (v.name.text !== val) v.name.text = val;
+      const val = `${title} credits $${Math.round(m.remaining)} left · $${Math.round(m.burnPerDay)}/day`; if (v.name.text !== val) v.name.text = val;
       v.name.tint = frac < 0.2 ? 0xff6b6b : col;
       const mi = ordered.indexOf(m), lr = BELT_R + BELT_W / 2 + (14 + (mi % 2) * 16) * ui; v.name.scale.set(ui * 0.85); v.name.position.set(Math.cos(c.a) * lr, Math.sin(c.a) * lr);
     }
-    for (const [id, v] of mineViews) if (!seenMine.has(id)) { v.rocks.forEach((r) => r.destroy()); v.glow.destroy(); v.name.destroy(); mineViews.delete(id); }
+    for (const [id, v] of mineViews) if (!seenMine.has(id)) { v.g.destroy(); v.glow.destroy(); v.name.destroy(); mineViews.delete(id); }
 
     // research station
     L.research.visible = store.layerOn("research") && !pm;
@@ -390,29 +397,37 @@ export function createScene(app: Application, store: Store) {
     L.factories.visible = store.layerOn("factories");
     const seenF = new Set<string>();
     const ov = L.overlay; ov.clear();
+    moonPos.clear();
+    const moonIdx = new Map<string, number>();
     for (const f of s.factories ?? []) {
       if (f.hidden || store.isHidden("factory", f.id, { planetId: f.planetId }) || !inPm(f.planetId)) continue;
+      const pl = s.planets.find((q) => q.id === f.planetId); if (!pl || pl.hidden || store.isHidden("planet", pl.id)) continue;
       seenF.add(f.id);
       let v = factoryViews.get(f.id);
-      if (!v) { v = { s: sprite("spaceStation_018", { tint: 0xcfe6ff }), name: setPrio(label("", 11, 0xaec3d8, "IBM Plex Sans", "500"), MINOR) }; L.factories.addChild(v.s); L.labels.addChild(v.name); factoryViews.set(f.id, v); }
-      setSize(v.s, 34 * ui); v.s.position.set(f.pos.x, f.pos.y);
-      const da = dimAlpha(f.planetId);
-      v.s.alpha = (f.paused ? 0.35 : 1) * da;
-      v.name.text = f.label + (f.paused ? " · paused" : ""); v.name.scale.set(ui); v.name.position.set(f.pos.x, f.pos.y - 32 * ui);
-      v.name.visible = L.factories.visible && store.layerOn("labels") && isHot("factory", f.id); v.name.alpha = da;
-      if (L.factories.visible) {
-        const frac = Math.max(0, Math.min(1, 1 - (f.nextRunAt - s.now) / Math.max(1, f.cadenceMs)));
-        ov.circle(f.pos.x, f.pos.y, 22 * ui).stroke({ width: 1.5 * ui, color: 0x9fb3c8, alpha: 0.25 * da });
-        arc(ov, f.pos.x, f.pos.y, 22 * ui, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * frac);
-        ov.stroke({ width: 2.5 * ui, color: f.paused ? 0x8a8f98 : 0x5cf2b0, alpha: 0.85 * da });
-      }
+      if (!v) { v = { s: sprite("sphere1"), name: setPrio(label("", 11, 0xd6e0ea, "IBM Plex Sans", "500"), 1) }; L.factories.addChild(v.s); L.labels.addChild(v.name); factoryViews.set(f.id, v); }
+      // one orbit per cycle; the job fires at the top (angle = progress to its next run)
+      const frac = Math.max(0, Math.min(1, 1 - (f.nextRunAt - s.now) / Math.max(1, f.cadenceMs)));
+      const i = moonIdx.get(f.planetId) ?? 0; moonIdx.set(f.planetId, i + 1);
+      const orb = PR * (1.45 + 0.28 * i), ang = -Math.PI / 2 + 2 * Math.PI * frac;
+      const mx = pl.pos.x + Math.cos(ang) * orb, my = pl.pos.y + Math.sin(ang) * orb;
+      moonPos.set(f.id, { x: mx, y: my });
+      const hotF = isHot("factory", f.id);
+      if (L.factories.visible) ov.circle(pl.pos.x, pl.pos.y, orb).stroke({ width: 1 * ui, color: 0x9fb3c8, alpha: hotF ? 0.35 : 0.1 });
+      setSize(v.s, (hotF ? 22 : 16) * ui); v.s.position.set(mx, my);
+      v.s.tint = f.paused ? 0x6b7078 : mix(0xd8dee6, hex(pl.color), 0.25);
+      v.s.alpha = f.paused ? 0.4 : 1;
+      const nm = `${f.label} · ${f.schedule ?? fmtDur(f.cadenceMs)}${f.paused ? " · paused" : ""}`;
+      if (v.name.text !== nm) v.name.text = nm;
+      v.name.scale.set(ui * 0.9); v.name.position.set(mx, my - 18 * ui);
+      v.name.visible = L.factories.visible && store.layerOn("labels") && hotF;
     }
     for (const [id, v] of factoryViews) if (!seenF.has(id)) { v.s.destroy(); v.name.destroy(); factoryViews.delete(id); }
 
     // energy beams sun → colony + packets
     const bm = L.beams; bm.clear();
     let pk = 0;
-    if (store.layerOn("beams")) for (const p of s.planets) {
+    const SUN_BEAMS = false; // no lanes toward the sun
+    if (SUN_BEAMS && store.layerOn("beams")) for (const p of s.planets) {
       if (p.hidden || store.isHidden("planet", p.id) || !inPm(p.id) || (p.colonization ?? 0) < 1) continue;
       const d = Math.hypot(p.pos.x, p.pos.y) || 1, ux = p.pos.x / d, uy = p.pos.y / d;
       const x0 = ux * SUN_R * 1.05, y0 = uy * SUN_R * 1.05, x1 = p.pos.x - ux * PR * 1.2, y1 = p.pos.y - uy * PR * 1.2;
@@ -474,12 +489,7 @@ export function createScene(app: Application, store: Store) {
       const v = unitView(u); v.seen = frame;
       const pk = parked.get(u.id), ss = subSite.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
       let goal: { x: number; y: number } = pk ?? u.pos, heading: { x: number; y: number } = u.target;
-      if (u.role === "subagent" && par && ss) {
-        const ph = time * 0.45 + hash(u.id) * 6.28;
-        const t = active(u) ? 0.5 - 0.5 * Math.cos(ph) : 0.1;
-        goal = { x: par.x + (ss.x - par.x) * t, y: par.y + (ss.y - par.y) * t };
-        heading = active(u) && Math.sin(ph) < 0 ? par : ss;
-      }
+      void ss; void par; // subagents follow the server's outward law from their mothership (no shuttling)
       v.x += (goal.x - v.x) * lerpK; v.y += (goal.y - v.y) * lerpK;
       if (Math.hypot(goal.x - v.x, goal.y - v.y) > 800) { v.x = goal.x; v.y = goal.y; }
       disp.set(u.id, { x: v.x, y: v.y });
@@ -487,26 +497,20 @@ export function createScene(app: Application, store: Store) {
       const size = unitSize(u), k = emph(u.id);
       const en = u.attacking ? s.enemies.find((e) => e.id === u.attacking) : undefined;
       const tgt = en ? en.pos : pk ? { x: v.x + Math.cos(pk.face) * 10, y: v.y + Math.sin(pk.face) * 10 } : heading;
-      const want = Math.atan2(tgt.y - v.y, tgt.x - v.x) + Math.PI / 2;
+      const want = Math.atan2(tgt.y - v.y, tgt.x - v.x);
       let dr = want - v.rot; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
-      v.rot += dr * lerpK;
-      v.ship.texture = tex[v.texName]; setSize(v.ship, size); v.ship.position.set(v.x, v.y); v.ship.rotation = u.role === "sentinel" ? time * 0.4 : v.rot;
-      v.ship.tint = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
-      v.ship.alpha = (u.status === "idle" || u.status === "done" ? 0.6 : 1) * k;
-      v.glow.tint = col; setSize(v.glow, size * (u.role === "mothership" ? 2 : 1.6)); v.glow.position.set(v.x, v.y);
-      v.glow.alpha = (u.role === "mothership" ? 0.2 : 0.12) * k;
-      const moving = active(u);
-      const back = v.rot + Math.PI / 2; // ships face up; exhaust sits behind the nose
-      v.trail.visible = moving && u.role !== "sentinel";
-      if (v.trail.visible) { v.trail.tint = col; setSize(v.trail, size * 0.7); v.trail.position.set(v.x + Math.cos(back) * size * 0.55, v.y + Math.sin(back) * size * 0.55); v.trail.alpha = 0.3 * k; }
+      if (Math.hypot(tgt.x - v.x, tgt.y - v.y) > 1) v.rot += dr * lerpK;
+      const hcol = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
+      drawHull(v.hull, u, size / 2, hcol, ui);
+      v.hull.position.set(v.x, v.y); v.hull.rotation = v.rot;
+      v.hull.alpha = (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * k;
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
-      v.ship.filters = focused && glowSel ? [glowSel] : null;
       const uHot = focused || sel0.has(u.id) || (store.hover?.kind === "unit" && store.hover.id === u.id);
       if (store.layerOn("labels") && (uHot || (cam.scale > 0.9 && u.role !== "subagent"))) {
         const t = tmpText(`unit:${u.id}`, u.label, 12, col, "IBM Plex Sans"); t.position.set(v.x, v.y + size * 0.8); t.scale.set(ui * 0.9); t.alpha = k;
       }
     }
-    for (const [id, v] of unitViews) if (v.seen !== frame) { v.ship.destroy(); v.glow.destroy(); v.trail.destroy(); unitViews.delete(id); }
+    for (const [id, v] of unitViews) if (v.seen !== frame) { v.hull.destroy(); unitViews.delete(id); }
 
     // enemies
     const showEnemies = store.layerOn("enemies");
@@ -525,7 +529,7 @@ export function createScene(app: Application, store: Store) {
       enemyPos.set(e.id, { x: v.x, y: v.y, r });
       v.c.position.set(v.x, v.y);
       // the only motion: a slow, subtle breathe on DO NOW (urgent + important)
-      const k = e.quadrant === "do_now" ? 1 + 0.035 * Math.sin(time * 1.6) : 1;
+      const k = 1;
       drawBlocker(v.g, e.quadrant, r * k, qc, ui);
       if (e.humanOnly) v.g.circle(0, 0, r * 1.45).stroke({ width: 1.5 * ui, color: GOLD, alpha: 0.9 });
       v.c.alpha = enemyEmph(e) * Math.min(1, Math.max(0, (time - v.born) / 0.5));
@@ -552,9 +556,9 @@ export function createScene(app: Application, store: Store) {
         if (u.role !== "mothership" || parked.has(u.id)) continue;
         const col = projectColor(s, u.projectId), k = emph(u.id);
         const hx = u.home.x, hy = u.home.y, tx = u.target.x, ty = u.target.y;
-        if (u.charted) {
-          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 6 * ui, color: col, alpha: 0.05 * k });
-          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 1.5 * ui, color: col, alpha: 0.55 * k });
+        if (u.charted) { // dotted time line: home → where the task is expected to end
+          dashed(pg, hx, hy, tx, ty, 1.5 * ui, 9 * ui);
+          pg.stroke({ width: 2 * ui, color: col, alpha: 0.5 * k, cap: "round" });
         } else {
           const N = 6;
           for (let j = 0; j < N; j++) {
@@ -572,26 +576,24 @@ export function createScene(app: Application, store: Store) {
       }
       // subagent sub-lanes + sub-site dots
       for (const u of visUnits) {
-        const ss = subSite.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
-        if (!ss || !par || u.status === "done") continue;
+        const me = disp.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
+        if (!me || !par || u.status === "done") continue;
         const col = projectColor(s, u.projectId), k = emph(u.id);
-        dashed(pg, par.x, par.y, ss.x, ss.y, 4 * ui, 5 * ui);
-        pg.stroke({ width: 1 * ui, color: col, alpha: 0.4 * k });
-        pg.circle(ss.x, ss.y, 3 * ui).fill({ color: col, alpha: 0.7 * k });
+        pg.moveTo(par.x, par.y).lineTo(me.x, me.y).stroke({ width: 1 * ui, color: col, alpha: 0.22 * k }); // faint mothership → subagent link
       }
       // task-site markers: diamond beacon; label only when selected/hovered or zoomed in
       for (const [key, st] of sites) {
         const d = 9 * ui, k = st.k;
         pg.poly([st.x, st.y - d, st.x + d, st.y, st.x, st.y + d, st.x - d, st.y]).fill({ color: st.col, alpha: 0.16 * k }).stroke({ width: 1.6 * ui, color: st.col, alpha: (st.charted ? 0.9 : 0.55) * k });
         pg.circle(st.x, st.y, 2 * ui).fill({ color: 0xffffff, alpha: 0.9 * k });
-        if (st.hot && st.k === 1) { const t = (time * 0.7) % 1; pg.circle(st.x, st.y, d * (1.2 + t * 2.2)).stroke({ width: 1.4 * ui, color: st.col, alpha: (1 - t) * 0.7 }); }
         if (store.layerOn("labels") && (st.hot || (pm && cam.scale > 0.3) || cam.scale > 0.9)) {
           const t = tmpText(`site:${key}`, `${st.text}  ${st.eta}`, 11, st.col, "IBM Plex Sans"); t.position.set(st.x, st.y - d - 11 * ui); t.scale.set(ui * 0.9); t.alpha = k;
         }
       }
       // mining: flowing credit dots from each working mothership to the Claude cluster it burns
       const cp = claude ? minePos.get(claude.id) : undefined;
-      if (claude && cp && mineViews.has(claude.id)) {
+      const NO_SUN_LANES = true; // no lanes toward the sun / credit clusters
+      if (!NO_SUN_LANES && claude && cp && mineViews.has(claude.id)) {
         let n = 0;
         for (const u of visUnits) {
           if (n > 60) break;
@@ -638,6 +640,23 @@ export function createScene(app: Application, store: Store) {
       }
     }
 
+    // dependency graph for the hovered / focused agent: its dependsOn agents, same-project agents (thin), memory writes → sun
+    {
+      const t = store.hover?.kind === "unit" ? store.hover : store.focus?.kind === "unit" ? store.focus : null;
+      const u = t ? byId.get(t.id) : undefined;
+      const a = u ? disp.get(u.id) : undefined;
+      if (u && a) {
+        const col = projectColor(s, u.projectId);
+        for (const id of u.dependsOn ?? []) { const d = disp.get(id); if (!d) continue; dashed(tg, a.x, a.y, d.x, d.y, 4 * ui, 5 * ui); tg.stroke({ width: 1.6 * ui, color: 0xd6dde8, alpha: 0.8 }); }
+        for (const q of visUnits) if (q.id !== u.id && q.role === "mothership" && q.projectId === u.projectId && q.parentId !== u.id) { const d = disp.get(q.id); if (d) tg.moveTo(a.x, a.y).lineTo(d.x, d.y); }
+        tg.stroke({ width: 0.8 * ui, color: col, alpha: 0.3 });
+        for (const k of visUnits) if (k.parentId === u.id) { const d = disp.get(k.id); if (d) tg.moveTo(a.x, a.y).lineTo(d.x, d.y); }
+        tg.stroke({ width: 1.2 * ui, color: col, alpha: 0.7 });
+        const wrote = (s.knowledge?.recent ?? []).some((m) => m.kind === "write" && m.unitId === u.id);
+        if (wrote) { dashed(tg, a.x, a.y, 0, 0, 2 * ui, 10 * ui); tg.stroke({ width: 1 * ui, color: 0xffd27a, alpha: 0.35 }); }
+      }
+    }
+
     // unit overlay: hp ring, status marks, selection
     const sel = new Set(store.selection);
     for (const u of visUnits) {
@@ -649,7 +668,7 @@ export function createScene(app: Application, store: Store) {
         ov.stroke({ width: 1.6 * ui, color: hp > 0.5 ? 0x5cf2b0 : hp > 0.25 ? 0xffb020 : 0xff4d4d, alpha: 0.6 * da });
       }
       if (u.status === "blocked") ov.circle(p.x, p.y, r * 1.35).stroke({ width: 1.2 * ui, color: 0xff5a5a, alpha: 0.6 * da });
-      if (u.status === "acting" && Math.sin(time * 10 + hash(u.id) * 6) > 0) ov.circle(p.x + r * 0.9, p.y - r * 0.9, 2.5 * ui).fill({ color: 0xffffff, alpha: 0.9 * da });
+      if (u.status === "acting") ov.circle(p.x + r * 0.9, p.y - r * 0.9, 2.5 * ui).fill({ color: 0xffffff, alpha: 0.9 * da });
       if (sel.has(u.id)) {
         ov.circle(p.x, p.y, r * 1.6).stroke({ width: 1.8 * ui, color: 0x7dffb2, alpha: 0.9 });
       }
@@ -781,7 +800,7 @@ export function createScene(app: Application, store: Store) {
     if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e) || enemyViews.get(e.id)?.seen !== frame) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, blockerR(e, cam.ui) * 1.2); }
     if (store.layerOn("units")) for (const u of s.units) { if (unitHidden(u) || !shown(u.id)) continue; const v = unitViews.get(u.id); consider({ kind: "unit", id: u.id }, v?.x ?? u.pos.x, v?.y ?? u.pos.y, unitSize(u) * 0.6); }
     if (best) return best;
-    if (store.layerOn("factories")) for (const f of s.factories) if (!f.hidden && !store.isHidden("factory", f.id, { planetId: f.planetId }) && (!pm || f.planetId === pm)) consider({ kind: "factory", id: f.id }, f.pos.x, f.pos.y, 22 * cam.ui);
+    if (store.layerOn("factories")) for (const f of s.factories) if (!f.hidden && !store.isHidden("factory", f.id, { planetId: f.planetId }) && (!pm || f.planetId === pm)) { const mp = moonPos.get(f.id); if (mp) consider({ kind: "factory", id: f.id }, mp.x, mp.y, 16 * cam.ui); }
     if (store.layerOn("mines")) for (const m of s.mines) { const c = minePos.get(m.id); if (c && mineViews.has(m.id)) consider({ kind: "mine", id: m.id }, c.x, c.y, 70); }
     if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 40);
     if (best) return best;
@@ -822,9 +841,9 @@ export function createScene(app: Application, store: Store) {
     let x0 = -SUN_R * 2, y0 = -SUN_R * 2, x1 = SUN_R * 2, y1 = SUN_R * 2;
     const add = (x: number, y: number, r: number) => { x0 = Math.min(x0, x - r); y0 = Math.min(y0, y - r); x1 = Math.max(x1, x + r); y1 = Math.max(y1, y + r); };
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id)) add(p.pos.x, p.pos.y, PLANET_R * 1.8);
-    for (const e of s.enemies) if (!enemyHidden(e)) add(e.pos.x, e.pos.y, 260); // glyph + its hover title stay clear of the bars
+    for (const e of s.enemies) if (!enemyHidden(e)) add(e.pos.x, e.pos.y, 110); // glyph + its hover title stay clear of the bars
     for (const u of s.units) if (!unitHidden(u) && u.role === "mothership") add(u.target.x, u.target.y, 60);
-    return fitBox(x0, y0, x1, y1, 40);
+    return fitBox(x0, y0, x1, y1, 30);
   }
 
   function flyToMode() {
