@@ -779,9 +779,12 @@ export function createScene(app: Application, store: Store) {
     const mine = s.units.filter((u) => u.planetId === pid && !u.hidden && u.status !== "dead");
     for (const u of mine) { pts.push(u.pos); if (u.role === "mothership" && u.status !== "idle" && u.status !== "done") pts.push(u.target); }
     const ids = new Set(mine.map((u) => u.id));
-    // blockers sit at the system edge: a far one only pulls the frame toward it (its tether shows the way), so the team stays readable
+    // idle agents park on the night side of the planet
+    const away = Math.atan2(p.pos.y, p.pos.x), pr = PLANET_R * planetK();
+    pts.push({ x: p.pos.x + Math.cos(away) * pr * 2.6, y: p.pos.y + Math.sin(away) * pr * 2.6 });
+    // blockers sit just beyond this team's frontier: keep them in frame; only a very far one merely pulls the frame toward it
     for (const e of s.enemies) if (!e.hidden && (e.planetIds.includes(pid) || e.blocked.some((id) => ids.has(id)))) {
-      const d = Math.hypot(e.pos.x - p.pos.x, e.pos.y - p.pos.y), k = d > 900 ? 0.35 : 1;
+      const d = Math.hypot(e.pos.x - p.pos.x, e.pos.y - p.pos.y), k = d > 1800 ? 0.5 : 1;
       pts.push({ x: p.pos.x + (e.pos.x - p.pos.x) * k, y: p.pos.y + (e.pos.y - p.pos.y) * k });
     }
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
