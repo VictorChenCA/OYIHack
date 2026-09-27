@@ -16,9 +16,9 @@ export const CORE_R = 70;
 function hash(s: string) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; }
 
 /** Reference (non-department) nodes: grey with a faint per-namespace tint. */
-function refColor(ns: string) {
+function refColor(ns: string, sat = 12) {
   const h = Math.floor(hash(ns) * 360);
-  return `hsl(${h} 12% 66%)`;
+  return `hsl(${h} ${sat}% 66%)`;
 }
 
 export class Sim {
@@ -44,18 +44,23 @@ export class Sim {
     });
     const gAngle = new Map(this.groups.map((x) => [x.key, x.angle]));
     const hasPlanets = g.nodes.some((n) => n.planetId);
+    const nGroups = new Set(g.nodes.map((n) => n.planetId ?? "ref:" + n.slug.split("/")[0])).size;
+    const sector = Math.min(Math.PI * 1.1, (Math.PI * 2) / Math.max(1, nGroups)) * 0.85;
+    const spread = Math.sqrt(g.nodes.length) * 4.5;
     this.nodes = g.nodes.map((n) => {
-      const group = n.planetId ?? "ref:" + n.slug.split("/")[0];
-      const depth = n.slug.split("/").length - 1;
-      const angle = gAngle.get(group) ?? 0;
-      const baseR = n.planetId ? 190 : hasPlanets ? 330 : 190;
-      const tr = baseR + depth * 70 + (n.type === "folder" ? -30 : 0);
+      const parts = n.slug.split("/");
+      const group = n.planetId ?? "ref:" + parts[0];
+      const depth = parts.length - 1;
+      const sub = n.planetId ? parts[2] ?? "" : parts[1] ?? "";
+      const angle = (gAngle.get(group) ?? 0) + (sub ? (hash(sub) - 0.5) * sector : 0) + (hash(n.id + "a") - 0.5) * 0.12;
+      const baseR = (n.planetId || !hasPlanets ? 150 : 260) + spread * 0.6;
+      const tr = baseR + Math.min(depth, 4) * (18 + spread * 0.12) + hash(n.id + "r") * spread * 0.5 + (n.type === "folder" ? -20 : 0);
       const ax = Math.cos(angle) * tr, ay = Math.sin(angle) * tr;
       const prev = old.get(n.id);
       const d = deg.get(n.id) ?? 0;
       const sn: SNode = {
         id: n.id, n, deg: d, r: Math.min(13, 2.4 + Math.sqrt(d) * 1.5) + (n.type === "folder" ? 0.5 : 0),
-        group, depth, ax, ay, color: n.planetId ? PLANET_COLORS[n.planetId] : refColor(n.slug.split("/")[0]),
+        group, depth, ax, ay, color: n.planetId ? PLANET_COLORS[n.planetId] : hasPlanets ? refColor(parts[0]) : refColor(parts.slice(0, 2).join("/"), 34),
         x: prev?.x ?? ax + (hash(n.id + "x") - 0.5) * 160, y: prev?.y ?? ay + (hash(n.id + "y") - 0.5) * 160,
         vx: 0, vy: 0,
       };
@@ -72,7 +77,7 @@ export class Sim {
     const alpha = this.alpha;
     this.alpha = Math.max(0.035, alpha * 0.992);
     // repulsion via uniform grid
-    const CELL = 70, CUT2 = CELL * CELL, K = 700 * alpha;
+    const CELL = 80, CUT2 = CELL * CELL, K = 1100 * alpha;
     const grid = new Map<number, SNode[]>();
     const key = (cx: number, cy: number) => (cx + 2048) * 4096 + (cy + 2048);
     for (const n of N) { const k = key(Math.floor(n.x / CELL), Math.floor(n.y / CELL)); let c = grid.get(k); if (!c) grid.set(k, (c = [])); c.push(n); }
@@ -98,7 +103,7 @@ export class Sim {
     }
     // anchors (sector pull) + core exclusion
     for (const n of N) {
-      n.vx += (n.ax - n.x) * 0.006 * alpha; n.vy += (n.ay - n.y) * 0.006 * alpha;
+      n.vx += (n.ax - n.x) * 0.004 * alpha; n.vy += (n.ay - n.y) * 0.004 * alpha;
       const r = Math.hypot(n.x, n.y); const minR = CORE_R + 40;
       if (r < minR && r > 0.01) { const push = (minR - r) * 0.08; n.vx += (n.x / r) * push; n.vy += (n.y / r) * push; }
     }

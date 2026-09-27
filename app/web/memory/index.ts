@@ -129,12 +129,18 @@ export function createMemory(root: HTMLElement, store: Store) {
   };
   function fitView() {
     if (!sim.nodes.length) return;
-    let R = 0; for (const n of sim.nodes) if (nodeVisible(n)) R = Math.max(R, Math.hypot(n.x, n.y));
-    camTarget = { x: 0, y: 0, s: Math.max(0.12, Math.min(1.4, (Math.min(W, H) * 0.48) / Math.max(200, R))) };
+    // bbox of visible nodes plus the core, in rotated (camera) space
+    const c = Math.cos(cam.rot), s = Math.sin(cam.rot);
+    let x0 = -CORE_R * 2, x1 = CORE_R * 2, y0 = -CORE_R * 2, y1 = CORE_R * 2;
+    for (const n of sim.nodes) { if (!nodeVisible(n)) continue; const rx = n.x * c - n.y * s, ry = n.x * s + n.y * c; if (rx < x0) x0 = rx; if (rx > x1) x1 = rx; if (ry < y0) y0 = ry; if (ry > y1) y1 = ry; }
+    const sc = Math.min((W - 120) / (x1 - x0), (H - 200) / (y1 - y0));
+    camTarget = { x: (x0 + x1) / 2, y: (y0 + y1) / 2 - 20 / Math.max(0.05, sc), s: Math.max(0.08, Math.min(1.6, sc)) };
   }
   function focusNode(n: SNode, zoom = true) {
     const c = Math.cos(cam.rot), s = Math.sin(cam.rot);
-    camTarget = { x: n.x * c - n.y * s, y: n.x * s + n.y * c, s: zoom ? Math.max(cam.s, 1.5) : cam.s };
+    const sc = zoom ? Math.max(cam.s, 1.5) : camTarget?.s ?? cam.s;
+    const off = drawer.classList.contains("open") && W > 900 ? Math.min(240, W * 0.16) : 0; // keep the node clear of the drawer
+    camTarget = { x: n.x * c - n.y * s + off / sc, y: n.x * s + n.y * c, s: sc };
   }
 
   function resize() {
@@ -177,7 +183,7 @@ export function createMemory(root: HTMLElement, store: Store) {
       if (Math.abs(camTarget.s - cam.s) < 0.002 && Math.abs(camTarget.x - cam.x) < 0.5 && Math.abs(camTarget.y - cam.y) < 0.5) camTarget = null;
     }
     if (!hover && !dragNode && !selected && !panning) cam.rot += 0.00035; // slow orbit
-    if (autoFit && t - autoFitAt > 250) { autoFitAt = t; if (t - openedAt > 5000) autoFit = false; else fitView(); }
+    if (autoFit && t - autoFitAt > 250) { autoFitAt = t; if (t - openedAt > 8000) autoFit = false; else fitView(); }
     draw(t);
   }
 
@@ -355,7 +361,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   // ── drawer ─────────────────────────────────────────────────────────────
   let pageReq = 0;
   async function openNode(n: SNode) {
-    selected = n; focusNode(n, false);
+    selected = n; drawer.classList.add("open"); focusNode(n, false);
     const dept = n.n.planetId ? PLANET_NAMES[n.n.planetId] : "Reference";
     dHead.innerHTML = `<div class="dk"><i style="--c:${n.color}"></i>${dept}${n.n.type ? " · " + escHtml(n.n.type) : ""}</div>
       <div class="dt">${escHtml(n.n.title)}</div><div class="ds">${escHtml(n.n.slug)}</div>
@@ -387,7 +393,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   function gotoSlug(slug: string) {
     autoFit = false;
     const n = sim.byId.get(slug) ?? sim.nodes.find((x) => x.id.endsWith("/" + slug) || x.id.endsWith(slug));
-    if (n) { hiddenGroups.delete(n.n.planetId ?? "ref"); focusNode(n); openNode(n); }
+    if (n) { hiddenGroups.delete(n.n.planetId ?? "ref"); drawer.classList.add("open"); focusNode(n); openNode(n); }
     else store.toast(`Page not in graph: ${slug}`, "warn");
   }
 
