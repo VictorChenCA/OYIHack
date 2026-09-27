@@ -79,7 +79,7 @@ function baseUnit(ctx: Ctx, p: ParsedTranscript, o: { id: string; sessionId: str
 /** Merge into the world: new ids are added; live units only get missing fields filled. */
 function upsert(ctx: Ctx, u: Unit) {
   const live = ctx.world.units.get(u.id);
-  if (live && !mine.has(u.id)) {
+  if (live && !mine.has(u.id) && !live.historical) {
     const fill: (keyof Unit)[] = ["owner", "task", "taskSig", "transcriptPath", "agentType", "model", "outputs"];
     for (const k of fill) if ((live as any)[k] == null && (u as any)[k] != null) (live as any)[k] = (u as any)[k];
     if (u.outputs && u.outputs.length) live.outputs = u.outputs;
