@@ -246,7 +246,7 @@ export function createSide(root: HTMLElement, store: Store) {
 
   function unitRow(u: Unit) {
     const col = store.state?.projects.find((p) => p.id === u.projectId)?.color ?? TIER_COLOR[u.tier];
-    return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="${u.role === "mothership" ? "ms" : "sub"}"><i class="dot" style="background:${col}"></i><b>${esc(u.label)}</b><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status)}</span></li>`;
+    return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="${u.role === "mothership" ? "ms" : "sub"}"><i class="dot" style="background:${col}"></i><b>${esc(u.label)}</b><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(u.status === "attacking" ? "resolving" : u.status === "acting" ? "working" : u.status)}</span></li>`;
   }
 
   store.on("state", render);

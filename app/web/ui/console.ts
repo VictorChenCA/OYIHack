@@ -107,14 +107,14 @@ export function createConsole(root: HTMLElement, store: Store) {
       <div class="ag-core">${tierGlyph(u.tier, 30)}<small class="num">${Math.round(frac * 100)}%</small></div></div>
       <div class="ag-model">${esc(modelName(u))}</div><div class="ag-mode${mismatch ? " warn" : ""}" title="Permission mode${mismatch ? " (differs from mothership)" : ""}">${esc(MODE_LABEL[u.permissionMode])}</div></div>`);
     const kids = u.role === "mothership" ? s.units.filter((x) => x.parentId === u.id && x.status !== "dead") : [];
-    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status]}">${esc(statusWord(u))}</span>
+    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(statusWord(u))}</span>
         ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}</div>
 `);
-    const eta = u.charted ? `known route${u.etaMs != null ? ` · ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : ""}` : "first time · into the unknown";
+    const eta = u.charted ? `known route${u.etaMs != null ? ` · ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : ""}` : "first time · no known route";
     const blk = u.blockedBy ? store.enemy(u.blockedBy) : undefined;
     now.set(`<div class="now-row"><span class="lbl">Doing</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : u.task ? `<span class="now-sum">${esc(u.task)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
-      <div class="now-row"><span class="lbl">Going to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num${u.charted ? "" : " fog-t"}">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
-      ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}">${tierGlyph(k.tier, 11)}${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
+      <div class="now-row"><span class="lbl">Heading to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num${u.charted ? "" : " fog-t"}">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
+      ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}"><i class="dot" style="background:${col}"></i>${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
     hint.textContent = `→ ${u.label}`;
   }
 

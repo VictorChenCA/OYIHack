@@ -471,6 +471,10 @@ html, body { background: #05070C; }
 .s-titles h2 { font: 600 17px/1.2 var(--sans); letter-spacing: 0; }
 .lbl, .p-title, .side h3, .c-side h3 { letter-spacing: 0.08em !important; font-weight: 600; }
 .st-word { letter-spacing: 0.04em; }
+.crumb { text-transform: none !important; letter-spacing: 0 !important; font: 500 13px/1 var(--sans) !important; }
+.side-ic .planet-orb, .c-side .planet-orb { background: var(--c); box-shadow: none; filter: none; }
+.side-ic .ag-model { font: 500 12px/1.3 var(--sans); letter-spacing: 0; text-transform: none; }
+.cmdr-core b { font: 600 13px/1 var(--sans); letter-spacing: 0.02em; text-transform: none; }
 
 /* Bottom bar: vertical resize from its top edge; content scrolls inside. */
 .console { min-height: 120px; max-height: 70vh; }
