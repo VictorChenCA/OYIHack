@@ -27,12 +27,19 @@ export function sendFilter(store: Store, f: HideFilter) {
 // ── Orders + autonomy ──
 export function createOrders(parent: HTMLElement, store: Store) {
   const box = el("section", "orders glass"); box.setAttribute("aria-label", "Orders");
-  box.innerHTML = `<header class="p-head"><span class="p-title">Orders</span><div class="seg" role="radiogroup" aria-label="Autonomy"></div></header><ol class="quests"></ol>`;
+  box.innerHTML = `<header class="p-head"><span class="p-title">Orders</span><span class="dim small" style="margin-left:auto">Autonomy</span><div class="seg" role="radiogroup" aria-label="Autonomy: how much C&amp;C acts on its own"></div></header><ul class="aut-help"></ul><ol class="quests"></ol>`;
   parent.appendChild(box);
-  const seg = live(box.querySelector(".seg")!); const list = live(box.querySelector(".quests")!);
+  const seg = live(box.querySelector(".seg")!); const list = live(box.querySelector(".quests")!); const help = live(box.querySelector(".aut-help")!);
+  const AUT_HELP: Record<Autonomy, string> = {
+    manual: "C&C never acts on its own.",
+    assist: "C&C suggests next steps here in Orders (default).",
+    auto: "C&C sends the best-ranked agent to blockers that don't need a person.",
+  };
+  const AUT_NAME: Record<Autonomy, string> = { manual: "Manual", assist: "Assist", auto: "Auto" };
   function render() {
     const s = store.state; if (!s) return;
-    seg.set((["manual", "assist", "auto"] as Autonomy[]).map((a) => `<button role="radio" aria-checked="${s.autonomy === a}" class="${s.autonomy === a ? "on" : ""}" data-act="autonomy" data-v="${a}">${a}</button>`).join(""));
+    seg.set((["manual", "assist", "auto"] as Autonomy[]).map((a) => `<button role="radio" aria-checked="${s.autonomy === a}" class="${s.autonomy === a ? "on" : ""}" data-act="autonomy" data-v="${a}" title="${esc(AUT_HELP[a])}">${AUT_NAME[a]}</button>`).join(""));
+    help.set((["manual", "assist", "auto"] as Autonomy[]).map((a) => `<li class="${s.autonomy === a ? "on" : ""}"><b>${AUT_NAME[a]}</b>: ${esc(AUT_HELP[a])}</li>`).join(""));
     const adv = [...s.advice].sort((a, b) => b.priority - a.priority);
     list.set(adv.map((a) => `<li><button class="quest p${a.priority >= 8 ? "hi" : a.priority >= 4 ? "mid" : "lo"}" data-act="advice" data-id="${esc(a.id)}"><i></i><span>${esc(a.text)}</span></button></li>`).join("") || `<li class="dim pad">All clear.</li>`);
   }

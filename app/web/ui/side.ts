@@ -4,6 +4,7 @@ import type { DeptId, Enemy, EnemyKind, Factory, Mine, Planet, Quadrant, RankEnt
 import { el, esc, live, delegate, kfmt, usd, dur, ago, bar, sparkline, scoreColor, TIER_COLOR, QUAD_COLOR, QUAD_LABEL, KIND_LABEL, GOLD, STATUS_COLOR, MODE_LABEL } from "./util";
 import { tierGlyph, blockerGlyph, QUAD_WHY } from "./glyphs";
 import { tierSvg, blockerSvg } from "../shapes";
+import { ownerChip, outputsHtml } from "./console";
 
 const KINDS: EnemyKind[] = ["credential", "account", "approval", "rate_limit", "billing", "missing_info", "dependency", "failure"];
 const QUADS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
@@ -59,6 +60,7 @@ export function createSide(root: HTMLElement, store: Store) {
           <div class="s-badges"><span class="st-word" style="--c:${qc}">${esc(QUAD_LABEL[e.quadrant])}</span>${e.humanOnly ? `<span class="st-word" style="--c:${GOLD}">needs a person</span>` : ""}<span class="dim small">${esc(KIND_LABEL[e.kind] ?? e.kind)}</span></div>
         </div></header>
       <p class="s-reason">${esc(e.reason)}</p>
+      ${todoHtml(s, e)}
       <section class="bk-why"><h3>Why this type</h3>
         <div class="bk-type"><span class="bk-sw">${blockerGlyph(e.quadrant, false, 16)}</span><b>${esc(QUAD_LABEL[e.quadrant])}</b><span class="dim">${esc(QUAD_WHY[e.quadrant])}</span></div>
         ${c ? `<div class="bk-cls num">${esc(KIND_LABEL[c.kind.label] ?? c.kind.label)} <span class="dim">${pct(c.kind.p)}</span> · ${esc(QUAD_LABEL[c.quadrant.label] ?? c.quadrant.label)} <span class="dim">${pct(c.quadrant.p)}</span> · ${c.humanOnly.label ? "needs a person" : "agent can do it"} <span class="dim">${pct(c.humanOnly.p)}</span> · ${esc(deptName(s, c.department.label))}</div>
@@ -77,6 +79,18 @@ export function createSide(root: HTMLElement, store: Store) {
         <div class="rk-foot">${store.selection.length ? `<button class="btn" data-act="send-squad">Send squad (${store.selection.length})</button>` : ""}<button class="btn primary" data-act="send-sel" ${checked.size ? "" : "disabled"}>Send selected (${[...checked].filter((id) => store.unit(id)).length})</button></div>
         <div class="deploy"><span class="dim small">Start a new agent</span>${(["haiku", "sonnet", "opus"] as Tier[]).map((t) => `<button class="btn sm ghost deploy-btn" data-act="deploy" data-tier="${t}" style="--c:${TIER_COLOR[t]}">${t[0]!.toUpperCase() + t.slice(1)}</button>`).join("")}</div>
       </section>`}`;
+  }
+
+  function todoHtml(s: WorldState, e: Enemy) {
+    const isTodo = e.kind === "todo";
+    if (!isTodo && !e.owner && e.due == null && !e.source && !e.defeatedAt) return "";
+    let due = "";
+    if (e.due != null) {
+      const d = e.due - s.now; const hm = new Date(e.due).toTimeString().slice(0, 5);
+      due = d >= 0 ? `due ${hm} · in ${dur(d)}` : `<span class="bad">overdue ${dur(-d)}</span> <span class="dim">(due ${hm})</span>`;
+    }
+    return `<section class="todo-sec"><div class="todo-row">${isTodo ? `<span class="st-word" style="--c:#B8F34A">To-do</span>` : ""}${e.owner ? ownerChip(e.owner) : ""}${due ? `<span class="num small">${due}</span>` : ""}${e.source ? `<span class="mono dim small">${esc(e.source)}</span>` : ""}${e.defeatedAt ? `<span class="dim small">Cleared ${ago(e.defeatedAt, s.now)}</span>` : ""}</div>
+      ${isTodo && !e.defeatedAt && !e.resolved ? `<button class="btn primary sm act-only" data-act="mark-done" data-id="${esc(e.id)}">Mark done</button>` : ""}</section>`;
   }
 
   function rankFor(s: WorldState, e: Enemy): { entries: RankEntry[]; local: boolean } {
@@ -107,6 +121,8 @@ export function createSide(root: HTMLElement, store: Store) {
     return `<header class="s-head" style="--c:${TIER_COLOR[u.tier]}"><div class="s-icon">${tierGlyph(u.tier, 34)}</div>
       <div class="s-titles"><h2>${esc(u.label)}</h2><div class="s-badges"><span class="badge" style="--c:${TIER_COLOR[u.tier]}">${esc(u.tier)}</span><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span>${proj ? `<span class="chip"><i class="dot" style="background:${proj.color}"></i>${esc(proj.name)}</span>` : ""}</div></div></header>
       ${u.summary ? `<p class="s-reason">${esc(u.summary)}</p>` : `<p class="s-reason shimmer">summarizing…</p>`}
+      ${u.owner ? `<div class="todo-row">${ownerChip(u.owner)}${u.endedAt ? `<span class="dim small">ended ${ago(u.endedAt, s.now)}</span>` : ""}</div>` : ""}
+      ${outputsHtml(u)}
       ${enemy ? `<button class="blocked-by" data-act="focus-enemy" data-id="${esc(enemy.id)}"><span class="lbl">Blocked by</span> ${esc(enemy.title)}</button>` : ""}
       <section><h3>Stats</h3><dl class="stats num">
         <dt>Tokens</dt><dd>${kfmt(tok.input)} in · ${kfmt(tok.output)} out</dd>
@@ -127,14 +143,15 @@ export function createSide(root: HTMLElement, store: Store) {
   // ── Planet ──
   function planetHtml(s: WorldState, p: Planet) {
     const ships = s.units.filter((u) => u.planetId === p.id && u.role === "mothership" && u.status !== "dead" && !hiddenUnit(u));
-    const enemies = s.enemies.filter((e) => !e.resolved && e.planetIds.includes(p.id) && !hiddenEnemy(e));
+    const enemies = s.enemies.filter((e) => !e.resolved && !e.defeatedAt && e.planetIds.includes(p.id) && !hiddenEnemy(e));
     const jobs = s.factories.filter((f) => f.planetId === p.id);
     const mem = [...(s.knowledge?.recent ?? [])].filter((m) => m.kind === "write" && m.text && (m as { planetId?: string }).planetId === p.id).slice(-4).reverse();
     const shipRow = (u: Unit) => {
       const col = s.projects.find((x) => x.id === u.projectId)?.color ?? p.color;
       const el = Math.max(0, s.now - u.startedAt);
       const st = u.status === "attacking" || u.status === "acting" ? "working" : u.status;
-      return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="ms"><span class="ic">${tierSvg(u.tier, col, 8)}</span><b>${esc(u.label)}</b><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(st)}</span><span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="num dim small">${dur(el)}${u.etaMs != null ? " / " + dur(u.etaMs) : ""}</span></li>`;
+      const nk = s.units.filter((x) => x.parentId === u.id && x.status !== "dead").length;
+      return `<li data-act="focus-unit" data-id="${esc(u.id)}" tabindex="0" class="ms${u.status === "done" || u.historical ? " hist" : ""}"><span class="ic">${tierSvg(u.tier, col, 8)}</span><b>${esc(u.label)}</b><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(st)}</span>${nk ? `<span class="num dim small" title="Subagents">${nk} sub</span>` : ""}${u.owner ? `<span class="dim small" title="Owner">${esc(u.owner)}</span>` : ""}<span class="dim trunc">${esc(u.summary ?? u.task ?? "")}</span><span class="num dim small">${dur(el)}${u.etaMs != null ? " / " + dur(u.etaMs) : ""}</span></li>`;
     };
     return `<header class="s-head" style="--c:${p.color}"><div class="s-titles"><h2><i class="dot" style="background:${p.color};color:${p.color}"></i>${esc(p.name)}</h2></div>
         <button class="btn sm ghost" data-act="spawn-ms" data-id="${esc(p.id)}" style="margin-left:auto">+ Mothership</button></header>
@@ -213,6 +230,7 @@ export function createSide(root: HTMLElement, store: Store) {
     "send-sel": (_t, e) => { const f = store.focus; const ids = [...checked].filter((id) => store.unit(id)); if (f?.kind !== "enemy" || !ids.length) return; store.command({ type: "attack", enemyId: f.id, unitIds: ids, interrupt: (e as MouseEvent).shiftKey || undefined }); checked.clear(); body.reset(); render(); },
     "send-squad": (_t, e) => { const f = store.focus; if (f?.kind !== "enemy" || !store.selection.length) return; store.command({ type: "attack", enemyId: f.id, unitIds: [...store.selection], interrupt: (e as MouseEvent).shiftKey || undefined }); },
     deploy: (t) => { const f = store.focus; if (f?.kind === "enemy") store.command({ type: "deploy_for_enemy", enemyId: f.id, tier: t.dataset.tier as Tier }); },
+    "mark-done": (t) => { store.command({ type: "resolve", enemyId: t.dataset.id!, note: "done" }); },
     resolve: (t) => {
       const note = forms.querySelector<HTMLInputElement>(".res-note")?.value.trim(); const done = forms.querySelector<HTMLInputElement>(".res-done")?.checked;
       if (!done) { store.toast("Tick the checkbox once the human step is done", "warn"); return; }

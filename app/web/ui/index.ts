@@ -15,6 +15,14 @@ export function createUI(root: HTMLElement, store: Store) {
   (window as unknown as { __cc: Store }).__cc = store; // devtools handle
   applyFixtureOverrides(store);
   setModalHost(root);
+  // Read-only viewers (remote links): hide every input and action; the server rejects their commands anyway.
+  store.api<{ readOnly?: boolean }>("/api/session").then((r) => {
+    const ro = !!r?.readOnly;
+    document.body.classList.toggle("readonly", ro);
+    (store as unknown as { readOnly?: boolean }).readOnly = ro;
+    document.querySelectorAll<HTMLTextAreaElement | HTMLInputElement>(".c-input textarea").forEach((t) => { t.disabled = ro; });
+    window.dispatchEvent(new CustomEvent("cc-session", { detail: { readOnly: ro } }));
+  }).catch(() => { /* treat as editable */ });
   createTopBar(root, store);
   // Left drawer: views + Orders + Visibility, tucked away by default so the map gets the space.
   const drawer = el("aside", "drawer"); drawer.setAttribute("aria-label", "Orders and visibility");
