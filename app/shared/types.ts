@@ -34,6 +34,7 @@ export interface Planet {
   colonization: 0 | 1 | 2 | 3; // barren → developed (driven by work + knowledge)
   knowledge: number;        // GBrain pages for this dept (slug namespace company/<dept>/)
   memTraffic: number;       // 0..1 recent memory read/write intensity (energy beam brightness)
+  summary?: string;         // AI one-liner: what this department is doing right now (shown before you click)
   hidden?: boolean;
 }
 
@@ -76,7 +77,8 @@ export interface Unit {
   attacking?: string;       // enemy id it was sent to
   pos: Vec;                 // server-computed world position
   home: Vec;                // where its lane starts (colony / mothership)
-  target: Vec;              // objective position
+  target: Vec;              // objective position (the task's site; same task → same site = charted route)
+  siteLabel?: string;       // short name of the destination site (task)
   groups: number[];         // control groups 1..9
   tokens: TokenUsage;
   costUsd: number;
@@ -192,6 +194,7 @@ export interface WorldState {
   research: ResearchState;
   knowledge: Knowledge;
   sunPulse: number;         // 0..1 recent memory activity (sun brightness)
+  overview?: string;        // AI summary of the whole company right now (bottom bar when nothing is selected)
   feed: FeedItem[];
   advice: Advice[];
   views: View[];
