@@ -13,6 +13,15 @@ Serving goes through OpenAI-compatible dedicated deployments. No local GPU neede
 - **Pricing:** token-based. Prompt $0.30–5.14/M, completion $0.80–12.84/M, training $1.00–15.41/M.
   No free tier, but **free hackathon credits are at the River AI booth. Unused credits expire at the end of the day.**
 
+## From the kickoff talk (Igor, CEO; xAI co-founder)
+- Mission: training models and agents is "locked behind closed doors" at big labs; River lets anyone train custom
+  models and agents "on their own data" and "own the means of intelligence."
+- Credits come from the QR code on River's site, which also has API instructions and a **starter pack** (the example project).
+- The demo they showed: a chatbot that learns your writing style ("your Claude simply doesn't sound like you").
+  They want **"creative new ideas"** beyond that, e.g. integrated into your own brain, or a new use of training.
+- **Judged on "the best use of the API to create a custom model for agents."** Spoken prizes: 2nd $25K and 3rd $15K
+  in credits (the slide says 1st is 50k).
+
 ## Hackathon brief (river.ai/own-your-intelligence-hackathon, mirrored at `kb/raw/river/hackathon/page.md`)
 "**The best showcase of using a custom model wins.**" River judges on three things, so build the demo around them:
 1. **Demo the experience:** what it is and who it's for.

@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/work/memory/
 
-
-
 Knowledge and memory
 
 Memory keeps facts that remain useful across conversations, such as preferences and decisions.

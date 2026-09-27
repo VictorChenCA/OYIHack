@@ -1,7 +1,5 @@
 Source: https://qm.ycombinator.com
 
-
-
 QM documentation
 
 A multiplayer agent harness for work
@@ -349,5 +347,3 @@ Error reporting
 Postgres connections
 
 Browse all documentation in github.com/yc-software/qm/docs.
-
- 

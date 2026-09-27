@@ -1,8 +1,6 @@
 Source: https://gbrain.io/
 
-
-
- A new hire asks the workspace, not the wiki
+A new hire asks the workspace, not the wiki
 
  One conversation everyone is in, on a server of the team's own.
  What the team works out stays there, so the person who joins in
@@ -12,7 +10,7 @@ Source: https://gbrain.io/
 Refunds: who owns it
 
  Marco
- Today at 8:41p
+ Today at 8:42p
 
 First week here, and I am picking up billing. Who owns refunds, and what has the team already decided about them?
 
@@ -21,7 +19,7 @@ Dana owns billing. The team settled the refund question in June, and there is a 
  being answered
 
  Maya
- Today at 8:44p
+ Today at 8:45p
 
 We moved that window to 30 days in August. Fix the note while you are in there.
 
@@ -218,5 +216,3 @@ Drive
  take it with you.
 
  Get started
-
- 

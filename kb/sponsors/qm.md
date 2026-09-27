@@ -14,6 +14,17 @@
 - **Read locally:** `README.md`, `docs/*.md` (memory-providers, mcp-connectors, skill-registry,
   swarms, session-sharing, files-publication, composio, model-gateway), `cli/README.md`, `SECURITY.md`, `adrs/`
 
+## From the kickoff talk (Josh, leads YC Labs; Eve, YC)
+- QM = "an open cloud for everyone in your org, centrally governed": web UI plus Slack, spins up internal web apps
+  ("like Lovable"), and a central skills repository promoted to the whole org.
+- **"Fork it and push the boundaries"**: "we really want people to be creative and... surprised." Ask what backend or
+  interface you'd love Codex/Claude to have that they don't.
+- **Swarms are an open problem:** "right now I don't think anyone has really figured out how to faithfully or
+  efficiently visualize swarms... how we can create a great interface for swarms."
+- Games: they had agents play **Minecraft last week** and loved following the feeds. Computer use is also open.
+- The UI is intentionally simple and modeled on Codex/Claude. **They want feedback on the interface** and are around all day.
+- Agent 37 (F26) gives free sandboxes: QM runs tools inside sandboxes, so this is a core primitive. YC Labs is hiring.
+
 ## From the kickoff slide: "Extend QM" examples (Sep 27)
 The slide's suggested directions (repo: https://github.com/yc-software/qm):
 - **Have QM play a video game** (SimCity, Dota, Minecraft, etc.)

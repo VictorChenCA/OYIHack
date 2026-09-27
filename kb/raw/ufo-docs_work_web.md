@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/work/web/
 
-
-
 Web portal
 
 The web portal opens a new conversation with the workspace’s main agent. Use it for reports, files,

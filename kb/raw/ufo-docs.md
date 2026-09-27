@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/
 
-
-
 Documentation
 Set up
  your UFO.
@@ -50,4 +48,4 @@ Turn a question into a report
 Build an internal application
 Create tools for your team
 
-Need help with your workspace?Troubleshooting 
+Need help with your workspace?Troubleshooting

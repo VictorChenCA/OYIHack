@@ -12,6 +12,10 @@ Source-available (ELv2), free tier.
 - Any page as markdown: `https://docs.superset.sh/llms.mdx/<path>`
 - Repo: https://github.com/superset-sh/superset (local: `kb/repos/superset`)
 
+## From the kickoff talk
+- The track is simple: **build whatever you're building on Superset and demonstrate it with a Superset Page.**
+  Any agent works (Claude, Codex, etc.). "Everyone should use Superset now."
+
 ## Use it TODAY as your build tool (free sponsor usage)
 - Desktop app: download from superset.sh. CLI: `brew install superset-sh/tap/superset`.
 - Race agents: run the same prompt in 2–3 workspaces and merge the best (`recipes/race-agents`).

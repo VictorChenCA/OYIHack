@@ -13,6 +13,13 @@ versus 15.6K for an equivalent skill.
 - Local scraped docs: `kb/raw/memorable-{llms.txt,doc,cli,api,integrate,gbrain,qm,usecase}.md`
 - Claude plugin source: github.com/MemorableOrg/cowork-plugin
 
+## From the kickoff talk (Miguel, co-founder)
+- Memorable started at a hackathon. It stores the steps of a task **in a graph**, so the next similar task runs
+  "faster, cheaper and more deterministic." Live on **QM, gstack, and GBrain**. Bring your own environments and browsers.
+- **What they judge:** "think really big... change how agent computation is done on a specific environment"; "something
+  super interesting about how to change the way agents are thinking using Memorable **on a specific domain**."
+- Prizes (spoken): **1st AirPods Pro + $500, 2nd $250, 3rd $100** (the slide adds Memorable Pro and bomber jackets).
+
 ## Fastest path (CLI)
 ```bash
 npm i -g memorable-cli            # or: curl -fsSL https://memorable.sh/install.sh | sh

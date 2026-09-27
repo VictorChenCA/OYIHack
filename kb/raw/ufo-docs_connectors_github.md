@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/connectors/github/
 
-
-
 Connecting GitHub
 
 Connect GitHubSection titled “Connect GitHub”

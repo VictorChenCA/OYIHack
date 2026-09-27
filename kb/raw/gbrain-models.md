@@ -1,8 +1,6 @@
 Source: https://gbrain.io/models
 
-
-
- Anthropic
+Anthropic
 
  Claude Fable 5
 
@@ -87,5 +85,3 @@ Source: https://gbrain.io/models
  and we will look at adding it.
 
  Get Started
-
- 

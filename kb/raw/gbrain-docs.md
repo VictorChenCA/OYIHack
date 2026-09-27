@@ -1,8 +1,6 @@
 Source: https://gbrain.io/docs
 
-
-
- Docs
+Docs
 
  Set up a workspace, point the agents at it, and share a fork with a group.
 
@@ -73,4 +71,3 @@ The accounts a workspace reaches, and pointing ChatGPT, Claude or a terminal at 
  Activity
 
  Every call an assistant made, what it did, which connection made it, and what it cost.
-

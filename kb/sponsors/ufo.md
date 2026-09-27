@@ -14,6 +14,18 @@ SQLite or Postgres/S3/Redis, Rust terminal client and servers.
 - Read locally: `README.md`, `spec.md` (design source of truth), `AGENTS.md`, `extensions/sample`
 - Slack community: https://join.slack.com/t/ufo-oss/shared_invite/zt-4b187sgtd-AysrUM5xku8FJ6BiPMyF5w
 
+## From the kickoff talk (Marshall and Alex, co-founders)
+- UFO = "an open agent harness to run your business on," from the team that built GitHub Copilot and Perplexity
+  Computer. The core engine was **open-sourced last night**, and sign-ups are open. It runs in Slack, web, terminal and
+  **iMessage**, and aims at thousands of durable agents with shared memory, data-ingesting connectors, and automations.
+- **Two tracks:** (1) an extension on the open-source core. They especially want **links between the sponsors**:
+  "an extension to integrate with GBrain, QM, even River or Memorable would be great to hack into UFO." (2) The best
+  **business automation** for startups.
+- Alex: "everything is an extension (sandboxing, memory...), so if you have a crazy idea that's hard to fit into an
+  existing harness, build it here." On real tasks: models are lazy and subagents finish early; **look at the
+  data**, then calibrate LLM judges on the failures you saw.
+- UFO booth on the floor. Garry called Perplexity Computer "one of the greatest harnesses ever created."
+
 ## Option A: hosted (fastest to demo)
 ```bash
 curl -fsSL https://ufo.ai/ufo | sh      # installs native client to ~/.ufo/bin (script reviewed: kb/raw/ufo-install.sh)

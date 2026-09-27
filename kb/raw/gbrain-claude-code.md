@@ -1,41 +1,6 @@
 Source: https://gbrain.io/works-with/claude-code
 
-
-
- Works with Claude Code
- · an agent that remembers for you
-
- Skip to main content
-
- GBrain
-
- Claude Code
-
- Claude Code, with the team's accounts in the room
-
- Mail, calendar and web search mid-task, no key in mcp.json.
-
- gbrain.io
-
- GBrain
-
- Get Started
-
- Menu
-
- Get Started
-
- Claude Code
-
- Claude Code, with the team's accounts in the room.
-
- Mail, calendar and web search mid-task, no key in mcp.json.
-
-Claude Code is good at the code in front of it. It cannot read the email thread where a bug was reported or check when the fix is due, so you end up pasting that context in yourself.
-GBrain connects on two sides. Over MCP it gives Claude Code tools: mail search, calendar, web search, page fetching. And GBrain workspaces run Anthropic models, so the company behind the assistant also makes the model the workspaces run on.
-You choose which tools it gets, and the token in mcp.json can be revoked at any time. No API keys on disk.
-
- One endpoint connects Claude Code
+One endpoint connects Claude Code
 
  Not one per service. What this client can call is decided by its
  permission, not by the address, and the token comes from the
@@ -82,4 +47,3 @@ $ claude mcp add gbrain https://gbrain.io/mcp --header "Authorization: Bearer <t
  Tools
 
  explains the permission, the ceiling and the record they share.
-

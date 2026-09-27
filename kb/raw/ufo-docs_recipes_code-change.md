@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/recipes/code-change/
 
-
-
 Make a code change
 
 Connect firstSection titled “Connect first”
@@ -46,4 +44,3 @@ Address the review comments that apply to this change. Explain any comment you d
 Wait for CI. Fix only failures caused by this branch, then report the latest commit and check results.
 
 Update the pull request description with the test results and browser checks. Do not merge.
-

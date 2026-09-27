@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/getting-started/setup/
 
-
-
 Set up your workspace
 
 Create the workspaceSection titled “Create the workspace”

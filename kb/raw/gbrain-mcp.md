@@ -1,8 +1,6 @@
 Source: https://gbrain.io/mcp
 
-
-
- An assistant sees what the permission allows
+An assistant sees what the permission allows
 
  An assistant is handed only the tools its permission allows. Anything you didn't grant isn't listed, offered, or callable.
 
@@ -53,5 +51,3 @@ GBrain on the dock or home screen
  All of Tools
 
  connect an account once, and every AI you use reaches it
-
- 

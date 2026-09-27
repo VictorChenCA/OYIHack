@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/getting-started/introduction/
 
-
-
 How UFO works
 
 UFO is an AI teammate designed to do real work. It is chat-first, so ask for what you need.

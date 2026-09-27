@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/getting-started/ask/
 
-
-
 Ask for work
 
 State the outcome. Add the context and limits that affect the work.

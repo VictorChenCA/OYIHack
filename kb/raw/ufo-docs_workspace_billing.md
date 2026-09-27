@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/workspace/billing/
 
-
-
 Balance and billing
 
 A workspace runs on a prepaid balance. The cost of each task is deducted from the balance.

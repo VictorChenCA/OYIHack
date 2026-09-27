@@ -1,8 +1,6 @@
 Source: https://river.ai
 
-
-
- River / The frontier AI development stack
+River / The frontier AI development stack
 
 Your own frontier AI lab.
 In one API.
@@ -634,5 +632,3 @@ Thanks for reaching out.
 
 Your request is with the River team. We’ll follow up by email.
  Explore the docs ↗
-
- 

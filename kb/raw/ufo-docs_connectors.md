@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/connectors/
 
-
-
 Connecting your systems
 
 Ask your UFO to connect a system:

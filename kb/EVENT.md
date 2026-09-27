@@ -51,7 +51,7 @@ Sponsor side quest prizes:
 |---|---|
 | QM | Mac mini |
 | River | 50k / 25k / 15k River API credits (1st/2nd/3rd) |
-| Memorable | Memorable Pro, bomber jackets, AirPods, cash prizes |
+| Memorable | Memorable Pro, bomber jackets; spoken: **1st AirPods Pro + $500, 2nd $250, 3rd $100** |
 | UFO | Unlimited lifetime UFO access |
 | Superset | AirPods Max plus a year of Superset Pro |
 
@@ -73,6 +73,34 @@ Criteria, quoted from the kickoff slide:
   https://gbrain.io/gratis/own-your-intelligence. Details in `kb/sponsors/gbrain.md`.
 - **QM:** agent37 hosting credit, code `QMHACK`: https://www.agent37.com/redeem/QMHACK. Hosted QM is at https://www.agent37.com/qm,
   and agent37 also works as QM's sandbox backend (`SANDBOX_BACKEND=agent37`).
+
+## Kickoff talk: what the speakers added (Granola, full text in `kb/raw/kickoff/`)
+- **Judging is about what you built today.** The organizer warned against taking "a really established project,
+  fork it and slap your name on it." Judges look at what was built in the timeframe.
+- **Demo video: 1–2 minutes.** Side-quest checkboxes route your project to the right sponsor judges.
+- **Cash is split among team members** (solo keeps it all). The grand prize is also 1st place: the 1:1 with Garry plus $5,000.
+- **Sponsors and founders are the judges, and they're on the floor all day.** Show them work in progress and ask for feedback.
+- Build spaces: main room, the room next door, and a field space downstairs (left out of the main room, then left down the stairs).
+- The organizers will post a YC message that "codifies everything".
+- Speakers:
+  - River: Igor, CEO and xAI co-founder.
+  - GBrain: Sina (open source) and Brad (gbrain.io).
+  - QM: Josh (leads YC Labs) and Eve.
+  - Memorable: Miguel.
+  - UFO: Marshall and Alex (co-founders; Alex created GitHub Copilot and built Perplexity Computer).
+- Garry, to the room: "probably the best hackathon applicants that YC has ever received."
+- **Alex's advice for agents that finish real tasks:** "look at the data." Diagnose each failure as model vs.
+  context vs. software, then "calibrate judges" (LLM graders) on the failure modes you actually saw, and scale from there.
+
+### What each sponsor said they're looking for
+| Sponsor | In their words |
+|---|---|
+| River | "the best use of the API to create a custom model for agents"; "creative new ideas"; own "the means of intelligence" |
+| GBrain | "solve a tedious task using GBrain", with skills, "for people outside of this room who aren't as AI cool as we are" |
+| QM | "fork it and push the boundaries"; what you'd love Codex/Claude to have; **"nobody has figured out how to faithfully or efficiently visualize swarms"**; agents playing video games (Minecraft last week); computer use. They welcome UI feedback |
+| Memorable | "think really big... change how agent computation is done on a specific environment"; "change the way agents are thinking using Memorable on a specific domain" |
+| Superset | "Build whatever you're building on Superset and demonstrate it using a Superset Page"; any agent works |
+| UFO | extensions, especially **links between the sponsors** ("GBrain, QM, even River or Memorable would be great to hack into UFO"), or the best business automation |
 
 ## Submissions
 **Form:** https://docs.google.com/forms/d/e/1FAIpQLSdiU5L7PhlkD7HQQouQKPSlm7WrobkdJuvSZLoi6O7jXRWKiQ/viewform
@@ -106,7 +134,7 @@ Both are Garry Tan / YC projects (`yc-software/qm`, `garrytan/gbrain`).
 
 ## Unknowns to resolve at the 13:00 kickoff (write the answers here)
 - [x] Prize tracks per sponsor: see **Prizes** above
-- [ ] Judging criteria? Team size limit? (Nothing published. The event page only says teams are allowed. Ask an organizer.)
+- [ ] Judging criteria? Team size limit? (Kickoff talk: judges weigh what you built today, and sponsors judge their side quests.) (Nothing published. The event page only says teams are allowed. Ask an organizer.)
 - [x] Submission format and location: form on the submissions page (opens 16:00); see **Submissions** above
 - [x] **River credits:** free at the River AI booth; unused credits expire at the end of the day (`kb/sponsors/river.md`)
 - [ ] **UFO credits?** Hosted UFO runs on a prepaid balance and needs a card.

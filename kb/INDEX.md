@@ -3,6 +3,7 @@
 | Need | File |
 |---|---|
 | Schedule, brief, open questions | `kb/EVENT.md` |
+| Kickoff talk: what each sponsor said they want (Granola summary + transcript) | `kb/raw/kickoff/` |
 | **What to build and how (decisions, ideas, timeline, footguns)** | `kb/ARCHITECTURE.md` |
 | Install/login checklist + smoke tests | `kb/SETUP.md` |
 | Sponsor cheat sheets | `kb/sponsors/{gbrain,memorable,qm,superset,river,ufo}.md` |

@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/recipes/data-analysis/
 
-
-
 Track weekly activation
 
 Define and test the measureSection titled “Define and test the measure”

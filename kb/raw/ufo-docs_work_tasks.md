@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/work/tasks/
 
-
-
 Scheduled work
 
 Ask your UFO to repeat work on a schedule. State the action, schedule, time zone, source, and result

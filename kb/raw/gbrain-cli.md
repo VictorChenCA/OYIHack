@@ -1,8 +1,6 @@
 Source: https://gbrain.io/cli
 
-
-
- Install GBrain once, and the accounts become commands
+Install GBrain once, and the accounts become commands
 
  Gmail, the calendar and a web search, each one a line you type.
  Anything else you connect works the same way.
@@ -406,5 +404,3 @@ GBrain on the dock or home screen
  Sign in
 
  Read the full reference
-
- 

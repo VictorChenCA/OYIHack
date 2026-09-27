@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/connectors/slack/
 
-
-
 Connecting Slack
 
 Connect SlackSection titled “Connect Slack”

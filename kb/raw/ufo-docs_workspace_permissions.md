@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/workspace/permissions/
 
-
-
 Permissions and privacy
 
 UFO acts through the accounts, sources, and permissions that you give it. Access to one workspace
@@ -44,4 +42,3 @@ spends money, or changes another person’s access.
 Draft the customer reply and show it to me. Do not send it.
 
 Diagnose the production error. Do not change configuration or deploy.
-

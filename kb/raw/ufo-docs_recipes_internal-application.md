@@ -1,7 +1,5 @@
 Source: https://ufo.ai/docs/recipes/internal-application/
 
-
-
 Build a customer-health application
 
 Define the applicationSection titled “Define the application”
