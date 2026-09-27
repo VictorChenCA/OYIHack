@@ -324,3 +324,9 @@ button.stat { cursor: pointer; }
 /* integration: the memory explorer owns the screen in memory mode (keep toasts) */
 body[data-mode="memory"] #memory { z-index: 20; }
 body[data-mode="memory"] #ui > *:not([class*="toast"]) { display: none; }
+
+/* Left column at short heights: headers and layer chips stay put, lists scroll inside their panel */
+.leftcol > .orders .p-head, .leftcol > .vis .p-head, .vis .layers { flex-shrink: 0; }
+.orders .quests, .vis .tree { flex: 1 1 auto; overscroll-behavior: contain; }
+.vis { min-height: 96px; }
+@media (max-height: 800px) { .orders { max-height: 50%; } .layers { padding: 6px 8px; } .p-head { padding: 7px 12px 6px; } }
