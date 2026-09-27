@@ -597,11 +597,12 @@ export function createScene(app: Application, store: Store) {
         const ep = enemyPos.get(e.id); if (!ep) continue;
         const qc = QUAD_COLOR[e.quadrant] ?? QUAD_COLOR.do_now;
         const hot = (hov?.kind === "enemy" && hov.id === e.id) || (store.focus?.kind === "enemy" && store.focus.id === e.id);
+        let said = false; // the reason is shown once per blocker, not on every tether
         for (const id of e.blocked) {
           const a = disp.get(id); if (!a) continue;
           dashed(tg, a.x, a.y, ep.x, ep.y, 6 * ui, 6 * ui);
           if (emph(id) < 1) { tg.stroke({ width: 1 * ui, color: qc, alpha: 0.35 * emph(id) }); }
-          if (hot || (hov?.kind === "unit" && hov.id === id)) {
+          if ((hot && !said) || (hov?.kind === "unit" && hov.id === id)) { said = true;
             const t = tmpText(`reason:${e.id}:${id}`, e.reason, 13, qc, "IBM Plex Sans");
             t.position.set((a.x + ep.x) / 2, (a.y + ep.y) / 2 - 10 * ui); t.scale.set(ui);
           }
