@@ -228,11 +228,15 @@ export class World implements WorldApi {
   }
 
   // ---------- enemies ----------
+  /** A blocker sits just beyond the frontier of the team it concerns (the Sentinel's department call, else the blocked
+   *  agents' teams). Shared by several teams → between them. Same cause → same spot. */
   private enemyPos(e: Enemy): Vec {
-    const pts = e.blocked.map((id) => this.units.get(id)?.pos).filter(Boolean) as Vec[];
-    const c = pts.length ? pts.reduce(add, { x: 0, y: 0 }) : this.planet(e.planetIds[0] ?? "engineering").pos;
-    const a = Math.atan2(c.y, c.x) + (hash(e.causeKey) - 0.5) * 0.35;
-    return polar(SYSTEM_R - 70 - hash(e.id) * 60, a);
+    const dept = e.classification && e.classification.department.p >= 0.5 ? [e.classification.department.label] : [];
+    const teams = [...new Set([...dept, ...e.planetIds])].map((id) => this.planet(id as DeptId));
+    const c = teams.length ? teams.reduce((a, p) => add(a, p.pos), { x: 0, y: 0 }) : { x: 1, y: 0 };
+    const mid = { x: c.x / Math.max(1, teams.length), y: c.y / Math.max(1, teams.length) };
+    const a = Math.atan2(mid.y, mid.x) + (hash(e.causeKey) - 0.5) * 0.28;
+    return polar(Math.max(len(mid), 600) + 300 + hash(e.id) * 60, a);
   }
   block(u: Unit, t: NonNullable<ReturnType<typeof ruleTriage>>) {
     let e = [...this.enemies.values()].find((x) => x.causeKey === t.causeKey && !x.resolved);
