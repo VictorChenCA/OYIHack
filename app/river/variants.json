@@ -57,9 +57,9 @@
     "steps": 80,
     "checkpoint": "river://e563d05c-dba6-4d14-9df5-9cf0b0c944d1/sampler_weights/sentinel-qwen36a3b-s080-inf",
     "val_acc": 0.9483333333333335,
-    "test_acc_trained": null,
-    "test_acc_base": null,
-    "test_all5": null,
+    "test_acc_trained": 0.9331,
+    "test_acc_base": 0.5661,
+    "test_all5": 0.7115,
     "lora_p50_ms": null,
     "lora_p95_ms": null,
     "base_p50_ms": null
