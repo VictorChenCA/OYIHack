@@ -60,6 +60,14 @@ export function createScene(app: Application, store: Store) {
   const factoryViews = new Map<string, { s: Sprite; name: Text }>();
   const mineViews = new Map<string, { s: Sprite; glow: Sprite; name: Text; val: Text }>();
   const texts = new Map<string, { t: Text; seen: number }>(); // transient labels (cycles, squadrons, reasons)
+  // Label declutter: lower number wins when two labels overlap; >= MINOR hides when zoomed out.
+  const prio = new WeakMap<Text, number>();
+  const MINOR = 4;
+  /** System-view framing radius (x systemRadius): content (orbits + enemies) reaches ~0.9R; the band between HUD bars is short. */
+  const SYS_FIT = 0.95;
+  const setPrio = <T extends Text>(t: T, p: number) => { prio.set(t, p); return t; };
+  /** "Claude (subscription usage)" -> "CLAUDE", "River credits" -> "RIVER". */
+  const shortMine = (s: string) => (s.replace(/\s*\(.*?\)\s*/g, " ").trim().split(/\s+/)[0] || s).toUpperCase();
   const packets: Sprite[] = [];
   const fxs: Fx[] = [];
   let lastWriteAt = 0;
@@ -111,7 +119,7 @@ export function createScene(app: Application, store: Store) {
     research.gem = sprite("meteor_squareLarge", { tint: 0x9fffef, size: 46 });
     research.shards = [0, 1, 2].map(() => sprite("meteor_small", { tint: 0x7fe9ff, size: 14 }));
     research.twinkle = sprite("star_08", { tint: 0xd8fffa, add: true, size: 70, alpha: 0.6 });
-    research.name = label("RESEARCH", 13, 0x9fffef);
+    research.name = setPrio(label("RESEARCH", 13, 0x9fffef), 2);
     L.research.addChild(research.glow, research.gem, ...research.shards, research.twinkle);
     L.labels.addChild(research.name);
 
@@ -146,8 +154,8 @@ export function createScene(app: Application, store: Store) {
     const lights = Array.from({ length: 7 }, () => sprite("star_04", { tint: 0xffd27a, add: true, size: 16 }));
     const dish = sprite("satellite_A", { tint: 0xcfe6ff, size: 26 });
     c.addChild(ring, base, dept, ...lights, dish);
-    const name = label(p.name.toUpperCase(), 18, hex(p.color));
-    const cycle = label("", 12, 0x8fa3b8, "IBM Plex Sans", "500");
+    const name = setPrio(label(p.name.toUpperCase(), 18, hex(p.color)), 1);
+    const cycle = setPrio(label("", 12, 0x8fa3b8, "IBM Plex Sans", "500"), 5);
     L.planets.addChild(c); L.labels.addChild(name, cycle);
     v = { c, base, dept, lights, ring, dish, name, cycle };
     planetViews.set(p.id, v);
@@ -170,7 +178,7 @@ export function createScene(app: Application, store: Store) {
     const badge = label("!", 22, GOLD, "Rajdhani", "700");
     c.addChild(aura, smokeS, halo, hull, badge);
     L.enemies.addChild(c);
-    const title = label("", 13, 0xffffff, "Rajdhani", "700"); L.labels.addChild(title);
+    const title = setPrio(label("", 13, 0xffffff, "Rajdhani", "700"), 0); L.labels.addChild(title);
     v = { c, title, aura, hull, halo, badge, drones, smoke: smokeS, x: e.pos.x, y: e.pos.y, seen: 0, kind: e.kind, last: e, born: frame > 30 ? time : -10 };
     if (frame > 30) spawnFx("circle_02", e.pos.x, e.pos.y, QUAD_COLOR[e.quadrant] ?? 0xff4d4d, 300, 30, 0.6, 0.8); // warp-in
     enemyViews.set(e.id, v);
@@ -193,7 +201,7 @@ export function createScene(app: Application, store: Store) {
 
   function tmpText(key: string, text: string, size: number, color: number, font = "Rajdhani"): Text {
     let e = texts.get(key);
-    if (!e) { e = { t: label(text, size, color, font, font === "Rajdhani" ? "700" : "500"), seen: frame }; L.labels.addChild(e.t); texts.set(key, e); }
+    if (!e) { e = { t: setPrio(label(text, size, color, font, font === "Rajdhani" ? "700" : "500"), key.startsWith("squad:") ? 1 : key.startsWith("reason:") ? 2 : 3), seen: frame }; L.labels.addChild(e.t); texts.set(key, e); }
     if (e.t.text !== text) e.t.text = text;
     e.seen = frame; e.t.visible = true;
     return e.t;
@@ -219,7 +227,7 @@ export function createScene(app: Application, store: Store) {
     top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
-    if (!fitted) { fitted = true; cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * 1.05); cam.update(0); }
+    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * SYS_FIT); cam.update(0); }
     const R = s.systemRadius, ui = cam.ui;
 
     // background parallax
@@ -313,7 +321,7 @@ export function createScene(app: Application, store: Store) {
       seenMine.add(m.id);
       let v = mineViews.get(m.id);
       if (!v) {
-        v = { glow: sprite("circle_05", { add: true, alpha: 0.35, size: 110 }), s: sprite("meteor_squareDetailedLarge"), name: label("", 12, 0xdbe8f5), val: label("", 12, 0xffffff, "JetBrains Mono", "500") };
+        v = { glow: sprite("circle_05", { add: true, alpha: 0.35, size: 110 }), s: sprite("meteor_squareDetailedLarge"), name: setPrio(label("", 12, 0xdbe8f5), 2), val: setPrio(label("", 12, 0xffffff, "JetBrains Mono", "500"), MINOR) };
         L.mines.addChild(v.glow, v.s); L.labels.addChild(v.name, v.val); mineViews.set(m.id, v);
       }
       const frac = m.total > 0 ? Math.max(0, Math.min(1, m.remaining / m.total)) : 0;
@@ -323,7 +331,7 @@ export function createScene(app: Application, store: Store) {
       const lv = store.layerOn("mines") && store.layerOn("labels");
       v.name.visible = v.val.visible = lv;
       const up = mi % 2 === 1 ? -1 : 1, ly = m.pos.y + up * 34 * ui + (up < 0 ? -16 * ui : 0);
-      v.name.text = m.label.toUpperCase(); v.name.scale.set(ui * 0.85); v.name.position.set(m.pos.x, ly);
+      const mn = shortMine(m.label); if (v.name.text !== mn) v.name.text = mn; v.name.scale.set(ui * 0.85); v.name.position.set(m.pos.x, ly);
       const val = `$${m.remaining.toFixed(m.remaining < 100 ? 1 : 0)}/${m.total}`; if (v.val.text !== val) v.val.text = val;
       v.val.scale.set(ui * 0.8); v.val.position.set(m.pos.x, ly + 14 * ui);
       v.val.tint = frac < 0.2 ? 0xff4d4d : 0xffffff;
@@ -351,7 +359,7 @@ export function createScene(app: Application, store: Store) {
       if (f.hidden || store.isHidden("factory", f.id, { planetId: f.planetId })) continue;
       seenF.add(f.id);
       let v = factoryViews.get(f.id);
-      if (!v) { v = { s: sprite("spaceStation_018", { tint: 0xcfe6ff }), name: label("", 11, 0xaec3d8, "IBM Plex Sans", "500") }; L.factories.addChild(v.s); L.labels.addChild(v.name); factoryViews.set(f.id, v); }
+      if (!v) { v = { s: sprite("spaceStation_018", { tint: 0xcfe6ff }), name: setPrio(label("", 11, 0xaec3d8, "IBM Plex Sans", "500"), MINOR) }; L.factories.addChild(v.s); L.labels.addChild(v.name); factoryViews.set(f.id, v); }
       setSize(v.s, 34 * ui); v.s.position.set(f.pos.x, f.pos.y); v.s.rotation += dt * 0.08;
       const da = dimAlpha(f.planetId);
       v.s.alpha = (f.paused ? 0.35 : 1) * da;
@@ -632,7 +640,29 @@ export function createScene(app: Application, store: Store) {
     for (const [k, e] of texts) if (e.seen !== frame) { if (frame - e.seen > 120) { e.t.destroy(); texts.delete(k); } else e.t.visible = false; }
     L.labels.visible = store.layerOn("labels") || true;
     for (const [k, e] of texts) if (k.startsWith("squad:") && !store.layerOn("labels")) e.t.visible = false;
+    declutter(cam.scale / cam.fitScale(R * SYS_FIT));
   });
+
+  /** Greedy label placement: keep higher-priority labels, hide ones that would overlap them; drop minor labels when zoomed out. */
+  const boxes: { x0: number; y0: number; x1: number; y1: number }[] = [];
+  function declutter(zoomRel: number) {
+    const cand: { t: Text; p: number }[] = [];
+    for (const ch of L.labels.children) {
+      const t = ch as Text; if (!t.visible || t.alpha < 0.05 || !t.text) continue;
+      const p = prio.get(t) ?? 3;
+      if (p >= MINOR && zoomRel < 0.8) { t.visible = false; continue; }
+      cand.push({ t, p });
+    }
+    cand.sort((a, b) => a.p - b.p);
+    boxes.length = 0;
+    const pad = 3 / Math.max(0.01, cam.scale); // ~3 screen px breathing room
+    for (const { t } of cand) {
+      const hw = Math.abs(t.width) / 2 + pad, hh = Math.abs(t.height) / 2 + pad * 0.5;
+      const b = { x0: t.x - hw, y0: t.y - hh, x1: t.x + hw, y1: t.y + hh };
+      if (boxes.some((o) => b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0)) { t.visible = false; continue; }
+      boxes.push(b);
+    }
+  }
 
   // ---------- picking ----------
   function pick(sx: number, sy: number): Target | null {
@@ -663,9 +693,10 @@ export function createScene(app: Application, store: Store) {
 
   function flyToMode() {
     const s = store.state; const m = store.mode;
+    measureInsets();
     if (!s) return;
     if (m.kind === "planet") { const p = s.planets.find((q) => q.id === m.planetId); if (p) cam.flyTo(p.pos.x * 0.85, p.pos.y * 0.85, cam.fitScale(520)); }
-    else if (m.kind === "system") cam.flyTo(0, 0, cam.fitScale(s.systemRadius * 1.05));
+    else if (m.kind === "system") cam.flyTo(0, 0, cam.fitScale(s.systemRadius * SYS_FIT));
     else if (m.kind === "memory") cam.flyTo(0, 0, cam.fitScale(420));
   }
   store.on("mode", flyToMode);
@@ -741,5 +772,13 @@ export function createScene(app: Application, store: Store) {
     if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
     store.setMode({ kind: "system" });
   });
-  window.addEventListener("resize", () => { if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * 1.05), 0.2); });
+  /** Keep the system framed between the top bar and the bottom console (HUD chrome is DOM, read its rects). */
+  function measureInsets() {
+    const r = (sel: string) => { const n = document.querySelector(sel) as HTMLElement | null; const b = n?.getBoundingClientRect(); return b && b.height > 0 ? b : null; };
+    const tb = r(".topbar"), con = r(".console");
+    if (store.mode.kind === "memory") { cam.insetTop = cam.insetBottom = 0; return; }
+    cam.insetTop = tb ? Math.max(0, tb.bottom + 6) : 0;
+    cam.insetBottom = con ? Math.max(0, cam.h - con.top + 6) : 0;
+  }
+  window.addEventListener("resize", () => { measureInsets(); if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * SYS_FIT), 0.2); });
 }

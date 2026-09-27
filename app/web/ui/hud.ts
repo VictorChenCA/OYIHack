@@ -1,7 +1,7 @@
 // Hover tooltip, top bar, toasts.
 import type { Store, Target } from "../store";
 import type { WorldState } from "../../shared/types";
-import { el, esc, live, delegate, kfmt, usd, dur, bar, TIER_COLOR, QUAD_COLOR, QUAD_LABEL, KIND_LABEL, GOLD, STATUS_COLOR } from "./util";
+import { el, esc, live, delegate, kfmt, usd, dur, bar, shortName, TIER_COLOR, QUAD_COLOR, QUAD_LABEL, KIND_LABEL, GOLD, STATUS_COLOR } from "./util";
 import { tierGlyph, kindGlyph } from "./glyphs";
 
 export function createTooltip(root: HTMLElement, store: Store) {
@@ -70,14 +70,14 @@ export function createTopBar(root: HTMLElement, store: Store) {
     if (m.kind === "memory") crumbs.push(`<span class="crumb on" style="color:#FFD166">Memory</span>`);
     const cyc = planet ?? [...s.planets].filter((p) => !store.isHidden("planet", p.id)).sort((a, b) => a.cycle.endAt - b.cycle.endAt)[0];
     left.set(`<span class="brand">C<span>&amp;</span>C</span><nav class="crumbs" aria-label="Breadcrumb">${crumbs.join(DOT)}</nav>
-      ${cyc ? `<div class="tb-cycle" title="${esc(cyc.name)} · ${esc(cyc.cycle.label)}"><span class="lbl">${esc(cyc.cycle.label)}</span>${bar(cyc.progress, cyc.color)}<span class="num dim">${dur(cyc.cycle.endAt - s.now)}</span></div>` : ""}`);
-    mines.set(s.mines.filter((x) => !store.isHidden("mine", x.id)).map((x) => `<button class="mine" data-act="focus-mine" data-id="${esc(x.id)}" title="${esc(x.label)} · ${x.measured ? "measured" : "manual"}">
-      <span class="mine-l"><i class="dot" style="background:${x.color};color:${x.color}"></i>${esc(x.label)}</span>
+      ${cyc ? `<div class="tb-cycle" title="${esc(cyc.name)} · ${esc(cyc.cycle.label)}"><span class="lbl trunc">${esc(cyc.cycle.label)}</span>${bar(cyc.progress, cyc.color)}<span class="num dim">${dur(cyc.cycle.endAt - s.now)}</span></div>` : ""}`);
+    mines.set(s.mines.filter((x) => !store.isHidden("mine", x.id)).map((x) => `<button class="mine" data-act="focus-mine" data-id="${esc(x.id)}" title="${esc(x.label)} · ${usd(x.remaining)} / ${usd(x.total)} · −${usd(x.burnPerDay)}/day · ${x.measured ? "measured" : "manual"}">
+      <span class="mine-l"><i class="dot" style="background:${x.color};color:${x.color}"></i>${esc(shortName(x.label))}</span>
       <span class="mine-v num">${usd(x.remaining)}<small>−${usd(x.burnPerDay)}/d</small></span>${bar(x.total ? x.remaining / x.total : 0, x.color)}</button>`).join(""));
     const tok = s.units.reduce((a, u) => a + u.tokens.input + u.tokens.output + u.tokens.cacheRead + u.tokens.cacheWrite, 0);
     const cost = s.units.reduce((a, u) => a + u.costUsd, 0);
     const k = s.knowledge;
-    right.set(`<div class="stat"><span class="lbl">Tokens</span><b class="num">${kfmt(tok)}</b></div><div class="stat"><span class="lbl">Spend</span><b class="num">${usd(cost)}</b></div>
+    right.set(`<div class="stat tokens"><span class="lbl">Tokens</span><b class="num">${kfmt(tok)}</b></div><div class="stat"><span class="lbl">Spend</span><b class="num">${usd(cost)}</b></div>
       <button class="stat knowledge" data-act="focus-sun" title="GBrain pages · facts · Memorable procedures"><span class="lbl">Knowledge</span><b class="num">${k.pages}<i>·</i>${k.facts}<i>·</i>${k.procedures}</b></button>
       ${s.simulated ? `<span class="badge sim" title="Some of this world is simulated">Simulated</span>` : ""}`);
   }

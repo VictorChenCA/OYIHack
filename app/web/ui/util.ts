@@ -71,3 +71,10 @@ export function sparkline(values: number[], w = 120, h = 28, color = "#4FD1FF") 
 }
 
 export function isTyping(e: KeyboardEvent) { const t = e.target as HTMLElement | null; return !!t && (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || t.isContentEditable); }
+
+/** Compact resource name for chips and map labels: "Claude (subscription usage)" -> "Claude", "River credits" -> "River". */
+export function shortName(label: string): string {
+  const base = label.replace(/\s*\(.*?\)\s*/g, " ").trim();
+  const first = base.split(/\s+/)[0];
+  return first || label;
+}
