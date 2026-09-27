@@ -4,7 +4,7 @@ import type { DeptId, Enemy, Mine, Planet, Unit, WorldState } from "../../shared
 import type { Store, Target } from "../store";
 import { loadTextures, tex, type TexName } from "./assets";
 import { Camera } from "./camera";
-import { GOLD, HOLO, QUAD_COLOR, arc, dashed, drawBlocker, fogTexture, hash, hex, label } from "./draw";
+import { GOLD, HOLO, QUAD_COLOR, arc, dashed, drawBlocker, hash, hex, label, vignetteTexture } from "./draw";
 import { MOTHERSHIP_SIZE, SUBAGENT_SCALE, TIER_HULL, TIER_SCALE } from "../shapes";
 
 const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", product: "planet01", design: "planet09", marketing: "planet02", operations: "planet04", product_design: "planet09", arts: "planet09" };
@@ -38,6 +38,7 @@ export function createScene(app: Application, store: Store) {
   const root = new Container(); app.stage.addChild(root);
   const bg = new Container(); root.addChild(bg);
   const world = new Container(); root.addChild(world);
+  const vignette = new Sprite(); root.addChild(vignette); // screen-space edge darkening (not world space)
   const top = new Container(); root.addChild(top); // labels: same camera transform, outside bloom
   const hud = new Graphics(); root.addChild(hud);
   const cam = new Camera(app, world);
@@ -53,13 +54,13 @@ export function createScene(app: Application, store: Store) {
   const L = {
     orbits: new Graphics(), belt: new Container(), beams: new Graphics(), packets: new Container(), paths: new Graphics(),
     sun: new Container(), research: new Container(), planets: new Container(), factories: new Container(), mines: new Container(),
-    fog: new Container(), tethers: new Graphics(), enemies: new Container(), unitGlow: new Container(), units: new Container(), overlay: new Graphics(),
+    tethers: new Graphics(), enemies: new Container(), unitGlow: new Container(), units: new Container(), overlay: new Graphics(),
     fx: new Container(), labels: new Container(),
   };
   for (const k of Object.keys(L) as (keyof typeof L)[]) (k === "labels" ? top : world).addChild(L[k]);
   L.beams.blendMode = "add"; L.unitGlow.blendMode = "add";
 
-  let nebula: TilingSprite, stars1: TilingSprite, stars2: TilingSprite, fog: Sprite;
+  let nebula: TilingSprite, stars1: TilingSprite, stars2: TilingSprite;
   const bgFill = new Graphics();
   const sun = {} as { core: Sprite; l1: Sprite; l2: Sprite; halo: Sprite; ring: Sprite; flash: number };
   const research = {} as { gem: Sprite; shards: Sprite[]; twinkle: Sprite; glow: Sprite; name: Text };
@@ -78,8 +79,6 @@ export function createScene(app: Application, store: Store) {
   const MINOR = 4;
   /** System-view framing radius (x systemRadius): content (orbits + enemies) reaches ~0.9R; the band between HUD bars is short. */
   const SYS_FIT = 0.95;
-  /** Fog of war: clear inside FOG_IN·R (charted space), darkening beyond it; the sprite reaches FOG_OUT·R. */
-  const FOG_IN = 0.78, FOG_OUT = 4;
   const setPrio = <T extends Text>(t: T, p: number) => { prio.set(t, p); return t; };
   /** "Claude (subscription usage)" -> "CLAUDE", "River credits" -> "RIVER". */
   const shortMine = (s: string) => (s.replace(/\s*\(.*?\)\s*/g, " ").trim().split(/\s+/)[0] || s).toUpperCase();
@@ -93,7 +92,6 @@ export function createScene(app: Application, store: Store) {
   const CAPTION_S = 9;
   const sunCaptions: Text[] = [];
   const captions: { text: string; t: number; unitId?: string }[] = [];
-  const lifts: Sprite[] = [];
   let frame = 0;
 
   let PF: typeof import("pixi-filters") | null = null;
@@ -123,8 +121,8 @@ export function createScene(app: Application, store: Store) {
 
   function build() {
     // background (screen space, parallax)
-    // nearly plain: deep navy-black, a faint starfield with a hint of parallax, nebula barely there
-    nebula = new TilingSprite({ texture: tex.nebula, width: app.screen.width, height: app.screen.height }); nebula.alpha = 0.06; nebula.tint = 0x6f7fa8;
+    // deep navy-black, a faint galaxy/nebula wash and a starfield with a hint of parallax (no fog of war)
+    nebula = new TilingSprite({ texture: tex.nebula, width: app.screen.width, height: app.screen.height }); nebula.alpha = 0.2; nebula.tint = 0x8a93c8;
     stars1 = new TilingSprite({ texture: tex.starfield, width: app.screen.width, height: app.screen.height }); stars1.blendMode = "add"; stars1.alpha = 0.22;
     stars2 = new TilingSprite({ texture: tex.starfield, width: app.screen.width, height: app.screen.height }); stars2.blendMode = "add"; stars2.alpha = 0.12; stars2.tileScale.set(0.55);
     bg.addChild(bgFill, nebula, stars1, stars2);
@@ -150,10 +148,7 @@ export function createScene(app: Application, store: Store) {
     L.research.addChild(research.glow, research.gem, ...research.shards, research.twinkle);
     L.labels.addChild(research.name);
 
-    // fog of war: a clean radial falloff beyond the frontier (no drifting smoke)
-    fog = new Sprite(fogTexture(FOG_IN / FOG_OUT)); fog.anchor.set(0.5);
-    L.fog.addChild(fog);
-    for (let i = 0; i < 24; i++) { const s = sprite("circle_05", { tint: 0x9fb8d8, add: true, alpha: 0 }); lifts.push(s); L.fog.addChild(s); }
+    vignette.texture = vignetteTexture();
 
     for (let i = 0; i < 64; i++) { const p = sprite("star_04", { tint: 0xffe2a0, add: true, size: 26, alpha: 0 }); packets.push(p); L.packets.addChild(p); }
     L.packets.blendMode = "add";
@@ -240,7 +235,7 @@ export function createScene(app: Application, store: Store) {
   const enemyHidden = (e: Enemy) => e.hidden || store.isHidden("enemy", e.id) || (e.planetIds.length > 0 && e.planetIds.every((p) => store.isHidden("planet", p)));
   /** Motherships ~3x subagents: the hierarchy should read at a glance. */
   /** Blocker radius: grows with how many agents it blocks; DROP (neither urgent nor important) stays small. */
-  const blockerR = (e: Enemy, ui: number) => (16 + 5 * Math.min(8, Math.max(1, e.blocked.length))) * ui * (e.quadrant === "drop" ? 0.7 : 1);
+  const blockerR = (e: Enemy, ui: number) => (10 + 2 * Math.min(5, Math.max(1, e.blocked.length))) * ui * (e.quadrant === "drop" ? 0.75 : 1);
   /** Full width in world units: MOTHERSHIP_SIZE × TIER_SCALE (subagents: same hull × SUBAGENT_SCALE). */
   const unitHalf = (u: Unit) => MOTHERSHIP_SIZE * 0.75 * (TIER_SCALE[u.tier] ?? 1) * (u.role === "subagent" ? SUBAGENT_SCALE : 1) * cam.ui;
   const unitSize = (u: Unit) => unitHalf(u) * 2;
@@ -452,7 +447,7 @@ export function createScene(app: Application, store: Store) {
     const showUnits = store.layerOn("units");
     const visUnits: Unit[] = [];
     const disp = new Map<string, { x: number; y: number }>();
-    const lerpK = 1 - Math.exp(-dt * 6);
+    const lerpK = 1 - Math.exp(-dt * 2.4); // gentle: flight reads slow and calm
     const sel0 = new Set(store.selection);
     const byId = new Map(s.units.map((u) => [u.id, u] as const));
     const active = (u: Unit) => u.status === "working" || u.status === "acting" || u.status === "attacking";
@@ -566,17 +561,12 @@ export function createScene(app: Application, store: Store) {
         if (u.role !== "mothership" || parked.has(u.id)) continue;
         const col = projectColor(s, u.projectId), k = emph(u.id);
         const hx = u.home.x, hy = u.home.y, tx = u.target.x, ty = u.target.y;
-        if (u.charted) { // dotted time line: home → where the task is expected to end
-          dashed(pg, hx, hy, tx, ty, 1.5 * ui, 9 * ui);
-          pg.stroke({ width: 2 * ui, color: col, alpha: 0.5 * k, cap: "round" });
-        } else {
-          const N = 6;
-          for (let j = 0; j < N; j++) {
-            const a0 = j / N, a1 = (j + 1) / N;
-            dashed(pg, hx + (tx - hx) * a0, hy + (ty - hy) * a0, hx + (tx - hx) * a1, hy + (ty - hy) * a1, 1.5 * ui, 9 * ui);
-            pg.stroke({ width: 2.2 * ui, color: col, alpha: 0.55 * k * (1 - (j / N) * 0.85), cap: "round" });
-          }
-        }
+        const cur = disp.get(u.id) ?? u.pos;
+        // dotted line = time elapsed: home → where the agent is NOW (you never know how long a task will take).
+        // A task done before (charted / veteran) is a recorded route: brighter. First-time trails stay faint.
+        const known = u.charted || u.veteran;
+        dashed(pg, hx, hy, cur.x, cur.y, 1.5 * ui, 9 * ui);
+        pg.stroke({ width: (known ? 2.2 : 1.6) * ui, color: known ? mix(col, 0xffffff, 0.25) : col, alpha: (known ? 0.85 : 0.3) * k, cap: "round" });
         const key = `${Math.round(tx / 20)},${Math.round(ty / 20)}`;
         const end = u.etaMs == null ? null : u.etaMs > 1e12 ? u.etaMs : u.startedAt + u.etaMs;
         const eta = !u.charted || end == null ? "?" : end - s.now > 0 ? fmtDur(end - s.now) : "due";
@@ -747,20 +737,8 @@ export function createScene(app: Application, store: Store) {
       setSize(f.s, f.from + (f.to - f.from) * (1 - Math.pow(1 - f.t, 3))); f.s.alpha = f.alpha * (1 - f.t);
     }
 
-    // fog of war
-    L.fog.visible = store.layerOn("fog");
-    fog.width = fog.height = R * 2 * FOG_OUT; // clear to FOG_IN·R (what the company has charted), darker beyond
-    // the fog lifts a little around places agents have already reached out there
-    let li = 0;
-    for (const u of visUnits) {
-      if (li >= lifts.length || u.role === "subagent") continue;
-      const d = disp.get(u.id); if (!d) continue;
-      for (const q of [d, u.target]) {
-        if (li >= lifts.length || Math.hypot(q.x, q.y) < R * (FOG_IN - 0.05)) continue;
-        const l = lifts[li++]; l.position.set(q.x, q.y); setSize(l, 360); l.alpha = 0.07;
-      }
-    }
-    for (let i = li; i < lifts.length; i++) lifts[i].alpha = 0;
+    // vignette (screen space): no fog of war, just a gentle darkening at the viewport edges
+    vignette.position.set(0, 0); vignette.width = app.screen.width; vignette.height = app.screen.height;
 
     // gc transient labels
     for (const [k, e] of texts) if (e.seen !== frame) { if (frame - e.seen > 120) { e.t.destroy(); texts.delete(k); } else e.t.visible = false; }

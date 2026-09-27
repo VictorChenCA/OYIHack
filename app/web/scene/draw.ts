@@ -59,4 +59,17 @@ export function fogTexture(inner: number): Texture {
   return Texture.from(c);
 }
 
+/** Screen-space vignette: clear center, gently darker toward the edges and corners. */
+export function vignetteTexture(): Texture {
+  const c = document.createElement("canvas"); c.width = c.height = 512;
+  const x = c.getContext("2d")!;
+  const gr = x.createRadialGradient(256, 256, 0, 256, 256, 362);
+  gr.addColorStop(0, "rgba(2,3,8,0)");
+  gr.addColorStop(0.55, "rgba(2,3,8,0)");
+  gr.addColorStop(0.8, "rgba(2,3,8,0.28)");
+  gr.addColorStop(1, "rgba(2,3,8,0.62)");
+  x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
+  return Texture.from(c);
+}
+
 export const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return ((h >>> 0) % 10000) / 10000; };
