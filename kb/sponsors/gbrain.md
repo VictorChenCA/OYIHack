@@ -12,6 +12,19 @@ Garry Tan's production brain: 155K pages.
 - **Agent docs in repo:** `kb/repos/gbrain/llms.txt`, `llms-full.txt`, `AGENTS.md`, `INSTALL_FOR_AGENTS.md`, `docs/`
 - Scraped site pages: `kb/raw/gbrain-*.md`
 
+## From the kickoff talk (Granola, Sep 27)
+- **Hosted GBrain now exists (gbrain.io).** "Turn a key" and an instance is up in a few minutes. This
+  fixes self-hosting's big problem (hard to reach unless you run a server). Use it if the demo must be
+  reachable from other machines or cloud agents.
+- gbrain.io is "4 different things", starting with memory (the open-source core). The other three
+  weren't covered in the notes; the site lists Skills and a skills directory.
+- Pitched as scaling to ~500K documents, all shared. Team use case they named: a **support inbox**
+  ("equivalent to 20 years of an individual's email").
+- The team said the **PR backlog is a good hackathon target**: look at open issues and PRs on `garrytan/gbrain`.
+- **Side quest:** "Solve tedious human problems with a new skill or memory improvement." A skill is a
+  `skills/<name>/SKILL.md` (frontmatter: name, version, description, triggers, mutating,
+  writes_pages, writes_to) plus optional `routing-eval.jsonl`. There are 87 examples in `kb/repos/gbrain/skills/`.
+
 ## Fastest path (keyless, no server, no Docker, about 2 min)
 ```bash
 bun upgrade                                  # NEEDS Bun >= 1.3.11
