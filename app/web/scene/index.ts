@@ -805,7 +805,7 @@ export function createScene(app: Application, store: Store) {
     let x0 = -SUN_R * 2, y0 = -SUN_R * 2, x1 = SUN_R * 2, y1 = SUN_R * 2;
     const add = (x: number, y: number, r: number) => { x0 = Math.min(x0, x - r); y0 = Math.min(y0, y - r); x1 = Math.max(x1, x + r); y1 = Math.max(y1, y + r); };
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id)) add(p.pos.x, p.pos.y, PLANET_R * 1.8);
-    for (const e of s.enemies) if (!enemyHidden(e)) add(e.pos.x, e.pos.y, 90);
+    for (const e of s.enemies) if (!enemyHidden(e)) add(e.pos.x, e.pos.y, 260); // glyph + its hover title stay clear of the bars
     for (const u of s.units) if (!unitHidden(u) && u.role === "mothership") add(u.target.x, u.target.y, 60);
     return fitBox(x0, y0, x1, y1, 40);
   }
