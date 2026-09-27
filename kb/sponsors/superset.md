@@ -19,6 +19,23 @@ Source-available (ELv2), free tier.
   `recipes/parallel-workstreams`).
 - Orchestrate: the `superset:orchestrate` skill lets one Claude Code/Codex session coordinate workers via the CLI.
 
+## Pages (REQUIRED for the Superset side quest: "Presented with Superset Pages")
+Docs: grep `Source: https://docs.superset.sh/pages` in `kb/raw/superset-llms-full.txt`.
+A Page is a self-contained HTML file, or a dir with `index.html` plus assets, published to a shareable URL.
+```bash
+superset pages publish demo.html --title "OYI demo" --label "v1" --visibility everyone   # prints the URL
+superset pages publish demo.html --label "v2: after feedback"   # same path + same workspace = new version, same link
+```
+- **Use `--visibility everyone` for judges and the submission form** ("anyone with the link", no sign-in).
+  The default is `org`, which judges can't open. Republishing keeps the visibility.
+- Desktop: **Pages** tab → **Create with AI**, or ask an agent in a workspace to "publish it as a Superset
+  Page". The Superset plugin ships a Pages skill.
+- Comment loop: teammates pin comments to page elements, and the agent watching the page (the one that
+  published from a Superset terminal) gets them, edits, republishes and replies. Keep the host and that
+  agent session running.
+- Swarm-demo idea: have the orchestrator agent publish a Page that shows the swarm's work (tasks, workspaces,
+  diffs, timings), and put that Page link in the submission's "anything else" field.
+
 ## MCP server (remote, OAuth)
 ```bash
 claude mcp add superset --transport http https://api.superset.sh/mcp

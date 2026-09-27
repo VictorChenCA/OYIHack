@@ -6,13 +6,17 @@
 |---|---|
 | 12:00 | Doors, registration, lunch |
 | 13:00 | Opening remarks |
-| **13:30** | **Hacking starts** (confirmed on the kickoff slide) |
+| **13:30** | **Hacking starts** (kickoff slide. The YC event page still says 13:15, which is stale, so trust the slide) |
 | 16:00 | Submissions page goes up |
 | **17:00** | **Hacking ends, projects due** (hard stop, about 3h30m of build time) |
 | 17:00–17:45 | Judging |
 | 18:00 | Prizes and closing |
 
 **Hosts/sponsors:** River AI, GBrain, Memorable, QM, Superset, UFO.
+Event page: https://events.ycombinator.com/gbrain-qm-river-memorable-hackathon (capacity 225, team applications allowed,
+16+). Sponsor hackathon pages exist only for **River** (`kb/raw/river/hackathon/page.md`) and **GBrain**
+(`kb/raw/gbrain-hackathon.md`), plus the agent37 QM credit. Memorable, Superset and UFO have none (checked
+Sep 27 ~13:30, all 404), so don't search for them. Memorable's hackathon material is the kit in `kb/repos/memorable-hackathon-kit`.
 
 **Brief (verbatim intent):** "building at the frontier of AI-native software… explore new ways to
 **extend QM and GBrain**, build novel **agent workflows and interfaces**, experiment with
@@ -73,7 +77,7 @@ Both are Garry Tan / YC projects (`yc-software/qm`, `garrytan/gbrain`).
 
 ## Unknowns to resolve at the 13:00 kickoff (write the answers here)
 - [x] Prize tracks per sponsor: see **Prizes** above
-- [ ] Judging criteria? Team size limit?
+- [ ] Judging criteria? Team size limit? (Nothing published. The event page only says teams are allowed. Ask an organizer.)
 - [x] Submission format and location: form on the submissions page (opens 16:00); see **Submissions** above
 - [x] **River credits:** free at the River AI booth; unused credits expire at the end of the day (`kb/sponsors/river.md`)
 - [ ] **UFO credits?** Hosted UFO runs on a prepaid balance and needs a card.
