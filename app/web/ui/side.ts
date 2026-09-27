@@ -68,7 +68,7 @@ export function createSide(root: HTMLElement, store: Store) {
           <div class="rk-main"><div class="rk-name">${tierGlyph(u.tier, 14)}<b data-act="focus-unit" data-id="${esc(u.id)}">${esc(u.label)}</b><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span></div><div class="rk-reason">${esc(r.reason)}</div></div>
           <button class="btn sm" data-act="send" data-id="${esc(u.id)}" title="Shift-click to interrupt">Send</button></li>`; }).join("") || `<li class="dim pad">No free units ranked yet.</li>`}
         </ul>
-        <div class="rk-foot"><button class="btn primary" data-act="send-sel" ${checked.size ? "" : "disabled"}>Send selected (${[...checked].filter((id) => store.unit(id)).length})</button></div>
+        <div class="rk-foot">${store.selection.length ? `<button class="btn" data-act="send-squad">Send squad (${store.selection.length})</button>` : ""}<button class="btn primary" data-act="send-sel" ${checked.size ? "" : "disabled"}>Send selected (${[...checked].filter((id) => store.unit(id)).length})</button></div>
         <div class="deploy">${(["haiku", "sonnet", "opus", "fable"] as Tier[]).map((t) => `<button class="btn ghost deploy-btn" data-act="deploy" data-tier="${t}" style="--c:${TIER_COLOR[t]}">${tierGlyph(t, 14)} + Deploy new ${t[0]!.toUpperCase() + t.slice(1)}</button>`).join("")}</div>
       </section>`}`;
   }
@@ -198,6 +198,7 @@ export function createSide(root: HTMLElement, store: Store) {
     "rk-check": (t) => { const id = t.dataset.id!; (t as HTMLInputElement).checked ? checked.add(id) : checked.delete(id); body.reset(); render(); },
     send: (t, e) => { const f = store.focus; if (f?.kind !== "enemy") return; store.command({ type: "attack", enemyId: f.id, unitIds: [t.dataset.id!], interrupt: (e as MouseEvent).shiftKey || undefined }); },
     "send-sel": (_t, e) => { const f = store.focus; const ids = [...checked].filter((id) => store.unit(id)); if (f?.kind !== "enemy" || !ids.length) return; store.command({ type: "attack", enemyId: f.id, unitIds: ids, interrupt: (e as MouseEvent).shiftKey || undefined }); checked.clear(); body.reset(); render(); },
+    "send-squad": (_t, e) => { const f = store.focus; if (f?.kind !== "enemy" || !store.selection.length) return; store.command({ type: "attack", enemyId: f.id, unitIds: [...store.selection], interrupt: (e as MouseEvent).shiftKey || undefined }); },
     deploy: (t) => { const f = store.focus; if (f?.kind === "enemy") store.command({ type: "deploy_for_enemy", enemyId: f.id, tier: t.dataset.tier as Tier }); },
     resolve: (t) => {
       const note = forms.querySelector<HTMLInputElement>(".res-note")?.value.trim(); const done = forms.querySelector<HTMLInputElement>(".res-done")?.checked;
