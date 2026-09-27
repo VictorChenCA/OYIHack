@@ -38,9 +38,8 @@ What this means for us:
 - Judges want working software, not slides. Demo the real thing live and keep the video as the backup.
 - `kb/` is prep and research, which is fine. **All product code must be written after 13:30** in `app/` (or a
   new dir). Commit often so the git timestamps prove it. Don't paste in code from earlier personal projects.
-- There's tension between the "no forks" rule and the QM side quest ("Fork QM and make it do something new").
-  Our reading: the rule bans forking *your own or others' finished projects*, while forking the sponsor's QM
-  repo to extend it is explicitly invited. **Confirm with an organizer before building on a QM fork.**
+- **Forking QM is allowed (resolved).** The "no forks" rule covers other existing projects (your own or
+  others' finished work), not the sponsor's QM repo, which the QM side quest explicitly invites you to fork.
 
 ## Prizes (kickoff slide)
 **Grand prize: a YC interview and a 1:1 working session with Garry.**
@@ -61,7 +60,7 @@ Criteria, quoted from the kickoff slide:
 | Sponsor | Side quest | What it takes to qualify |
 |---|---|---|
 | GBrain | "Solve tedious human problems with a new skill or memory improvement" | A new GBrain skill, or a memory improvement, aimed at a real chore |
-| QM | "Fork QM and make it do something new! Push the harness in any direction." | An actual **fork** of `yc-software/qm` with new behavior. Slide examples: play a video game, what you wish Codex/Claude Cowork could do, swarms, RTS-style UX, multiplayer, computer use (`kb/sponsors/qm.md`) |
+| QM | "Fork QM and make it do something new! Push the harness in any direction." | An actual **fork** of `yc-software/qm` with new behavior (**allowed**; the "no forks" rule doesn't apply to QM). Slide examples: play a video game, what you wish Codex/Claude Cowork could do, swarms, RTS-style UX, multiplayer, computer use (`kb/sponsors/qm.md`) |
 | River AI | "Best use of a custom model/agent (trained using River API)" | A model you **trained with the River API** (SFT/RL/distill) that the demo uses. The River page adds: show the training data or reward signal, and compare against base on unseen tasks |
 | Memorable | "Most Memorable. The most interesting/innovative use case of Memorable." | A novel use of Memorable procedures |
 | UFO | "Best extension, Best business automation for startups." | A UFO extension, or a startup business automation built on UFO |
@@ -134,10 +133,15 @@ Both are Garry Tan / YC projects (`yc-software/qm`, `garrytan/gbrain`).
 
 ## Unknowns to resolve at the 13:00 kickoff (write the answers here)
 - [x] Prize tracks per sponsor: see **Prizes** above
-- [ ] Judging criteria? Team size limit? (Kickoff talk: judges weigh what you built today, and sponsors judge their side quests.) (Nothing published. The event page only says teams are allowed. Ask an organizer.)
+- [x] Judging criteria: judges weigh what you built today, and sponsors judge their side quests (kickoff talk). **Team size: doesn't matter, building solo.**
 - [x] Submission format and location: form on the submissions page (opens 16:00); see **Submissions** above
 - [x] **River credits: DONE.** Team key with about $1000 of credit is in `.env` as `RIVER_API_KEY` (verified 13:45). Booth credits expire at the end of the day.
-- [ ] **UFO credits?** Hosted UFO runs on a prepaid balance and needs a card.
+- [x] **UFO credits: skipped** unless UFO becomes necessary. Hosted UFO runs on a prepaid balance and needs a card.
 - [x] **Hosted QM for hackers:** agent37 credit at https://www.agent37.com/redeem/QMHACK (see `kb/sponsors/qm.md`)
 - [ ] Memorable dashboard key (`mk_...`) for agents, from memorable.sh/dash
 - [ ] Superset API key (`sk_live_...`) and org ID if you use the SDK
+
+## Before submitting / after the hackathon
+- [ ] **Before submitting: push to a public GitHub repo.** This repo has no remote yet. Create a public repo, push,
+  and check it in an incognito window. `.env` is gitignored, but check `git log -p` for keys before making it public.
+- [ ] **After the hackathon: rotate the River key** (the team key in `.env`).

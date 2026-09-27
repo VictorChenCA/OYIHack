@@ -58,6 +58,8 @@ Mirrored at `kb/raw/gbrain-hackathon.md`.
 - **PGLite has a single-writer lock: only ONE process can own `~/.gbrain` at a time.** Every Claude session
   (and every Superset agent) that loads `.mcp.json` spawns its own stdio `gbrain serve`, and all but the first
   fail with `CONNECTION_CLOSED`. `gbrain import`, `remember` and other CLI writes also block while any `serve` holds it.
+  This includes `gbrain sync`: a `gbrain sync --dry-run` run while a serve was live found the serve and failed at the
+  default source (it isn't a git repo), so nothing was written. Stop the server before any re-sync or re-import.
   Find the holder with `pgrep -fl "gbrain serve"`, stop it with SIGTERM (never steal a live lock), then run the command.
   **Fix for multi-session or swarm use:** run ONE `gbrain serve --http` daemon and point every client at it over
   HTTP. On PGLite, mint a token BEFORE starting serve (`gbrain auth create local-agents --scopes read,write`).
