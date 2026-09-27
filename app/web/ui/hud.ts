@@ -75,9 +75,12 @@ export function createToasts(root: HTMLElement, store: Store) {
   const box = el("div", "toasts passthru"); box.setAttribute("aria-live", "polite"); root.appendChild(box);
   store.on("toast", (t) => {
     const n = el("div", `toast ${t.level}`, `<i></i><span>${esc(t.text)}</span>`);
+    const kill = () => { n.classList.add("out"); setTimeout(() => n.remove(), 250); };
+    let left = t.level === "alert" ? 9000 : 8500; let t0 = Date.now(); let timer = setTimeout(kill, left);
+    n.addEventListener("pointerenter", () => { clearTimeout(timer); left -= Date.now() - t0; });
+    n.addEventListener("pointerleave", () => { t0 = Date.now(); timer = setTimeout(kill, Math.max(1500, left)); });
     n.addEventListener("click", () => n.remove());
     box.appendChild(n);
-    while (box.children.length > 5) box.firstElementChild?.remove();
-    setTimeout(() => { n.classList.add("out"); setTimeout(() => n.remove(), 300); }, t.level === "alert" ? 7000 : t.level === "warn" ? 5000 : 3200);
+    while (box.children.length > 3) box.firstElementChild?.remove();
   });
 }
