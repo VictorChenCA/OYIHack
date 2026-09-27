@@ -55,12 +55,15 @@ class Engine:
 
     def classify_auto(self, items, budget_ms=1500):
         """River within a latency budget, else the fast classifier (the River call finishes in the background)."""
+        t0 = time.time()
         fut = _POOL.submit(self.classify, items, None)
         try:
             return fut.result(timeout=budget_ms / 1000)
         except FTimeout:
             out = self.classify(items, "fast")
             out["engine"] = f"fast (river over {budget_ms} ms budget)"
+            for r in out["results"]:
+                r["latency_ms"] = round((time.time() - t0) * 1000)  # includes the budget spent waiting on River
             return out
 
     def classify(self, items, engine=None):

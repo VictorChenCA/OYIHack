@@ -11,9 +11,27 @@
 | 15:05 | Sidecar smoke test OK (trained, `?engine=base`, `?engine=fast`, `/models`). Live latency noisy under load (2.4-10 s per 20 prompts), so added `?engine=auto&budget_ms=1500`. |
 | 15:07-15:11 | Val acc: step 60 0.897, step 80 0.958, **step 100 0.973** (best). Training done in 602 s. Best checkpoint `river://60c2d383-71ea-4ef7-829e-3f7bc8c4a9fb/sampler_weights/sentinel-v1-s100-inf` (training state: `.../weights/sentinel-v1-s100-train`). |
 | 15:13 | Eval on test_unseen (n=260): **mean acc base 0.545 -> trained 0.916**, macro-F1 0.494 -> 0.926, all-5-fields-right 5% -> 67%. Unconstrained temperature fit on val sharpened (T=0.05 on kind) and hurt test ECE, so the fit is now constrained to T >= 1. Trained LoRA sampled via `session.sample(checkpoint=...)`: p50 4.0 s, p95 9.9 s (base 2.5 / 3.1 s). |
+| 15:16 | `bench_lora.py` (8 runs, 50 prompts): `session.sample(checkpoint=...)` p50 3905 / p95 4518 ms; `create_model` (12 s load) + in-memory `model.sample` p50 4034 / p95 4392 ms; base `client.sample` p50 2513 / p95 2661 ms. LoRA sampling costs ~1.5 s over base and is not faster in memory, so the sidecar uses `session.sample(checkpoint=...)`. |
+| 15:19 | Final eval (T >= 1 calibration): see `eval.md`. Mean acc 0.545 -> **0.916**, macro-F1 0.494 -> 0.926, ECE 0.087 -> 0.048, Brier 0.531 -> 0.132, all-5-right 5% -> 67%. Latency p50/p95 (10 blockers x 5 fields, 1 call): trained 3989 / 4396 ms, base 2559 / 3300 ms. `card.json` built. |
+| 15:21 | Sidecar verified on the final checkpoint: `/health`, `/classify` (trained, `?engine=base`, `?engine=fast` 2 ms, `?engine=auto` falls back to fast at 1.5 s), `/reload` s100 -> s080 -> s100 (calibration follows the checkpoint), `/models`. One blocker (5 prompts) takes the same ~4 s as ten: the cost is per-call overhead, not throughput. |
+
+## Speed gate verdict
+River p50 is ~4 s for the trained LoRA (2.5 s base), over the 1.5 s gate and over `classify.ts`'s 3 s timeout. The hot path
+should call `POST /classify?engine=auto&budget_ms=1500` (River if it answers in time, else the numpy fast classifier,
+test_unseen mean acc 0.746) or `?engine=fast`. The River model stays the evaluated model, the Research Center model and the A/B.
+
+## Stretch (RL calibration): not run, on purpose
+The Sentinel's probabilities are the model's own next-token distribution over the codes, and SFT's cross-entropy on that
+single code token *is* the log score of the correct label. A River RL pass with a log-score reward would optimize the same
+objective. Calibration is instead temperature scaling fit on val (T >= 1); ECE 0.087 (base) -> 0.048 (trained, test_unseen).
+Remaining weak spot: `tier` (acc 0.75, ECE 0.148, overconfident on held-out task contexts).
 
 ## Spend (River)
-- Benchmark: ~240 one-token samples, well under $0.01.
+No spend API in river-client 0.12.0, so this is an estimate from token counts (check console.river.ai for the bill):
+- training: 100 steps x 32 examples x ~145 tokens = ~0.46M training tokens;
+- sampling: ~2.7M prompt tokens (5 val evals during training, 3 test/val evals, 2 benchmarks, sidecar tests), 1 output token each.
+- At River's small-model rates (~$0.30/M prompt, ~$1/M training): **~$1.3**. Even at the top of River's published price
+  table ($5.14/M prompt, $15.41/M training) it would be ~$21. No deployments were created.
 
 ## Haiku baseline
 Not run (no `ANTHROPIC_API_KEY` in this environment).

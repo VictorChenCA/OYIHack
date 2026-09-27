@@ -28,8 +28,9 @@ curl -s 127.0.0.1:7788/models                                                  #
 ```
 Response: `{"results":[{"id","fields":{"kind":{"label","p","dist":{...}},...},"latency_ms"}],"model","checkpoint","engine"}`.
 
-**Speed gate:** River's live p50 for 10 blockers × 5 fields is over 1.5 s (see `eval.md`), so the server's hot path
-(`classify.ts`, 3 s timeout) should call `?engine=auto` (or `?engine=fast`). The River model stays the evaluated model,
+**Speed gate:** River's live p50 for 10 blockers × 5 fields is ~4.0 s for the trained LoRA (2.5 s base; one blocker costs the
+same as ten), over the 1.5 s gate and over `classify.ts`'s 3 s timeout. So the server's hot path should call
+`?engine=auto&budget_ms=1500` (River if it answers in time, else the fast classifier) or `?engine=fast`. The River model stays the evaluated model,
 the Research Center model and the base/trained A/B.
 
 ## Research Center scripts
