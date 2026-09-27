@@ -12,22 +12,25 @@ const lastSig = new Map<string, string>(); // unit → input signature (skip unc
 
 const clean = (s: string) => s.replace(/^["'`\s]+|["'`\s]+$/g, "").replace(/^summary:\s*/i, "").replace(/\s+/g, " ").split(" ").slice(0, 30).join(" ");
 
-export function templateSummary(u: Unit): string {
-  const task = u.task ? u.task.replace(/\s+/g, " ").slice(0, 90) : u.agentType ? `${u.agentType} subtask` : "awaiting orders";
-  const tool = u.lastTool ? `; last ran ${u.lastTool}${u.lastToolInput ? ` on ${u.lastToolInput.slice(0, 40)}` : ""}` : "";
-  const st = u.status === "blocked" ? "Blocked while working on" : u.status === "idle" ? "Idle after" : "Working on";
-  return `${st}: ${task}${tool}.`;
+export function templateSummary(u: Unit, parentTask?: string): string {
+  let task = u.task ? u.task.replace(/\s+/g, " ").slice(0, 90) : "";
+  if (u.role === "subagent") task = `${u.agentType ?? "sub"} subagent${parentTask ? ` for “${parentTask.slice(0, 60)}”` : ""}`;
+  if (!task) task = "awaiting orders";
+  const input = u.lastToolInput && u.lastToolInput.length > 3 && !/^[….\s]+$/.test(u.lastToolInput) ? ` on ${u.lastToolInput.slice(0, 40)}` : "";
+  const tool = u.lastTool ? `; last used ${u.lastTool.replace(/^mcp__([\w-]+)__/, "$1 ")}${input}` : "";
+  const st = u.status === "blocked" ? "Blocked on" : u.status === "idle" ? "Idle after" : "Working on";
+  return `${st} ${task}${tool}.`;
 }
 
 export function summarize(u: Unit, ctx: Ctx, why: string): void {
   if (u.status === "dead") return;
   if (u.simulated || !u.transcriptPath) {
-    if (u.simulated || u.task || u.lastTool) ctx.world.setSummary(u.id, templateSummary(u));
+    if (u.simulated || u.task || u.lastTool) ctx.world.setSummary(u.id, templateSummary(u, u.parentId ? ctx.world.units.get(u.parentId)?.task : undefined));
     return;
   }
   if (inflight.has(u.id) || inflight.size >= MAX_INFLIGHT) return;
   const tail = readTail(u.transcriptPath, 60);
-  if (!tail || !tail.items.length) { if (u.task) ctx.world.setSummary(u.id, templateSummary(u)); return; }
+  if (!tail || !tail.items.length) { if (u.task) ctx.world.setSummary(u.id, templateSummary(u, u.parentId ? ctx.world.units.get(u.parentId)?.task : undefined)); return; }
   const digest = tailDigest(tail, 5000);
   const sig = `${tail.items.length}:${digest.slice(-300)}`;
   if (lastSig.get(u.id) === sig && u.summary) return;
@@ -42,7 +45,7 @@ Transcript tail:
 ${digest}`;
   claude(prompt, { model: "haiku", timeoutMs: 45_000 })
     .then((text) => { const s = clean(text); if (s) ctx.world.setSummary(u.id, s); })
-    .catch((e) => { console.warn(`[brains] summary ${u.label} (${why}): ${String(e?.message ?? e).slice(0, 120)}`); if (!u.summary) ctx.world.setSummary(u.id, templateSummary(u)); })
+    .catch((e) => { console.warn(`[brains] summary ${u.label} (${why}): ${String(e?.message ?? e).slice(0, 120)}`); if (!u.summary) ctx.world.setSummary(u.id, templateSummary(u, u.parentId ? ctx.world.units.get(u.parentId)?.task : undefined)); })
     .finally(() => inflight.delete(u.id));
 }
 
@@ -51,6 +54,7 @@ export function periodicSummaries(ctx: Ctx) {
   const now = Date.now();
   for (const u of ctx.world.units.values()) {
     if (u.status === "dead" || u.status === "done") continue;
+    if (u.simulated) { summarize(u, ctx, "tick"); continue; } // template only: free, so refresh every pass
     const stale = !u.summary || !u.summaryAt || now - u.summaryAt > PERIODIC_MS; // subagents inherit summaryAt from the mothership
     if (!stale) continue;
     if (u.simulated) { summarize(u, ctx, "tick"); continue; }
