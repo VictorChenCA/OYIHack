@@ -6,7 +6,7 @@ import { tierGlyph, kindGlyph } from "./glyphs";
 
 const KINDS: EnemyKind[] = ["credential", "account", "approval", "rate_limit", "billing", "missing_info", "dependency", "failure"];
 const QUADS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
-const DEPTS: DeptId[] = ["engineering", "marketing", "product_design", "arts"];
+const DEPTS: DeptId[] = ["engineering", "product_design", "marketing"];
 const TIERS: Tier[] = ["haiku", "sonnet", "opus", "fable", "river"];
 
 export function createSide(root: HTMLElement, store: Store) {
@@ -57,7 +57,7 @@ export function createSide(root: HTMLElement, store: Store) {
       <p class="s-reason">${esc(e.reason)}</p>
       <div class="s-kv num"><span><b>${e.blocked.length}</b> agents waiting</span><span><b>${e.attackers.length}</b> resolving</span><span>open <b>${dur(s.now - e.createdAt)}</b></span></div>
       ${c ? `<section><h3>Classification <span class="badge src" style="--c:${c.source.startsWith("sentinel") ? "#40E0D0" : "#8A96A8"}">${esc(src)}${c.latencyMs != null ? ` · <span class="num">${c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms"}</span>` : ""}</span></h3>
-        ${conf("Kind", KIND_LABEL[c.kind.label] ?? c.kind.label, c.kind.p)}${conf("Quadrant", QUAD_LABEL[c.quadrant.label] ?? c.quadrant.label, c.quadrant.p)}${conf("Human", c.humanOnly.label ? "yes" : "no", c.humanOnly.p)}${conf("Dept", deptName(s, c.department.label), c.department.p)}${conf("Tier", c.tier.label, c.tier.p)}</section>` : ""}
+        ${conf("Kind", KIND_LABEL[c.kind.label] ?? c.kind.label, c.kind.p)}${conf("Quadrant", QUAD_LABEL[c.quadrant.label] ?? c.quadrant.label, c.quadrant.p)}${conf("Human", c.humanOnly.label ? "yes" : "no", c.humanOnly.p)}${conf("Team", deptName(s, c.department.label), c.department.p)}${conf("Tier", c.tier.label, c.tier.p)}</section>` : ""}
       ${e.dependsOnUnit && store.unit(e.dependsOnUnit) ? `<button class="blocked-by dep" data-act="focus-unit" data-id="${esc(e.dependsOnUnit)}"><span class="lbl">Waiting on</span> ${esc(store.unit(e.dependsOnUnit)!.label)}</button>` : ""}
       ${blocked.length ? `<section><h3>Waiting <span class="num dim">${blocked.length}</span></h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
       ${e.humanOnly ? `<section class="gold-sec"><h3>Human only</h3><p class="dim small">Agents can't do this step (phone, CAPTCHA, payment, legal, secrets). Put secrets in <span class="mono">.env</span>; C&amp;C only tells agents "unblocked".</p></section>`
@@ -82,7 +82,7 @@ export function createSide(root: HTMLElement, store: Store) {
     const entries = s.units.filter((u) => ok(u.id) && !e.blocked.includes(u.id) && u.role !== "sentinel").map((u) => {
       let sc = 40; const why: string[] = [];
       if (u.status === "idle" || u.status === "done") { sc += 25; why.push("free"); } else if (u.status === "blocked") { sc -= 25; why.push("blocked itself"); } else { sc -= 5; why.push("busy (queues)"); }
-      if (dept && u.planetId === dept) { sc += 18; why.push("same dept"); }
+      if (dept && u.planetId === dept) { sc += 18; why.push("same team"); }
       if (want && u.tier === want) { sc += 15; why.push(`${want} fits`); }
       if (u.veteran) { sc += 6; why.push("veteran"); }
       if (u.contextWindow && u.contextUsed / u.contextWindow > 0.8) { sc -= 12; why.push("context nearly full"); }
@@ -179,7 +179,7 @@ export function createSide(root: HTMLElement, store: Store) {
           <label>Kind<select name="kind">${opt(KINDS, c?.kind.label ?? e.kind, (v) => KIND_LABEL[v])}</select></label>
           <label>Quadrant<select name="quadrant">${opt(QUADS, c?.quadrant.label ?? e.quadrant, (v) => QUAD_LABEL[v])}</select></label>
           <label>Human only<select name="humanOnly">${opt(["yes", "no"], (c?.humanOnly.label ?? e.humanOnly) ? "yes" : "no")}</select></label>
-          <label>Department<select name="department">${opt(DEPTS, c?.department.label ?? e.planetIds[0], (v) => deptName(s, v))}</select></label>
+          <label>Team<select name="department">${opt(DEPTS, c?.department.label ?? e.planetIds[0], (v) => deptName(s, v))}</select></label>
           <label>Tier<select name="tier">${opt(TIERS, (c?.tier.label as Tier) ?? "sonnet")}</select></label>
         </div><button class="btn" data-act="correct" data-id="${esc(e.id)}">Submit correction → River dataset</button></details>`;
     }

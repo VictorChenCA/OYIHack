@@ -65,7 +65,7 @@ function runAdvice(store: Store, a: Advice) {
 }
 
 // ── Visibility: layer toggles + Hide… tree ──
-const LAYERS: [Layer, string][] = [["units", "Agents"], ["tethers", "Tethers"], ["enemies", "Blockers"], ["factories", "Factories"], ["mines", "Credits"], ["paths", "Paths"], ["beams", "Beams"], ["fog", "Fog"], ["labels", "Labels"], ["orbits", "Orbits"], ["research", "Research"]];
+const LAYERS: [Layer, string][] = [["units", "Agents"], ["tethers", "Tethers"], ["enemies", "Blockers"], ["factories", "Factories"], ["mines", "Credits"], ["paths", "Paths"], ["beams", "Memory links"], ["fog", "Fog"], ["labels", "Labels"], ["research", "Research"]];
 
 export function createFilter(parent: HTMLElement, store: Store) {
   const box = el("section", "vis glass"); box.setAttribute("aria-label", "Visibility");
