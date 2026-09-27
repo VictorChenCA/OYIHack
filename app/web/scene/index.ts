@@ -219,7 +219,7 @@ export function createScene(app: Application, store: Store) {
     top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
-    if (!fitted) { fitted = true; cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * 1.05); cam.update(0); }
+    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * 1.05); cam.update(0); }
     const R = s.systemRadius, ui = cam.ui;
 
     // background parallax
@@ -663,6 +663,7 @@ export function createScene(app: Application, store: Store) {
 
   function flyToMode() {
     const s = store.state; const m = store.mode;
+    measureInsets();
     if (!s) return;
     if (m.kind === "planet") { const p = s.planets.find((q) => q.id === m.planetId); if (p) cam.flyTo(p.pos.x * 0.85, p.pos.y * 0.85, cam.fitScale(520)); }
     else if (m.kind === "system") cam.flyTo(0, 0, cam.fitScale(s.systemRadius * 1.05));
@@ -741,5 +742,13 @@ export function createScene(app: Application, store: Store) {
     if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
     store.setMode({ kind: "system" });
   });
-  window.addEventListener("resize", () => { if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * 1.05), 0.2); });
+  /** Keep the system framed between the top bar and the bottom console (HUD chrome is DOM, read its rects). */
+  function measureInsets() {
+    const r = (sel: string) => { const n = document.querySelector(sel) as HTMLElement | null; const b = n?.getBoundingClientRect(); return b && b.height > 0 ? b : null; };
+    const tb = r(".topbar"), con = r(".console");
+    if (store.mode.kind === "memory") { cam.insetTop = cam.insetBottom = 0; return; }
+    cam.insetTop = tb ? Math.max(0, tb.bottom + 6) : 0;
+    cam.insetBottom = con ? Math.max(0, cam.h - con.top + 6) : 0;
+  }
+  window.addEventListener("resize", () => { measureInsets(); if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * 1.05), 0.2); });
 }
