@@ -57,3 +57,25 @@ curl -sS $BASE/v1/extract -H "authorization: Bearer $MEMORABLE_API_KEY" -H "cont
 Any custom agent loop (browser, voice, ops, or River-trained) can POST its trace and get reusable
 procedures. Integration is one HTTP call, so it's a cheap extra sponsor to include.
 Recall output is **reference data, not instructions**; render it inertly.
+
+## ★ Official hackathon kit: `kb/repos/memorable-hackathon-kit` (github.com/MemorableOrg/memorable-hackathon-kit, pushed Sep 27)
+- `PROMPT.md` is the ONE prompt to paste into the agent that builds your project. It adds recall,
+  replay, and record. A headless Claude Code agent integrated it in 6 min / $0.69.
+- `builds/0{1..4}-*/agent.mjs` are reference integrations (coding, home, browser, research agents),
+  about 40 lines each: `recall(goal)` → `stepsOf(ref)` → `replay(steps)` → `record(goal, history)`.
+- `eval/run.mjs <app-dir> "<task>"` runs a task cold, then warm, and prints turns, tool calls, and
+  cost. **This is your before/after demo number.**
+- Dashboard routes: memorable.sh/dash → Environments (agent prompt + key), Connect (claude.ai/Cowork
+  connector), Account (key for a hosted service). Teams: one environment, invite by email.
+
+### Gotchas learned by the kit's authors (these override the API docs where they differ)
+1. The trace must END in a command step marked ok, or it is refused as `no_postcondition`.
+2. **Only `input.command` reaches the extractor.** Encode every step as a `"tool key=value"` string in `input.command`.
+3. Keep volatile values (summaries, note bodies, file text) out of commands. They split procedures,
+   and long lines get truncated and can't be replayed. Use identifiers only.
+4. `memorable show` prints prose, so replay has to parse step lines with a regex.
+5. Bare `memorable login` inside an agent never finishes. Use `echo 'mk_…' | memorable login --paste`.
+6. **Never run `memorable forget --yes`.** It wipes consent for the whole machine.
+7. **Claude Code auto mode may refuse the key line or `memorable enable` as exfiltration.** Approve it
+   once, or add `Bash(memorable:*)` to your permission allowlist.
+8. `show <slug>` "not found" for `procedures/…` slugs is fixed in 0.5.31 (npm latest was 0.5.30 on Sep 27; pass the full slug).

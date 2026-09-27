@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p repos raw/river
-for r in garrytan/gbrain garrytan/gstack yc-software/qm superset-sh/superset ufo-ai/ufo-core; do
+for r in garrytan/gbrain garrytan/gstack yc-software/qm superset-sh/superset ufo-ai/ufo-core MemorableOrg/memorable-hackathon-kit; do
   d="repos/${r#*/}"
   if [ -d "$d/.git" ]; then git -C "$d" pull --ff-only -q || true; else git clone --depth 1 -q "https://github.com/$r" "$d"; fi &
 done; wait
