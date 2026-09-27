@@ -105,6 +105,7 @@ export class World implements WorldApi {
   spawns: SpawnRec[] = [];
   planetStats = new Map<DeptId, { unitsEver: number; tools: number }>();
   offsets = new Map<string, { angle: number; dist: number }>();
+  sigExample = new Map<string, string>();
 
   constructor(cfg: AppConfig) {
     this.cfg = cfg;
@@ -189,6 +190,7 @@ export class World implements WorldApi {
     const task = firstLine(prompt);
     u.task = short(task, 140);
     u.taskSig = taskSignature(task);
+    this.sigExample.set(u.taskSig, short(task, 48));
     const hist = this.durations[u.taskSig] ?? [];
     u.charted = u.charted || hist.length > 0;
     u.etaMs = hist.length ? median(hist) : null;
@@ -375,7 +377,7 @@ export class World implements WorldApi {
     }
     const sigs = new Map<string, number>(); for (const [sig, xs] of Object.entries(this.durations)) sigs.set(sig, xs.length);
     const rep = [...sigs.entries()].find(([sig, n]) => n >= 3 && !this.factories.some((f) => f.prompt.toLowerCase().includes(sig.split(" ")[0])));
-    if (rep) out.push({ id: `fac:${rep[0]}`, priority: 4, text: `“${rep[0]}” ran ${rep[1]}×: build a factory for it` });
+    if (rep) out.push({ id: `fac:${rep[0]}`, priority: 4, text: `“${this.sigExample.get(rep[0]) ?? rep[0]}” ran ${rep[1]}×: build a factory for it` });
     if (!units.some((u) => !u.charted && (u.status === "working" || u.status === "acting"))) out.push({ id: "frontier", priority: 1, text: "Nobody on the frontier: scout a task you've never done" });
     for (const m of this.mines) if (m.remaining / m.total < 0.15) out.push({ id: `mine:${m.id}`, priority: 8, text: `${m.label} below 15%: top up` });
     const seen = new Set<string>();
