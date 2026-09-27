@@ -236,7 +236,7 @@ export function createScene(app: Application, store: Store) {
   /** Blocker radius: grows with how many agents it blocks; DROP (neither urgent nor important) stays small. */
   const blockerR = (e: Enemy, ui: number) => (16 + 5 * Math.min(8, Math.max(1, e.blocked.length))) * ui * (e.quadrant === "drop" ? 0.7 : 1);
   /** Full width in world units: MOTHERSHIP_SIZE × TIER_SCALE (subagents: same hull × SUBAGENT_SCALE). */
-  const unitHalf = (u: Unit) => MOTHERSHIP_SIZE * 1.25 * (TIER_SCALE[u.tier] ?? 1) * (u.role === "subagent" ? SUBAGENT_SCALE : 1) * cam.ui;
+  const unitHalf = (u: Unit) => MOTHERSHIP_SIZE * 0.75 * (TIER_SCALE[u.tier] ?? 1) * (u.role === "subagent" ? SUBAGENT_SCALE : 1) * cam.ui;
   const unitSize = (u: Unit) => unitHalf(u) * 2;
 
   // ---------- per-frame ----------
@@ -426,7 +426,8 @@ export function createScene(app: Application, store: Store) {
     // energy beams sun → colony + packets
     const bm = L.beams; bm.clear();
     let pk = 0;
-    if (store.layerOn("beams")) for (const p of s.planets) {
+    const SUN_BEAMS = false; // no lanes toward the sun
+    if (SUN_BEAMS && store.layerOn("beams")) for (const p of s.planets) {
       if (p.hidden || store.isHidden("planet", p.id) || !inPm(p.id) || (p.colonization ?? 0) < 1) continue;
       const d = Math.hypot(p.pos.x, p.pos.y) || 1, ux = p.pos.x / d, uy = p.pos.y / d;
       const x0 = ux * SUN_R * 1.05, y0 = uy * SUN_R * 1.05, x1 = p.pos.x - ux * PR * 1.2, y1 = p.pos.y - uy * PR * 1.2;
