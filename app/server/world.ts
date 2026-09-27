@@ -20,7 +20,13 @@ const lerp = (a: Vec, b: Vec, t: number): Vec => ({ x: a.x + (b.x - a.x) * t, y:
 const len = (v: Vec) => Math.hypot(v.x, v.y);
 const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
 const short = (s: string, n = 80) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-const firstLine = (s: string) => (s.split("\n").find((l) => l.trim() && !l.startsWith("<")) ?? s).trim();
+const firstLine = (raw: string) => {
+  if (/^\s*<(task-notification|system-reminder|cross-session-message|local-command)/.test(raw)) {
+    const sum = raw.match(/<summary>([^<]{1,200})<\/summary>/); return sum ? `↻ ${sum[1].trim()}` : "↻ system notification";
+  }
+  const s = raw.replace(/<pasted_content[^>]*>/g, "").replace(/<\/?[a-z_-]+[^>]*>/gi, " ");
+  return (s.split("\n").find((l) => l.trim()) ?? s).trim();
+};
 
 export const taskSignature = (prompt: string) =>
   firstLine(prompt).toLowerCase().replace(/https?:\/\/\S+/g, "").replace(/#?\d+/g, "#").replace(/[^a-z# ]+/g, " ")
