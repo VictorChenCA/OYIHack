@@ -6,7 +6,7 @@ import { loadTextures, tex, type TexName } from "./assets";
 import { Camera } from "./camera";
 import { GOLD, HOLO, QUAD_COLOR, arc, dashed, drawBlocker, fogTexture, hash, hex, label } from "./draw";
 
-const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", marketing: "planet02", product_design: "planet01", arts: "planet09" };
+const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", product: "planet01", design: "planet09", marketing: "planet02", operations: "planet04", product_design: "planet09", arts: "planet09" };
 const TIER_TEX: Record<string, TexName> = { haiku: "ship_A", sonnet: "ship_B", opus: "ship_E", fable: "ship_H", river: "meteor_squareLarge", unknown: "ship_B" };
 const PLANET_R = 70, SUN_R = 95;
 /** Credit belt: one small asteroid ≈ one credit chunk, clustered per mine in a tight arc south of the sun. */

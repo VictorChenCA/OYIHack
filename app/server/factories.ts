@@ -28,7 +28,7 @@ export function seedFactories(ctx: Ctx) {
   ctx.world.factories.push(
     make(ctx, "engineering", "Nightly GBrain PR triage",
       "Triage GBrain's 10 oldest open PRs (read-only): for each give a verdict, risk and next step. Remember the triage table in GBrain under company/engineering/gbrain-pr-triage/<date> with provenance.", DAY),
-    make(ctx, "product_design", "Sprint retro (GBrain skill)",
+    make(ctx, "operations", "Daily Sync (GBrain skill)",
       "Run the sprint-retro GBrain skill: recall this week's company/* pages, write what shipped, what blocked us and what to change, and remember it under company/product-design/retros/<date>.", 7 * DAY),
   );
 }

@@ -1,11 +1,12 @@
 // Offline demo graph for ?fixture (~300 nodes), same MemGraph shape as /api/memory/graph.
 import type { DeptId, MemEdge, MemGraph, MemNode } from "../../shared/types";
 
-const DEPT_SLUG: Record<DeptId, string> = { engineering: "engineering", marketing: "marketing", product_design: "product-design", arts: "arts" };
+const DEPT_SLUG: Record<DeptId, string> = { engineering: "engineering", product: "product", design: "design", marketing: "marketing", operations: "operations", product_design: "product-design", arts: "arts" };
 const TOPICS: Record<DeptId, string[]> = {
   engineering: ["api", "infra", "hooks", "transport", "gbrain", "river", "superset", "postmortems", "runbooks", "decisions"],
   marketing: ["launch", "campaigns", "copy", "channels", "personas"],
   product_design: ["flows", "research", "components", "specs"],
+  product: ["roadmap", "specs", "research"], design: ["components", "brand", "flows"], operations: ["finance", "hiring", "legal"],
   arts: ["brand", "moodboards", "icons"],
 };
 const WORDS = ["websocket", "retry", "latency", "sentinel", "classifier", "tether", "orbit", "fog", "veteran", "budget", "token", "cache", "schema", "planet", "swarm", "hotkeys", "minimap", "beam", "colony", "enemy", "rate-limit", "oauth", "deploy", "rollback", "eval", "checkpoint", "prompt", "preamble", "hero", "palette", "tagline", "demo", "pitch", "timeline", "audit", "index", "graph", "search", "vector", "chunk"];
@@ -19,7 +20,7 @@ export function fakeGraph(): MemGraph {
   const nodes: MemNode[] = []; const edges: MemEdge[] = []; const ids = new Set<string>();
   const now = Date.now();
   const add = (slug: string, type = "note", planetId?: DeptId) => { if (ids.has(slug)) return; ids.add(slug); nodes.push({ id: slug, slug, title: type === "folder" ? slug.split("/").pop() + "/" : title(slug.split("/").pop()!), planetId, type, updatedAt: new Date(now - r() * 86400000).toISOString() }); };
-  const weight: Record<DeptId, number> = { engineering: 110, marketing: 45, product_design: 38, arts: 27 };
+  const weight: Record<DeptId, number> = { engineering: 110, marketing: 45, product_design: 38, arts: 27 , product: 0, design: 0, operations: 0 };
   add("company", "folder");
   for (const d of Object.keys(DEPT_SLUG) as DeptId[]) {
     const root = `company/${DEPT_SLUG[d]}`; add(root, "folder", d); edges.push({ from: "company", to: root, kind: "structural" });

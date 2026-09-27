@@ -1,7 +1,7 @@
 // C&C shared contract (v2). Owned by the main session. Slices: DO NOT edit. Ask for additive changes.
 // Spec: app/SPEC.md. Server pushes WorldState over WS /ws at 4 Hz; clients send Commands to POST /api/command.
 
-export type DeptId = "engineering" | "marketing" | "product_design" | "arts";
+export type DeptId = "engineering" | "product" | "design" | "marketing" | "operations" | "product_design" | "arts"; // last two: legacy (mapped to design)
 export type Tier = "haiku" | "sonnet" | "opus" | "fable" | "river" | "unknown";
 export type PermissionMode = "default" | "acceptEdits" | "auto" | "plan" | "bypassPermissions" | "dontAsk" | "unknown";
 export type UnitRole = "mothership" | "subagent" | "sentinel";
@@ -90,6 +90,8 @@ export interface Unit {
   workspaceId?: string;     // Superset workspace (for prompting)
   terminalId?: string;      // Superset terminal (for prompting)
   veteran?: boolean;        // charted via Memorable procedure
+  dependsOn?: string[];     // agent ids this agent is waiting on (dependency links)
+  finishDist?: number;      // world distance from home where its task is expected to end (dotted line); null ETA → the frontier
   hidden?: boolean;
   simulated?: boolean;
 }

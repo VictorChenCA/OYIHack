@@ -8,9 +8,9 @@ export interface SNode {
 }
 export interface SEdge { a: SNode; b: SNode; kind: MemEdge["kind"] }
 
-export const PLANET_COLORS: Record<DeptId, string> = { engineering: "#4FD1FF", product_design: "#7C9CFF", arts: "#FF7AD9", marketing: "#5CF2B0" };
-export const PLANET_NAMES: Record<DeptId, string> = { engineering: "Engineering", product_design: "Product Design", arts: "Arts", marketing: "Marketing" };
-const PLANET_ANGLE: Record<DeptId, number> = { engineering: -Math.PI / 2, product_design: 0, arts: Math.PI / 2, marketing: Math.PI };
+export const PLANET_COLORS: Record<DeptId, string> = { engineering: "#4FD1FF", product: "#7C9CFF", design: "#C792FF", marketing: "#5CF2B0", operations: "#FFC66D", product_design: "#C792FF", arts: "#C792FF" };
+export const PLANET_NAMES: Record<DeptId, string> = { engineering: "Engineering", product: "Product", design: "Design", marketing: "Marketing", operations: "Operations", product_design: "Design", arts: "Design" };
+const PLANET_ANGLE: Record<DeptId, number> = { engineering: -Math.PI / 2, product: -Math.PI / 2 + 1.2566, design: -Math.PI / 2 + 2.5133, marketing: -Math.PI / 2 + 3.7699, operations: -Math.PI / 2 + 5.0265, product_design: -Math.PI / 2 + 2.5133, arts: -Math.PI / 2 + 2.5133 };
 export const CORE_R = 70;
 
 function hash(s: string) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; }

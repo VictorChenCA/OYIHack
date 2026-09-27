@@ -9,7 +9,9 @@ import type { AppConfig, WorldApi } from "./plugin";
 const DATA = new URL("../data/", import.meta.url).pathname;
 mkdirSync(DATA, { recursive: true });
 const DURATIONS = DATA + "durations.json";
-const SYSTEM_R = 1900;
+const SYSTEM_R = 1680;       // fog (0.78·R ≈ 1310) begins where tasks longer than ~1 minute travel
+const TEAM_R = 820;           // every team sits the same distance from the sun (memory)
+const UNIT = 260;             // one motion "unit" in world space (see distUnits)
 const FOG_R = SYSTEM_R * 0.78;
 const DAY = 86_400_000;
 
@@ -31,6 +33,12 @@ export const firstLine = (raw: string) => {
 export const taskSignature = (prompt: string) =>
   firstLine(prompt).toLowerCase().replace(/https?:\/\/\S+/g, "").replace(/#?\d+/g, "#").replace(/[^a-z# ]+/g, " ")
     .split(/\s+/).filter(Boolean).slice(0, 8).join(" ");
+
+/** Legacy department ids (the Sentinel was trained on these) → current teams. */
+export const normDept = (id: string): DeptId => (id === "arts" || id === "product_design" ? "design" : id) as DeptId;
+
+/** Motion law (founder spec): distance in "units" after t seconds — 1s → 1, 60s → 1.5, ∞ → 2. Slow, decelerating, outward. */
+export const distUnits = (sec: number) => (sec <= 1 ? Math.max(0, sec) : 2 - 1 / (1 + Math.log(sec) / Math.log(60)));
 
 export function tierOf(model?: string): Tier {
   const m = (model ?? "").toLowerCase();
@@ -119,8 +127,8 @@ export class World implements WorldApi {
     const hackEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0).getTime();
     this.planets = cfg.planets.map((p, i) => ({
       id: p.id, name: p.name, color: p.color,
-      baseAngle: Math.PI + (i * 2 * Math.PI) / cfg.planets.length, // evenly spaced; angle = progress through the team's cycle
-      orbitRadius: 1150,                               // distance from memory: new teams start far out, move in as their knowledge grows
+      baseAngle: -Math.PI / 2 + (i * 2 * Math.PI) / cfg.planets.length, // evenly spaced around the sun, fixed
+      orbitRadius: TEAM_R,                                              // all teams equidistant from memory
       cycle: p.id === "engineering"
         ? { kind: "deadline", label: "Hackathon submission · 17:00", startAt: hackStart, endAt: hackEnd }
         : { kind: "sprint", label: "Sprint 1 · 1 week", startAt: dayStart, endAt: dayStart + 7 * DAY },
@@ -132,8 +140,8 @@ export class World implements WorldApi {
   }
 
   log(text: string, extra: Partial<FeedItem> = {}) { this.feed.unshift({ at: Date.now(), text, ...extra }); if (this.feed.length > 200) this.feed.length = 200; }
-  planet(id: DeptId) { const pid = (id as string) === "arts" ? "marketing" : id; return this.planets.find((p) => p.id === pid) ?? this.planets[0]; }
-  stats(id: DeptId) { if ((id as string) === "arts") id = "marketing" as DeptId; let s = this.planetStats.get(id); if (!s) this.planetStats.set(id, (s = { unitsEver: 0, tools: 0 })); return s; }
+  planet(id: DeptId) { const pid = normDept(id); return this.planets.find((p) => p.id === pid) ?? this.planets[0]; }
+  stats(id: DeptId) { id = normDept(id); let s = this.planetStats.get(id); if (!s) this.planetStats.set(id, (s = { unitsEver: 0, tools: 0 })); return s; }
 
   registerSpawn(s: Omit<SpawnRec, "at">) { this.spawns.push({ ...s, at: Date.now() }); if (this.spawns.length > 100) this.spawns.shift(); }
   attach(unitId: string, workspaceId?: string, terminalId?: string) { const u = this.units.get(unitId); if (u) { if (workspaceId) u.workspaceId = workspaceId; if (terminalId) u.terminalId = terminalId; } }
@@ -150,7 +158,7 @@ export class World implements WorldApi {
     let mother = this.units.get(ev.session_id);
     if (!mother) {
       const spawn = this.spawns.find((s) => (ev.cwd ?? "").includes(s.name) || (ev._workspaceId && s.workspaceId === ev._workspaceId));
-      const planetId = this.planetFor(ev, spawn);
+      const planetId = normDept(this.planetFor(ev, spawn));
       const project = this.projects.find((p) => p.id === spawn?.projectId) ?? this.projects.find((p) => p.planetId === planetId) ?? this.projects[0];
       const home = this.planet(planetId).pos;
       const sim = !!ev._simulated;
@@ -232,12 +240,12 @@ export class World implements WorldApi {
   /** A blocker sits just beyond the frontier of the team it concerns (the Sentinel's department call, else the blocked
    *  agents' teams). Shared by several teams → between them. Same cause → same spot. */
   private enemyPos(e: Enemy): Vec {
-    const dept = e.classification && e.classification.department.p >= 0.5 ? [e.classification.department.label] : [];
+    const dept = e.classification && e.classification.department.p >= 0.5 ? [normDept(e.classification.department.label)] : [];
     const teams = [...new Set([...dept, ...e.planetIds])].map((id) => this.planet(id as DeptId));
     const c = teams.length ? teams.reduce((a, p) => add(a, p.pos), { x: 0, y: 0 }) : { x: 1, y: 0 };
     const mid = { x: c.x / Math.max(1, teams.length), y: c.y / Math.max(1, teams.length) };
     const a = Math.atan2(mid.y, mid.x) + (hash(e.causeKey) - 0.5) * 0.28;
-    return polar(Math.max(len(mid), 600) + 300 + hash(e.id) * 60, a);
+    return polar(TEAM_R + 90 + 2.35 * UNIT + hash(e.id) * 50, a);
   }
   block(u: Unit, t: NonNullable<ReturnType<typeof ruleTriage>>) {
     let e = [...this.enemies.values()].find((x) => x.causeKey === t.causeKey && !x.resolved);
@@ -326,16 +334,11 @@ export class World implements WorldApi {
   }
 
   // ---------- tick ----------
-  private tickPlanets(now: number) {
+  private tickPlanets(_now: number) {
     for (const p of this.planets) {
-      const c = p.cycle;
-      p.progress = Math.max(0, Math.min(1, (now - c.startAt) / (c.endAt - c.startAt)));
+      p.progress = 0;
+      p.pos = polar(p.orbitRadius, p.baseAngle);
       const st = this.stats(p.id);
-      // DISTANCE FROM THE SUN = distance from what the company knows: GBrain pages + charted work pull a team inward
-      const known = Math.min(1, (p.knowledge + 2 * Object.keys(this.durations).length * (st.unitsEver > 0 ? 0.15 : 0)) / 40);
-      const want = 1150 - 430 * known;
-      p.orbitRadius += (want - p.orbitRadius) * 0.02;
-      p.pos = polar(p.orbitRadius, p.baseAngle + 2 * Math.PI * p.progress);
       p.colonization = Math.min(3, (st.unitsEver > 0 ? 1 : 0) + (st.tools > 25 ? 1 : 0) + (p.knowledge > 5 || st.tools > 120 ? 1 : 0)) as Planet["colonization"];
       p.memTraffic *= 0.97;
     }
@@ -345,36 +348,41 @@ export class World implements WorldApi {
     this.sunPulse *= 0.94;
     for (const u of this.units.values()) {
       if (u.status === "dead") { if (now - u.lastEventAt > 8000) this.units.delete(u.id); continue; }
+      u.planetId = normDept(u.planetId);
       const parent = u.parentId ? this.units.get(u.parentId) : undefined;
-      const home = parent ? parent.pos : this.planet(u.planetId).pos;
-      u.home = home;
+      const team = this.planet(u.planetId);
+      const teamA = Math.atan2(team.pos.y, team.pos.x);
       const off = this.offsets.get(u.id) ?? { angle: (hash(u.id) - 0.5) * 1.1, dist: 0 };
-      const outward = Math.atan2(home.y, home.x) + off.angle;
+      // everything explores OUTWARD: from its home, along a bearing that fans out from the sun→team direction
+      const home = parent ? parent.pos : add(team.pos, polar(90, teamA));
+      const bearing = parent ? teamA + off.angle * 0.9 : teamA + off.angle * 0.55;
+      const scale = parent ? UNIT * 0.35 : UNIT;
+      u.home = home;
+      const dirTo = (d: number) => add(home, polar(d, bearing));
+      // dotted line = expected length of the task (ETA) or the frontier (2 units) if it's never been done
+      u.finishDist = (u.etaMs ? distUnits(u.etaMs / 1000) : 2) * scale;
       if (u.attacking && this.enemies.get(u.attacking)) {
-        const e = this.enemies.get(u.attacking)!; u.target = lerp(e.pos, home, 0.12);
-      } else if (u.role === "subagent" && parent) {
-        u.target = add(parent.target, polar(off.dist, off.angle));
-      } else if (u.charted) {
-        // known work: between the team and the sun (memory), closer the better it's known
-        const sunward = Math.atan2(-home.y, -home.x) + off.angle * 0.8;
-        u.target = add(home, polar(Math.min(off.dist || 260, len(home) - 260), sunward));
-      } else {
-        // first-time work: outward, into the fog of war
-        const need = Math.max(220, FOG_R + 120 - len(home));
-        u.target = add(home, polar(need, outward));
+        const e = this.enemies.get(u.attacking)!; u.target = e.pos;
+        u.pos = lerp(u.pos, lerp(u.pos, e.pos, 0.85), 0.01); // slow approach
+        continue;
       }
+      u.target = dirTo(u.finishDist);
       if (u.status === "idle") {
-        // park in formation beside the colony (sunward side), in arrival order
         const idle = [...this.units.values()].filter((x) => x.planetId === u.planetId && x.role === "mothership" && x.status === "idle");
-        const i = idle.indexOf(u), sunward = Math.atan2(-home.y, -home.x);
-        u.pos = lerp(u.pos, add(home, polar(62 + Math.floor(i / 4) * 26, sunward + 1.25 + (i % 4) * 0.32)), 0.12); continue;
+        const i = idle.indexOf(u);
+        u.pos = lerp(u.pos, add(team.pos, polar(70 + Math.floor(i / 5) * 24, teamA + Math.PI + (i % 5 - 2) * 0.35)), 0.02); // park slowly on the sun side
+        continue;
       }
-      if (u.status === "done") { u.pos = lerp(u.pos, home, 0.12); if (now - u.lastEventAt > 6000 && u.role === "subagent") this.units.delete(u.id); continue; }
-      const elapsed = now - u.startedAt;
-      if (u.status !== "blocked") u.progress = u.attacking ? Math.min(1, u.progress + 0.03) : u.etaMs ? Math.min(0.97, elapsed / u.etaMs) : 0.92 * (1 - Math.exp(-elapsed / 150_000));
+      if (u.status === "done") { if (now - u.lastEventAt > 8000 && u.role === "subagent") this.units.delete(u.id); continue; } // done: stays put, fades
+      const elapsed = (now - u.startedAt) / 1000;
+      if (u.status !== "blocked") u.progress = Math.min(1, distUnits(elapsed) / 2);
       const budget = u.etaMs ? Math.max(60_000, u.etaMs * 1.6) : 12 * 60_000;
-      u.hp = Math.max(0.05, Math.min(1, 1 - elapsed / budget) - u.failCount * 0.04);
-      u.pos = lerp(home, u.target, u.progress);
+      u.hp = Math.max(0.05, Math.min(1, 1 - (now - u.startedAt) / budget) - u.failCount * 0.04);
+      const want = dirTo(distUnits(u.status === "blocked" ? Math.max(0, (u.lastEventAt - u.startedAt) / 1000) : elapsed) * scale);
+      u.pos = lerp(u.pos, want, 0.08); // smooth, never fast
+      // dependency links: waiting on another agent's output
+      const dep = u.blockedBy ? this.enemies.get(u.blockedBy) : undefined;
+      u.dependsOn = dep?.dependsOnUnit ? [dep.dependsOnUnit] : undefined;
     }
     for (const e of this.enemies.values()) {
       if (e.resolved) continue;
@@ -385,7 +393,7 @@ export class World implements WorldApi {
       if (e.blocked.length >= 3) e.quadrant = "do_now";
       e.pos = lerp(e.pos, this.enemyPos(e), 0.05);
     }
-    for (const f of this.factories) { const p = this.planet(f.planetId); f.pos = add(p.pos, polar(110, Math.atan2(p.pos.y, p.pos.x) + 2.2 + hash(f.id))); }
+    for (const f of this.factories) { const p = this.planet(f.planetId); f.pos = add(p.pos, polar(120, Math.atan2(p.pos.y, p.pos.x) + Math.PI * 0.75 + hash(f.id) * 0.5)); }
   }
 
   advice(): Advice[] {
@@ -399,8 +407,6 @@ export class World implements WorldApi {
       const idle = units.filter((u) => u.planetId === p.id && u.role === "mothership" && u.status === "idle");
       if (idle.length) out.push({ id: `idle:${p.id}`, priority: 5, text: `${idle.length} agent${idle.length > 1 ? "s" : ""} idle in ${p.name}: assign a task` });
       if (p.colonization === 0) out.push({ id: `colonize:${p.id}`, priority: 3, text: `${p.name} has no agents yet: start one` });
-      const left = p.cycle.endAt - Date.now();
-      if (left > 0 && left < 45 * 60_000) out.push({ id: `cycle:${p.id}`, priority: 7, text: `${p.name}: ${p.cycle.label} ends in ${Math.round(left / 60_000)} min` });
     }
     const sigs = new Map<string, number>(); for (const [sig, xs] of Object.entries(this.durations)) sigs.set(sig, xs.length);
     const rep = [...sigs.entries()].find(([sig, n]) => n >= 3 && this.sigExample.has(sig) && !this.factories.some((f) => f.prompt.toLowerCase().includes(sig.split(" ")[0])));
@@ -423,9 +429,8 @@ export class World implements WorldApi {
       if (!existsSync(path)) return;
       const d = JSON.parse(readFileSync(path, "utf8"));
       if (Date.now() - d.at > 45 * 60_000) return;
-      for (const u of d.units ?? []) this.units.set(u.id, { ...u, lastEventAt: Date.now() });
+      for (const u of d.units ?? []) this.units.set(u.id, { ...u, planetId: normDept(u.planetId), lastEventAt: Date.now() });
       for (const e of d.enemies ?? []) this.enemies.set(e.id, e);
-      if (d.factories?.length) this.factories = d.factories;
       for (const [k, v] of d.stats ?? []) this.planetStats.set(k, v);
       for (const [k, v] of d.offsets ?? []) this.offsets.set(k, v);
       for (const [k, v] of d.sigExample ?? []) this.sigExample.set(k, v);

@@ -56,7 +56,7 @@ let lastSeen = ""; // ISO updated_at high-water mark for write pulses
 export async function countPages(ctx: Ctx) {
   if (counting) return; counting = true; lastCount = Date.now();
   try {
-    const counts: Record<DeptId, number> = { engineering: 0, marketing: 0, product_design: 0, arts: 0 };
+    const counts: Record<DeptId, number> = { engineering: 0, product: 0, design: 0, marketing: 0, operations: 0, product_design: 0, arts: 0 };
     let total = 0;
     for (let offset = 0; offset < 3000; offset += 100) {
       const pages = pagesOf(await brainCall(ctx, "list_pages", { limit: 100, offset, sort: "updated_asc" }));

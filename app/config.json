@@ -47,12 +47,25 @@
       ]
     },
     {
-      "id": "product_design",
-      "name": "Product Design",
+      "id": "product",
+      "name": "Product",
       "color": "#7C9CFF",
       "prefix": [
+        "prod-",
+        "product-"
+      ]
+    },
+    {
+      "id": "design",
+      "name": "Design",
+      "color": "#C792FF",
+      "prefix": [
+        "des-",
         "pd-",
-        "design"
+        "design",
+        "art-",
+        "arts",
+        "brand"
       ]
     },
     {
@@ -62,9 +75,16 @@
       "prefix": [
         "mkt-",
         "marketing",
-        "art-",
-        "arts",
-        "brand"
+        "growth"
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "Operations",
+      "color": "#FFC66D",
+      "prefix": [
+        "ops-",
+        "operations"
       ]
     }
   ],
@@ -82,22 +102,34 @@
       "planetId": "engineering"
     },
     {
+      "id": "roadmap",
+      "name": "Roadmap",
+      "color": "#7C9CFF",
+      "planetId": "product"
+    },
+    {
       "id": "site",
       "name": "C&C site",
-      "color": "#7C9CFF",
-      "planetId": "product_design"
+      "color": "#C792FF",
+      "planetId": "design"
     },
     {
       "id": "brand",
       "name": "Brand",
       "color": "#FF7AD9",
-      "planetId": "marketing"
+      "planetId": "design"
     },
     {
       "id": "launch",
       "name": "Launch campaign",
       "color": "#5CF2B0",
       "planetId": "marketing"
+    },
+    {
+      "id": "ops",
+      "name": "Company ops",
+      "color": "#FFC66D",
+      "planetId": "operations"
     }
   ]
 }
