@@ -44,9 +44,9 @@
     "steps": 80,
     "checkpoint": "river://92b6361c-a442-4258-97e5-871094b763d1/sampler_weights/sentinel-dsv4flash-s080-inf",
     "val_acc": 0.9800000000000001,
-    "test_acc_trained": null,
-    "test_acc_base": null,
-    "test_all5": null,
+    "test_acc_trained": 0.9369,
+    "test_acc_base": 0.5331,
+    "test_all5": 0.6923,
     "lora_p50_ms": 5419,
     "lora_p95_ms": 6292,
     "base_p50_ms": 2776

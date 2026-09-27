@@ -1,0 +1,8 @@
+{
+  "kind": 1.0,
+  "quadrant": 1.15,
+  "human_only": 1.0,
+  "department": 1.15,
+  "tier": 1.0,
+  "_checkpoint": "river://92b6361c-a442-4258-97e5-871094b763d1/sampler_weights/sentinel-dsv4flash-s080-inf"
+}
