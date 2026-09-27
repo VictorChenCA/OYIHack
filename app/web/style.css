@@ -303,6 +303,8 @@ button.stat { cursor: pointer; }
 .tt-l { color: #C1CEDC; margin: 4px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tt-f { display: flex; flex-wrap: wrap; gap: 3px 10px; color: var(--muted); font-size: 11px; }
 
+#ui[data-mode=memory] .leftcol, #ui[data-mode=memory] .groups, #ui[data-mode=memory] .views, #ui[data-mode=memory] .side { display: none; }
+
 /* ── Responsive: 1280×800 ─────────────────────────────── */
 @media (max-width: 1360px) {
   :root { --side-w: 330px; --left-w: 248px; --console-h: 200px; }

@@ -21,4 +21,7 @@ export function createUI(root: HTMLElement, store: Store) {
   createConsole(root, store);
   createToasts(root, store);
   createTooltip(root, store);
+  // Mode flag for CSS (memory explorer owns the screen: only top bar + console stay).
+  const setMode = () => { root.dataset.mode = store.mode.kind; };
+  setMode(); store.on("mode", setMode);
 }

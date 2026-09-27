@@ -52,12 +52,13 @@ export function createConsole(root: HTMLElement, store: Store) {
 
   function modeKey() { const s = squad(); if (s.length > 1) return "squad"; return consoleUnitId() ? "agent:" + consoleUnitId() : "commander"; }
 
-  async function loadDetail(id: string) {
+  async function loadDetail(id: string, first = false) {
     const d = await store.api<UnitDetail>(`/api/unit/${encodeURIComponent(id)}`);
     if (detailFor !== id) return;
-    detail = d ?? fixtureDetail(store.unit(id));
+    if (!d && detail && !first) return; // keep what we have (and locally echoed prompts) when offline
+    detail = d ?? fixtureDetail(store.unit(id), store.fixture);
     rows = pair(detail.history);
-    renderLog(true);
+    renderLog(first);
   }
 
   function setMode() {
@@ -68,7 +69,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     detail = null; rows = []; pop.hidden = true;
     const id = consoleUnitId();
     if (id && k.startsWith("agent")) {
-      detailFor = id; loadDetail(id);
+      detailFor = id; loadDetail(id, true);
       detailTimer = setInterval(() => { if (!document.hidden) loadDetail(id); }, 4000);
     } else detailFor = "";
     ta.placeholder = k === "commander" ? "Order the commander…  (Enter to send · Shift+Enter newline)" : k === "squad" ? `Broadcast to ${store.selection.length} selected units…` : "Prompt this agent…  (Enter to send · Esc back to commander)";
@@ -223,8 +224,11 @@ export function createConsole(root: HTMLElement, store: Store) {
   window.addEventListener("keydown", (e) => {
     const t = e.target as HTMLElement;
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
-    if ((e.key === "Enter" || e.key === "/") && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ta.focus(); }
-    else if (e.key === "Escape" && !document.querySelector(".modal")) toCommander();
+    const free = t === document.body || t === document.documentElement || t.tagName === "CANVAS";
+    if ((e.key === "Enter" || e.key === "/") && free && !e.metaKey && !e.ctrlKey) { e.preventDefault(); ta.focus(); }
+    else if (e.key === "Escape" && !document.querySelector(".modal")) {
+      if (store.focus && store.focus.kind !== "unit") store.setFocus(null); else toCommander();
+    }
   });
 
   return { focusInput: () => ta.focus() };
@@ -243,9 +247,15 @@ function pair(h: HistoryItem[]): Row[] {
 }
 
 /** Fixture / offline fallback so the console is demoable without /api/unit. */
-function fixtureDetail(u?: Unit): UnitDetail {
+function fixtureDetail(u: Unit | undefined, fake: boolean): UnitDetail {
   if (!u) return { unitId: "", history: [], filesInContext: [], memoryInContext: [] };
   const t0 = u.startedAt;
+  if (!fake) { // live but /api/unit unavailable: only what the unit itself tells us
+    const h: HistoryItem[] = [];
+    if (u.task) h.push({ ts: t0, role: "user", kind: "prompt", text: u.task });
+    if (u.lastTool) h.push({ ts: u.lastEventAt, role: "assistant", kind: "tool_use", toolName: u.lastTool, text: u.lastToolInput ?? "" });
+    return { unitId: u.id, history: h, filesInContext: [], memoryInContext: [] };
+  }
   const history: HistoryItem[] = [
     { ts: t0, role: "user", kind: "prompt", text: u.task ?? "Continue the task." },
     { ts: t0 + 4000, role: "assistant", kind: "text", text: `On it. I'll start by reading the relevant files for ${u.projectId}.` },
