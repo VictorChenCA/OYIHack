@@ -8,7 +8,7 @@ const TIER_ORDER: Tier[] = ["haiku", "sonnet", "opus", "fable"];
 
 export function candidates(ctx: Ctx, e: Enemy): Unit[] {
   return [...ctx.world.units.values()].filter((u) =>
-    u.status !== "dead" && u.status !== "done" && !u.blockedBy && !e.blocked.includes(u.id) &&
+    u.role !== "subagent" && u.status !== "dead" && u.status !== "done" && !u.blockedBy && !e.blocked.includes(u.id) &&
     (!u.attacking || u.attacking === e.id || u.status === "idle"));
 }
 
@@ -37,7 +37,7 @@ export function heuristicRank(ctx: Ctx, e: Enemy): RankEntry[] {
 const cache = new Map<string, RankEntry[]>();
 const refining = new Set<string>();
 const keyOf = (ctx: Ctx, e: Enemy, ids: string[]) =>
-  `${e.id}|${e.classification?.source ?? ""}|` + ids.map((id) => `${id}@${ctx.world.units.get(id)?.summaryAt ?? 0}`).join(",");
+  `${e.id}|${e.classification?.source ?? ""}|` + ids.map((id) => { const u = ctx.world.units.get(id); return `${id}@${(u?.simulated ? u.task : u?.summary) ?? ""}`; }).join(",");
 
 /** Heuristic now (or cached refined), refine in the background and broadcast {type:'rank'}. */
 export function rank(ctx: Ctx, enemyId: string): RankEntry[] {
