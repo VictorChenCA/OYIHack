@@ -2,8 +2,21 @@
 import { Graphics, Text, Texture } from "pixi.js";
 
 export const hex = (s: string | undefined, fallback = 0x9fb3c8) => (s && s[0] === "#" ? parseInt(s.slice(1, 7), 16) : fallback);
-export const QUAD_COLOR: Record<string, number> = { do_now: 0xff4d4d, schedule: 0xffb020, delegate: 0xa774ff, drop: 0x8a8f98 };
+/** The four blocker types = the Eisenhower quadrants. Color + shape encode the quadrant and nothing else. */
+export const QUAD_COLOR: Record<string, number> = { do_now: 0xff5a5a, schedule: 0xffb547, delegate: 0xa78bfa, drop: 0x7c8594 };
 export const GOLD = 0xffd24a;
+
+/** Blocker glyph in local coords: DO NOW = solid hexagon, SCHEDULE = diamond, DELEGATE = triangle, DROP = small open circle. */
+export function drawBlocker(g: Graphics, quadrant: string, r: number, color: number, ui: number) {
+  g.clear();
+  const w = 1.6 * ui;
+  if (quadrant === "drop") { g.circle(0, 0, r).fill({ color: 0x05070d, alpha: 0.6 }).stroke({ width: 2 * ui, color, alpha: 0.95 }); return; }
+  let pts: number[];
+  if (quadrant === "schedule") pts = [0, -r * 1.1, r * 1.1, 0, 0, r * 1.1, -r * 1.1, 0];
+  else if (quadrant === "delegate") { const h = r * 1.15; pts = [0, -h, h * 0.94, h * 0.62, -h * 0.94, h * 0.62]; }
+  else { pts = []; for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 3; pts.push(Math.cos(a) * r, Math.sin(a) * r); } }
+  g.poly(pts).fill({ color, alpha: quadrant === "do_now" ? 0.92 : 0.8 }).stroke({ width: w, color: 0xffffff, alpha: 0.35 });
+}
 export const HOLO = 0x9fe8ff;
 
 /** Dashed segment path (one stroke call per line keeps Graphics instructions small). */

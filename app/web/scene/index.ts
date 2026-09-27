@@ -4,7 +4,7 @@ import type { DeptId, Enemy, Mine, Planet, Unit, WorldState } from "../../shared
 import type { Store, Target } from "../store";
 import { loadTextures, tex, type TexName } from "./assets";
 import { Camera } from "./camera";
-import { GOLD, HOLO, QUAD_COLOR, arc, dashed, fogTexture, hash, hex, label } from "./draw";
+import { GOLD, HOLO, QUAD_COLOR, arc, dashed, drawBlocker, fogTexture, hash, hex, label } from "./draw";
 
 const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", marketing: "planet02", product_design: "planet01", arts: "planet09" };
 const TIER_TEX: Record<string, TexName> = { haiku: "ship_A", sonnet: "ship_B", opus: "ship_E", fable: "ship_H", river: "meteor_squareLarge", unknown: "ship_B" };
@@ -25,7 +25,7 @@ function sprite(name: TexName, opts: { tint?: number; add?: boolean; size?: numb
 const setSize = (s: Sprite, size: number) => s.scale.set(size / Math.max(1, s.texture.width));
 
 interface UnitView { glow: Sprite; trail: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
-interface EnemyView { c: Container; title: Text; aura: Sprite; hull: Sprite; halo: Sprite; badge: Text; drones: Sprite[]; smoke: Sprite; x: number; y: number; seen: number; kind: string; last: Enemy; born: number }
+interface EnemyView { c: Container; g: Graphics; title: Text; x: number; y: number; seen: number; last: Enemy; born: number }
 interface PlanetView { c: Container; base: Sprite; dept: Sprite; lights: Sprite[]; ring: Graphics; dish: Sprite; name: Text; cycle: Text; sum: Text }
 interface Fx { s: Sprite; t: number; dur: number; from: number; to: number; alpha: number }
 
@@ -170,25 +170,14 @@ export function createScene(app: Application, store: Store) {
     return v;
   }
 
+  /** One blocker language: shape + color = quadrant (the only thing the silhouette encodes); gold ring = needs a person. */
   function enemyView(e: Enemy): EnemyView {
     let v = enemyViews.get(e.id);
-    if (v && v.kind === e.kind) return v;
-    if (v) { v.c.destroy({ children: true }); v.title.destroy(); }
-    const c = new Container();
-    const aura = sprite("circle_05", { add: true, alpha: 0.5 });
-    const halo = sprite("magic_02", { tint: GOLD, add: true, alpha: 0.7 });
-    const hullTex: TexName = e.kind === "credential" ? "ship_sidesB" : e.kind === "account" ? "station_C" : e.kind === "approval" ? "meteor_squareLarge"
-      : e.kind === "missing_info" ? "spaceStation_028" : e.kind === "dependency" ? "ship_E" : e.kind === "failure" ? "enemy_A" : "enemy_D";
-    const hull = sprite(hullTex);
-    if (e.kind === "credential") hull.rotation = Math.PI;
-    const smokeS = sprite("smoke_04", { tint: 0x6b6f7a, alpha: 0.35 });
-    const drones: Sprite[] = [];
-    const badge = label("!", 22, GOLD, "Rajdhani", "700");
-    c.addChild(aura, smokeS, halo, hull, badge);
+    if (v) return v;
+    const c = new Container(); const g = new Graphics(); c.addChild(g);
     L.enemies.addChild(c);
     const title = setPrio(label("", 12, 0xffffff, "IBM Plex Sans", "600"), 0); L.labels.addChild(title);
-    v = { c, title, aura, hull, halo, badge, drones, smoke: smokeS, x: e.pos.x, y: e.pos.y, seen: 0, kind: e.kind, last: e, born: frame > 30 ? time : -10 };
-    if (frame > 30) spawnFx("circle_02", e.pos.x, e.pos.y, QUAD_COLOR[e.quadrant] ?? 0xff4d4d, 300, 30, 0.6, 0.8); // warp-in
+    v = { c, g, title, x: e.pos.x, y: e.pos.y, seen: 0, last: e, born: frame > 30 ? time : -10 };
     enemyViews.set(e.id, v);
     return v;
   }
@@ -201,7 +190,6 @@ export function createScene(app: Application, store: Store) {
     const trail = sprite("star_04", { alpha: 0 });
     const ship = sprite(texName);
     L.unitGlow.addChild(glow, trail); L.units.addChild(ship);
-    if (frame > 30) spawnFx("star_08", u.pos.x, u.pos.y, 0xe8f6ff, 20, 160, 0.5, 1); // warp-in flash
     v = { glow, trail, ship, x: u.pos.x, y: u.pos.y, rot: 0, texName, seen: 0 };
     unitViews.set(u.id, v);
     return v;
@@ -231,6 +219,8 @@ export function createScene(app: Application, store: Store) {
   const unitHidden = (u: Unit) => u.hidden || u.status === "dead" || store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId });
   const enemyHidden = (e: Enemy) => e.hidden || store.isHidden("enemy", e.id) || (e.planetIds.length > 0 && e.planetIds.every((p) => store.isHidden("planet", p)));
   /** Motherships ~3x subagents: the hierarchy should read at a glance. */
+  /** Blocker radius: grows with how many agents it blocks; DROP (neither urgent nor important) stays small. */
+  const blockerR = (e: Enemy, ui: number) => (16 + 5 * Math.min(8, Math.max(1, e.blocked.length))) * ui * (e.quadrant === "drop" ? 0.7 : 1);
   const unitSize = (u: Unit) => (u.role === "subagent" ? 15 : u.role === "sentinel" ? 30 : 46) * cam.ui;
 
   // ---------- per-frame ----------
@@ -511,39 +501,24 @@ export function createScene(app: Application, store: Store) {
       if (!showEnemies || enemyHidden(e) || !enemyInPm(e)) continue;
       const v = enemyView(e); v.seen = frame; v.last = e;
       v.x += (e.pos.x - v.x) * lerpK; v.y += (e.pos.y - v.y) * lerpK;
-      const qc = QUAD_COLOR[e.quadrant] ?? 0xff4d4d;
-      const age = time - v.born, grow = age >= 0.6 ? 1 : 1 - Math.pow(1 - age / 0.6, 3) * Math.cos(age * 9);
-      const size = (46 + 14 * Math.min(8, e.strength)) * ui * Math.max(0.05, grow);
-      enemyPos.set(e.id, { x: v.x, y: v.y, r: size * 0.6 });
-      const drift = e.quadrant === "drop" ? Math.sin(time * 0.5 + hash(e.id) * 6) * 12 : 0;
-      v.c.position.set(v.x + drift, v.y + drift * 0.5);
-      const speed = e.quadrant === "do_now" ? 6 : e.quadrant === "schedule" ? 1.6 : 2.5;
-      const pa = 0.5 + 0.5 * Math.sin(time * speed + hash(e.id) * 6);
-      v.aura.tint = qc; setSize(v.aura, size * (2.4 + 0.3 * pa)); v.aura.alpha = (0.35 + 0.35 * pa) * (e.resolved ? 0.3 : 1);
-      v.hull.tint = e.humanOnly ? 0xffe28a : qc; setSize(v.hull, size);
-      if (e.kind === "credential") v.hull.rotation = Math.PI;
-      else if (e.kind === "missing_info") v.hull.rotation += dt * 0.3;
-      else if (e.kind === "approval") v.hull.rotation = Math.PI / 4 + Math.sin(time) * 0.1;
-      v.hull.filters = e.humanOnly && glowGold ? [glowGold] : null;
-      v.halo.visible = e.humanOnly; setSize(v.halo, size * 1.9); v.halo.rotation += dt * 0.6;
-      v.badge.visible = e.humanOnly; v.badge.position.set(size * 0.55, -size * 0.55); v.badge.scale.set(ui);
-      v.smoke.visible = e.kind === "missing_info"; setSize(v.smoke, size * 1.4); v.smoke.rotation -= dt * 0.2; v.smoke.alpha = 0.25 + 0.1 * Math.sin(time);
-      // drone swarm for rate_limit / billing: N = strength
-      const nd = e.kind === "rate_limit" || e.kind === "billing" ? Math.max(1, Math.min(12, Math.round(e.strength) + 2)) : 0;
-      while (v.drones.length < nd) { const d = sprite("enemy_D"); v.drones.push(d); v.c.addChild(d); }
-      while (v.drones.length > nd) v.drones.pop()!.destroy();
-      v.drones.forEach((d, i) => { const a = time * 1.3 + (i * Math.PI * 2) / nd, rr = size * (0.9 + 0.15 * Math.sin(time * 2 + i)); d.position.set(Math.cos(a) * rr, Math.sin(a) * rr); d.rotation = a + Math.PI; d.tint = qc; setSize(d, size * 0.32); });
-      if (nd) v.hull.alpha = 0.9;
-      v.c.alpha = enemyEmph(e);
+      const qc = QUAD_COLOR[e.quadrant] ?? QUAD_COLOR.do_now;
+      const r = blockerR(e, ui);
+      enemyPos.set(e.id, { x: v.x, y: v.y, r });
+      v.c.position.set(v.x, v.y);
+      // the only motion: a slow, subtle breathe on DO NOW (urgent + important)
+      const k = e.quadrant === "do_now" ? 1 + 0.035 * Math.sin(time * 1.6) : 1;
+      drawBlocker(v.g, e.quadrant, r * k, qc, ui);
+      if (e.humanOnly) v.g.circle(0, 0, r * 1.45).stroke({ width: 1.5 * ui, color: GOLD, alpha: 0.9 });
+      v.c.alpha = enemyEmph(e) * Math.min(1, Math.max(0, (time - v.born) / 0.5));
       if (e.resolved) v.c.alpha *= 0.4;
       const tt = e.title;
       if (v.title.text !== tt) v.title.text = tt;
-      v.title.tint = e.humanOnly ? GOLD : qc; v.title.alpha = v.c.alpha;
-      v.title.visible = store.layerOn("labels") && isHot("enemy", e.id); v.title.scale.set(ui); v.title.position.set(v.c.x, v.c.y + size * 0.95 + 8 * ui);
+      v.title.tint = 0xe8eef6; v.title.alpha = v.c.alpha;
+      v.title.visible = store.layerOn("labels") && isHot("enemy", e.id); v.title.scale.set(ui); v.title.position.set(v.c.x, v.c.y + r * (e.humanOnly ? 1.45 : 1.1) + 12 * ui);
     }
     for (const [id, v] of enemyViews) if (v.seen !== frame) {
       const stillThere = s.enemies.some((e) => e.id === id);
-      if (!stillThere || v.last.resolved) { shock(v.x, v.y); spawnFx("circle_02", v.x, v.y, 0xffffff, 40, 520, 0.8, 1); spawnFx("light_01", v.x, v.y, QUAD_COLOR[v.last.quadrant] ?? 0xffffff, 60, 260, 0.6, 0.9); }
+      if (!stillThere || v.last.resolved) spawnFx("circle_02", v.x, v.y, 0x5cf2b0, 40, 160, 0.8, 0.5); // resolved: one quiet ring
       v.c.destroy({ children: true }); v.title.destroy(); enemyViews.delete(id);
     }
 
@@ -618,35 +593,28 @@ export function createScene(app: Application, store: Store) {
       // blocked unit → enemy
       for (const e of s.enemies) {
         const ep = enemyPos.get(e.id); if (!ep) continue;
-        const qc = e.humanOnly ? GOLD : QUAD_COLOR[e.quadrant] ?? 0xff4d4d;
-        const hot = hov?.kind === "enemy" && hov.id === e.id;
+        const qc = QUAD_COLOR[e.quadrant] ?? QUAD_COLOR.do_now;
+        const hot = (hov?.kind === "enemy" && hov.id === e.id) || (store.focus?.kind === "enemy" && store.focus.id === e.id);
         for (const id of e.blocked) {
           const a = disp.get(id); if (!a) continue;
-          dashed(tg, a.x, a.y, ep.x, ep.y, 10 * ui, 6 * ui, -time * 20 * ui);
-          if (emph(id) < 1) { tg.stroke({ width: 1.4 * ui, color: qc, alpha: 0.5 * emph(id) }); }
+          dashed(tg, a.x, a.y, ep.x, ep.y, 6 * ui, 6 * ui);
+          if (emph(id) < 1) { tg.stroke({ width: 1 * ui, color: qc, alpha: 0.35 * emph(id) }); }
           if (hot || (hov?.kind === "unit" && hov.id === id)) {
             const t = tmpText(`reason:${e.id}:${id}`, e.reason, 13, qc, "IBM Plex Sans");
             t.position.set((a.x + ep.x) / 2, (a.y + ep.y) / 2 - 10 * ui); t.scale.set(ui);
           }
         }
-        tg.stroke({ width: (hot ? 2.2 : 1.1) * ui, color: qc, alpha: hot ? 0.9 : 0.32 });
+        tg.stroke({ width: (hot ? 1.6 : 1) * ui, color: qc, alpha: hot ? 0.85 : 0.35 });
         if (e.kind === "dependency" && e.dependsOnUnit) {
           const d = disp.get(e.dependsOnUnit);
-          if (d) { dashed(tg, ep.x, ep.y, d.x, d.y, 3 * ui, 7 * ui); tg.stroke({ width: 1.4 * ui, color: 0xa774ff, alpha: 0.7 }); }
+          if (d) { dashed(tg, ep.x, ep.y, d.x, d.y, 3 * ui, 7 * ui); tg.stroke({ width: 1 * ui, color: 0x9aa6b8, alpha: 0.5 }); }
         }
-        // attackers: laser bolts + sparks
+        // agents sent to resolve it: one steady line (no bolts/sparks)
         for (const id of e.attackers) {
           const a = disp.get(id); if (!a) continue;
-          const dx = ep.x - a.x, dy = ep.y - a.y;
-          for (let b = 0; b < 2; b++) {
-            const t = (time * 2.2 + hash(id) + b * 0.5) % 1, t2 = Math.min(1, t + 0.08);
-            tg.moveTo(a.x + dx * t, a.y + dy * t).lineTo(a.x + dx * t2, a.y + dy * t2);
-          }
-          tg.stroke({ width: 2.5 * ui, color: 0xaff6ff, alpha: 0.95 });
-          const sp = 0.5 + 0.5 * Math.sin(time * 20 + hash(id) * 10);
-          tg.circle(ep.x - dx * 0.02, ep.y - dy * 0.02, 5 * ui * sp).fill({ color: 0xffffff, alpha: 0.8 * sp });
-          tg.circle(a.x + dx * 0.03, a.y + dy * 0.03, 3 * ui).fill({ color: 0xaff6ff, alpha: 0.6 + 0.4 * sp });
+          tg.moveTo(a.x, a.y).lineTo(ep.x, ep.y);
         }
+        if (e.attackers.length) tg.stroke({ width: 1.4 * ui, color: 0x5cf2b0, alpha: 0.7 });
       }
     }
 
@@ -787,14 +755,14 @@ export function createScene(app: Application, store: Store) {
     let strict = true; // pass 1: exact hull hits only, so a planet under a docked mothership stays clickable
     const consider = (t: Target, x: number, y: number, r: number) => { const d = Math.hypot(w.x - x, w.y - y); if (d < (strict ? r * 0.55 : Math.max(r, tol)) && d - r * 0.3 < bestD) { bestD = d - r * 0.3; best = t; } };
     const units = () => {
-      if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e) || enemyViews.get(e.id)?.seen !== frame) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, (46 + 14 * Math.min(8, e.strength)) * cam.ui * 0.6); }
+      if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e) || enemyViews.get(e.id)?.seen !== frame) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, blockerR(e, cam.ui) * 1.2); }
       if (store.layerOn("units")) for (const u of s.units) { if (unitHidden(u) || !shown(u.id)) continue; const v = unitViews.get(u.id); consider({ kind: "unit", id: u.id }, v?.x ?? u.pos.x, v?.y ?? u.pos.y, unitSize(u) * 0.6); }
     };
     units(); if (best) return best;
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * planetK() * 1.8);
     if (best) return best;
     strict = false;
-    if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e) || enemyViews.get(e.id)?.seen !== frame) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, (46 + 14 * Math.min(8, e.strength)) * cam.ui * 0.6); }
+    if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e) || enemyViews.get(e.id)?.seen !== frame) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, blockerR(e, cam.ui) * 1.2); }
     if (store.layerOn("units")) for (const u of s.units) { if (unitHidden(u) || !shown(u.id)) continue; const v = unitViews.get(u.id); consider({ kind: "unit", id: u.id }, v?.x ?? u.pos.x, v?.y ?? u.pos.y, unitSize(u) * 0.6); }
     if (best) return best;
     if (store.layerOn("factories")) for (const f of s.factories) if (!f.hidden && !store.isHidden("factory", f.id, { planetId: f.planetId }) && (!pm || f.planetId === pm)) consider({ kind: "factory", id: f.id }, f.pos.x, f.pos.y, 22 * cam.ui);
