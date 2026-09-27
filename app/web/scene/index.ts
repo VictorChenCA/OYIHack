@@ -63,6 +63,8 @@ export function createScene(app: Application, store: Store) {
   // Label declutter: lower number wins when two labels overlap; >= MINOR hides when zoomed out.
   const prio = new WeakMap<Text, number>();
   const MINOR = 4;
+  /** System-view framing radius (x systemRadius): content (orbits + enemies) reaches ~0.9R; the band between HUD bars is short. */
+  const SYS_FIT = 0.95;
   const setPrio = <T extends Text>(t: T, p: number) => { prio.set(t, p); return t; };
   /** "Claude (subscription usage)" -> "CLAUDE", "River credits" -> "RIVER". */
   const shortMine = (s: string) => (s.replace(/\s*\(.*?\)\s*/g, " ").trim().split(/\s+/)[0] || s).toUpperCase();
@@ -225,7 +227,7 @@ export function createScene(app: Application, store: Store) {
     top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
-    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * 1.05); cam.update(0); }
+    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * SYS_FIT); cam.update(0); }
     const R = s.systemRadius, ui = cam.ui;
 
     // background parallax
@@ -638,7 +640,7 @@ export function createScene(app: Application, store: Store) {
     for (const [k, e] of texts) if (e.seen !== frame) { if (frame - e.seen > 120) { e.t.destroy(); texts.delete(k); } else e.t.visible = false; }
     L.labels.visible = store.layerOn("labels") || true;
     for (const [k, e] of texts) if (k.startsWith("squad:") && !store.layerOn("labels")) e.t.visible = false;
-    declutter(cam.scale / cam.fitScale(R * 1.05));
+    declutter(cam.scale / cam.fitScale(R * SYS_FIT));
   });
 
   /** Greedy label placement: keep higher-priority labels, hide ones that would overlap them; drop minor labels when zoomed out. */
@@ -694,7 +696,7 @@ export function createScene(app: Application, store: Store) {
     measureInsets();
     if (!s) return;
     if (m.kind === "planet") { const p = s.planets.find((q) => q.id === m.planetId); if (p) cam.flyTo(p.pos.x * 0.85, p.pos.y * 0.85, cam.fitScale(520)); }
-    else if (m.kind === "system") cam.flyTo(0, 0, cam.fitScale(s.systemRadius * 1.05));
+    else if (m.kind === "system") cam.flyTo(0, 0, cam.fitScale(s.systemRadius * SYS_FIT));
     else if (m.kind === "memory") cam.flyTo(0, 0, cam.fitScale(420));
   }
   store.on("mode", flyToMode);
@@ -778,5 +780,5 @@ export function createScene(app: Application, store: Store) {
     cam.insetTop = tb ? Math.max(0, tb.bottom + 6) : 0;
     cam.insetBottom = con ? Math.max(0, cam.h - con.top + 6) : 0;
   }
-  window.addEventListener("resize", () => { measureInsets(); if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * 1.05), 0.2); });
+  window.addEventListener("resize", () => { measureInsets(); if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * SYS_FIT), 0.2); });
 }
