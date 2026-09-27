@@ -1,0 +1,34 @@
+Source: https://ufo.ai/docs/recipes/data-analysis/
+
+
+
+Track weekly activation
+
+Define and test the measureSection titled “Define and test the measure”
+
+Connect the analytics service and the source that identifies internal or test accounts. Define the
+measure before you schedule it:
+
+Define activation as a new workspace that completes one UFO task within 24 hours of sign-up.
+Exclude internal workspaces. Use Pacific time and complete weeks only.
+
+Run the query for the last eight weeks. Ask your UFO to show the query, reconcile counts with raw
+events, inspect sample rows, and explain missing or duplicate records.
+
+Create the scheduled taskSection titled “Create the scheduled task”
+
+Every Monday at 6:00 AM Pacific time, calculate activation for the previous complete week and the
+seven weeks before it. Use the agreed definition and exclusions. Return weekly new-workspace
+counts, activated counts, activation rates, and week-over-week change. Reconcile the totals with
+raw event counts and report missing or duplicate data. Compare the latest week with the prior
+four-week range. Post a table and chart in this conversation. Call out a change only when it is
+outside that range or the data check fails. Do not write to the source.
+
+Keep the query or formula with each result.
+
+Change the definition safelySection titled “Change the definition safely”
+
+Before you change a published metric definition, compare both definitions over the same period.
+Approve the new definition, then update the task. Record the effective date in the task prompt.
+
+Use Tasks, then Scheduled to pause or change the task.

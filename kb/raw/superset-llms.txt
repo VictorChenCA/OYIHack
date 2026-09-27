@@ -1,0 +1,62 @@
+# Superset Documentation
+
+> Official documentation for Superset — run parallel AI coding agents in isolated Git worktrees on your machine.
+
+Fetch the relevant Markdown pages linked below. Each page includes its source URL and description, followed by the full documentation content.
+
+Any documentation page is available as Markdown at https://docs.superset.sh/llms.mdx/<path>, for example https://docs.superset.sh/llms.mdx/cli/getting-started.
+
+The full documentation corpus is available at https://docs.superset.sh/llms-full.txt.
+
+## Pages
+
+- [AI Agents](https://docs.superset.sh/llms.mdx/agent-integration): Use Claude Code and other AI agents
+- [Agent Status & Notifications](https://docs.superset.sh/llms.mdx/agent-status): How Superset knows what your agents are doing, and how it tells you
+- [Automations](https://docs.superset.sh/llms.mdx/automations): Schedule agent sessions to run on a recurring basis
+- [In-App Browser](https://docs.superset.sh/llms.mdx/browser): Built-in browser pane for previewing your running services
+- [Community & Support](https://docs.superset.sh/llms.mdx/community): Get help, follow along, and talk to us
+- [Computer Control](https://docs.superset.sh/llms.mdx/computer): Let agents operate native desktop applications through an accessibility-first driver
+- [Custom Themes](https://docs.superset.sh/llms.mdx/custom-themes): Build, edit, and import your own Superset theme files
+- [Customization](https://docs.superset.sh/llms.mdx/customization): Personalize Superset to your workflow
+- [Diff Viewer](https://docs.superset.sh/llms.mdx/diff-viewer): Review code changes and manage your git workflow
+- [Editor & Files](https://docs.superset.sh/llms.mdx/editor): File explorer, built-in editor, and cross-workspace search
+- [FAQ](https://docs.superset.sh/llms.mdx/faq): Frequently asked questions
+- [Your First Parallel Session](https://docs.superset.sh/llms.mdx/first-workspace): Go from install to three agents working in parallel, then ship the best result
+- [Superset Documentation](https://docs.superset.sh/llms.mdx/): Run AI coding agents in parallel, each in its own isolated workspace
+- [Install](https://docs.superset.sh/llms.mdx/install): Requirements, download, and first launch
+- [Keyboard Shortcuts](https://docs.superset.sh/llms.mdx/keyboard-shortcuts): Customize hotkeys for common actions
+- [Superset MCP Server](https://docs.superset.sh/llms.mdx/mcp-server): Connect AI agents directly to Superset via MCP
+- [Agent Orchestration](https://docs.superset.sh/llms.mdx/orchestration): Turn the agent you're already talking to into a coordinator of other agents
+- [What is Superset?](https://docs.superset.sh/llms.mdx/overview): The 60-second version
+- [Pages](https://docs.superset.sh/llms.mdx/pages): Share agent-created designs and reports with your team, and turn comments into updates
+- [Port Management](https://docs.superset.sh/llms.mdx/ports): View and manage active ports per workspace
+- [Use with OpenRouter, Bedrock, Vertex, or Vercel](https://docs.superset.sh/llms.mdx/providers): Connect Superset to Vercel AI Gateway, OpenRouter, AWS Bedrock, Google Vertex, and other providers
+- [Pull Requests](https://docs.superset.sh/llms.mdx/pull-requests): Review, check, and merge PRs from your projects without leaving the app
+- [Remote Access](https://docs.superset.sh/llms.mdx/remote-access): Reach workspaces hosted on another machine
+- [Project Lifecycle Scripts](https://docs.superset.sh/llms.mdx/setup-teardown-scripts): Configure setup, teardown, and Run-button commands for a project
+- [Skills](https://docs.superset.sh/llms.mdx/skills): Superset abilities your coding agents get automatically. Orchestration, automations, feedback, diagnostics, and more
+- [The Superset Model](https://docs.superset.sh/llms.mdx/superset-model): Five concepts everything else builds on
+- [Tasks](https://docs.superset.sh/llms.mdx/tasks): Track work items and delegate them to agents without leaving the app
+- [Terminal](https://docs.superset.sh/llms.mdx/terminal-integration): Built-in terminal with multiple tabs and persistence
+- [Terminal Scripts](https://docs.superset.sh/llms.mdx/terminal-scripts): Save and reuse commands that launch in terminals
+- [Troubleshooting](https://docs.superset.sh/llms.mdx/troubleshooting): Symptoms, causes, and fixes for common issues
+- [Usage](https://docs.superset.sh/llms.mdx/usage): Subscription quota meters, token-cost analytics, machine resources, and multi-account switching
+- [IDE Integration](https://docs.superset.sh/llms.mdx/use-with-ide): Use with Cursor, VS Code, or other editors
+- [Linear Integration](https://docs.superset.sh/llms.mdx/use-with-linear): Open Linear issues as Superset workspaces with a custom script
+- [Slack Integration](https://docs.superset.sh/llms.mdx/use-with-slack): Mention @superset in Slack to file tasks or dispatch coding agents
+- [Monorepos](https://docs.superset.sh/llms.mdx/using-monorepos): Working with monorepos
+- [Workspaces](https://docs.superset.sh/llms.mdx/workspaces): Isolated environments for each git branch
+- [Superset CLI Reference](https://docs.superset.sh/llms.mdx/cli/cli-reference): Complete reference for Superset command-line interface, including commands and flags.
+- [Environment variables](https://docs.superset.sh/llms.mdx/cli/env-vars): Complete reference for environment variables that control Superset CLI behavior.
+- [Getting Started](https://docs.superset.sh/llms.mdx/cli/getting-started): Install the Superset CLI, sign in, and run your first commands.
+- [Host Server](https://docs.superset.sh/llms.mdx/cli/host-server): Set up the daemon the CLI and desktop app talk to when targeting the local machine.
+- [Drive Superset from Your Agent](https://docs.superset.sh/llms.mdx/recipes/agent-driven-superset): Delegate work in parallel, then make it recurring with the automate skill, without leaving the conversation
+- [Command Your Fleet from the CLI](https://docs.superset.sh/llms.mdx/recipes/command-your-fleet): Read every agent's screen and broadcast follow-ups across workspaces with two shell loops
+- [Fan Out a Big Refactor](https://docs.superset.sh/llms.mdx/recipes/fan-out-refactor): Split a large change into independent slices and run one workspace per slice
+- [Wake Up to a Finished Audit](https://docs.superset.sh/llms.mdx/recipes/nightly-audit): Schedule an agent to audit your repo overnight and review the results over coffee
+- [Run Three Workstreams at Once](https://docs.superset.sh/llms.mdx/recipes/parallel-workstreams): A feature, a bugfix, and a PR review in parallel without branch juggling
+- [Clear PR Feedback in the Background](https://docs.superset.sh/llms.mdx/recipes/pr-feedback): An agent addresses review comments on your PR while you work on something else
+- [Race Agents on One Task](https://docs.superset.sh/llms.mdx/recipes/race-agents): Run the same prompt across multiple agents and merge the best result
+- [Advanced Usage](https://docs.superset.sh/llms.mdx/sdk/advanced): Real-world recipes that combine the SDK's primitives (webhooks, triage scripts, and on-demand agents).
+- [Getting Started](https://docs.superset.sh/llms.mdx/sdk/getting-started): Drive Superset programmatically from any TypeScript or JavaScript codebase.
+- [Superset SDK Reference](https://docs.superset.sh/llms.mdx/sdk/reference): Method-by-method reference for the Superset TypeScript SDK.

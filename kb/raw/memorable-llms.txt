@@ -1,0 +1,57 @@
+# Memorable
+
+> Memorable is a company and a developer tool, not the English adjective. It is procedural memory for AI agents: it records the tool calls an agent made to finish a task, extracts a deterministic procedure from that trace, and gives the procedure back the next time a similar task arrives.
+
+Memorable Solutions AI Corp. Y Combinator backed. Free CLI on npm as `memorable-cli`.
+
+## What it does
+
+- **Capture.** A hook reads the tool calls a run already produced, with their outcomes. Tool names and allow-listed arguments only, identifiers scrubbed. Never the conversation, never file contents.
+- **Extract.** A parser turns the trace into a procedure: ordered steps, preconditions, postconditions, and the command that proved the run worked. No model in the loop, so the same trace gives the same procedure.
+- **Store.** Written to the customer's own database. Memorable keeps no copy.
+- **Recall.** Before a run, the matching procedure is added to the prompt at roughly 50 to 100 tokens, marked as reference data.
+- **Credit.** A procedure that stops passing stops being recalled.
+
+## What it is not
+
+- Not a vector store of past conversations. The unit is a verified procedure, not a chunk of text.
+- Not a replacement for skills or system prompts. A skill says how a task is done in general; a procedure says how it went the last time, on this repository.
+- Not a hosted system of record. Procedures live in the customer's store.
+
+## Harnesses it works with
+
+Claude Code, OpenAI Codex, Cursor, OpenCode, Devin, Google Antigravity, Claude Cowork, gbrain, Quartermaster, and any custom loop that can POST one JSON trace.
+
+## Measured results
+
+- gbrain on the Claude Code harness: 19 percent fewer agent turns, 25 runs per arm, replicated twice across 454 runs, task accuracy unchanged.
+- Quartermaster on the Codex harness: 40 percent fewer tool calls, 75 runs per arm. Across five task families sharing one store: tool calls 4 to 2, input tokens down 34 percent, pass rate 87 to 97 percent, 30 runs per arm.
+- Injected context costs 293 tokens where a hand-written skill covering the same ground cost 15,593.
+- OpenHome, a voice assistant with 150 abilities: eight real tasks run twice, all eight completed.
+- On tau-bench the result was neutral and the gate was a no-go. Published, because the boundary is part of the product: memory pays where an agent re-derives a multi-step path, not where turns are dialogue.
+
+## Install
+
+```bash
+npm i -g memorable-cli
+echo 'mk_...' | memorable login --paste   # the key your human gave you; bare login cannot finish inside an agent
+memorable init
+memorable enable
+memorable install-hooks
+```
+
+## Pages
+
+- [Home](https://www.memorable.sh/): what it does, how it works, the numbers.
+- [Use cases](https://www.memorable.sh/use-case): coding, browser, computer-use, voice, research and ops agents.
+- [Case studies](https://www.memorable.sh/case-studies): OpenHome, gstack and Quartermaster, with sample sizes.
+- [Documentation](https://www.memorable.sh/doc): capture, extraction, recall, consent.
+- [CLI reference](https://www.memorable.sh/doc/cli): every command and flag.
+- [API reference](https://www.memorable.sh/doc/api): endpoints, auth, payloads, limits.
+- [Integration guide](https://www.memorable.sh/doc/integrate): the two hooks, per harness.
+- [Security](https://www.memorable.sh/legal/security): consent, egress, scrubbing.
+- [Privacy](https://www.memorable.sh/legal/privacy): what is held and what is not.
+
+## Contact
+
+hello@memorable.sh

@@ -1,0 +1,47 @@
+# River API Documentation
+
+> Train and serve large language models (LLMs) and agents with River. Learn supervised fine-tuning, reinforcement learning, and the objectives, data formats, and evaluation methods behind effective experiments.
+
+## Getting started
+
+- [Overview](https://docs.river.ai/index.md): Train and serve large language models (LLMs) and agents with River. Learn SFT, reinforcement learning, and how to evaluate your experiments.
+- [Quickstart](https://docs.river.ai/quickstart.md): Install the client, connect to River, and generate your first response before starting a training run.
+- [How the API works](https://docs.river.ai/guides/api-basics.md): Create a model instance, sample from its weights, and train it with one call.
+- [Models and access](https://docs.river.ai/guides/models.md): Choose an available model and connect to River Cloud or your own deployment.
+
+## Supervised fine-tuning
+
+- [Learning from examples](https://docs.river.ai/guides/sft-concepts.md): Understand demonstrations, next-token loss, training masks, and evaluation.
+- [Your first SFT run](https://docs.river.ai/guides/sft.md): Train a small supervised task, sample the result, and save your weights.
+- [Choosing an adapter](https://docs.river.ai/guides/lora.md): Choose LoRA capacity and the parts of the model to adapt.
+
+## Reinforcement learning
+
+- [Learning from rewards](https://docs.river.ai/guides/rl-concepts.md): Work through rewards, group-relative advantages, and a policy update.
+- [Your first RL run](https://docs.river.ai/guides/rl-sync.md): Train a synchronous math recipe with the River RL library.
+- [Tools and environments](https://docs.river.ai/guides/rl-tools.md): Extend a rollout into a multi-turn interaction with tools and stateful environments.
+- [Image understanding](https://docs.river.ai/guides/image-understanding.md): Include visual observations in agent rollouts and manage image handles across training and evaluation.
+- [Asynchronous training](https://docs.river.ai/guides/rl-async.md): Overlap sampling and training with bounded policy staleness.
+- [Policy versions](https://docs.river.ai/guides/rl-policies.md): Understand trajectory pinning, masking, group completion, and KV reuse.
+- [Evaluation and recovery](https://docs.river.ai/guides/rl-checkpoints.md): Evaluate held-out tasks and recover an interrupted training run.
+- [Build your own RL system](https://docs.river.ai/guides/rl-primitives.md): Build custom algorithms with explicit sampling, token-level credit, gradient accumulation, and policy-version control.
+
+## Distillation
+
+- [Distillation overview](https://docs.river.ai/guides/distillation.md): Choose a teacher–student recipe and a path through KL, self-distillation, and specialist teachers.
+- [Distill a larger model](https://docs.river.ai/guides/distillation-basics.md): Train a smaller student with sampled reverse-KL feedback from a stronger teacher.
+- [On-policy self-distillation](https://docs.river.ai/guides/distillation-self.md): Give the teacher a checked solution while the student learns to answer without it.
+- [Self-distillation with River OPSD](https://docs.river.ai/guides/distillation-opsd.md): Align student and teacher contexts for River’s native full-vocabulary forward-KL loss.
+- [Multi-teacher distillation](https://docs.river.ai/guides/distillation-multi-teacher.md): Route tasks to specialist teachers and combine their capabilities in one student.
+
+## Working with River
+
+- [Sessions and requests](https://docs.river.ai/guides/requests.md): Understand model lifetimes, blocking calls, and submit-and-poll requests.
+- [Save and resume weights](https://docs.river.ai/guides/checkpoints.md): Save training or inference weights and restore them in another session.
+- [Deploy and serve](https://docs.river.ai/guides/deployments.md): Deploy a checkpoint and stream responses through an OpenAI-compatible endpoint.
+- [Throughput and the Console](https://docs.river.ai/guides/operations.md): Measure batch throughput, inspect runs, and download trained adapters.
+
+## Reference
+
+- [Loss functions](https://docs.river.ai/guides/losses.md): Built-in training objectives, their input fields, and configuration.
+- [Python API](https://docs.river.ai/python-api.md): Reference for river-client: core sampling and training primitives, plus the multi-turn RL library.
