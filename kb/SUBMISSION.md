@@ -39,7 +39,7 @@ We used C&C to run its own launch: the agents on screen built and marketed C&C t
 
 ## 7. Side Quests (tick only the ones that are real in the demo)
 - [ ] **Superset**, "Best Agent Swarm". Tick it if Command was built by parallel Superset workspaces **and** the
-      after-action report is published as a Superset Page (`superset pages publish … --visibility everyone`). Strong fit.
+      after-action report is published as a Superset Page: https://app.superset.sh/page/c-c-after-action-report-inxkbz. Strong fit.
 - [ ] **GBrain**, "new skill or memory improvement". GBrain use is mandatory anyway. Tick it if we ship a new GBrain skill
       (for example the Daily Sync factory skill, or an after-action-report skill that writes a swarm's results to the brain).
 - [ ] **Memorable**. Tick it if a Memorable recall really sets a repeat task's ETA (known road versus fog) in the demo.
