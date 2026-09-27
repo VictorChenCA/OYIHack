@@ -3,6 +3,7 @@ import type { Store } from "../store";
 import type { DeptId, HistoryItem, Unit, UnitDetail, WorldState } from "../../shared/types";
 import { el, esc, live, delegate, usd, dur, clock, TIER_COLOR, STATUS_COLOR, MODE_LABEL, GOLD, QUAD_COLOR, QUAD_LABEL } from "./util";
 import { tierGlyph, blockerGlyph, CC_EMBLEM } from "./glyphs";
+import { tierSvg, blockerSvg, SUBAGENT_SCALE } from "../shapes";
 import { openModal } from "./modal";
 
 type ChatLine = { role: "me" | "cmdr"; text: string; at: number };
@@ -45,6 +46,7 @@ export function createConsole(root: HTMLElement, store: Store) {
   let detail: UnitDetail | null = null; let detailFor = ""; let detailTimer: ReturnType<typeof setInterval> | null = null;
   let rows: Row[] = [];
   let lastMode = "";
+  let helpFor = ""; let helpPlanet = "";
 
   const consoleUnitId = (): string | null => {
     const f = store.focus; if (store.selection.length > 1) return null;
@@ -70,7 +72,7 @@ export function createConsole(root: HTMLElement, store: Store) {
   }
 
   function setMode() {
-    const k = modeKey(); if (k === lastMode) return; lastMode = k;
+    const k = modeKey(); if (k === lastMode) return; lastMode = k; helpFor = ""; helpPlanet = "";
     wrap.dataset.mode = k.split(":")[0];
     left.reset(); head.reset(); now.reset(); log.reset();
     if (detailTimer) { clearInterval(detailTimer); detailTimer = null; }
@@ -81,7 +83,7 @@ export function createConsole(root: HTMLElement, store: Store) {
       detailTimer = setInterval(() => { if (!document.hidden) loadDetail(id); }, 4000);
     } else detailFor = "";
     const pl = store.focus?.kind === "planet" ? store.state?.planets.find((p) => p.id === store.focus!.id) : undefined;
-    ta.placeholder = k === "commander" ? "Ask the commander anything…  (Enter to send)" : k === "squad" ? `Message ${store.selection.length} selected agents…` : k.startsWith("side:planet") ? `Start an agent in ${pl?.name ?? "this team"}…  (Enter to start)` : k.startsWith("side:") ? "Ask the commander…  (Esc to go back)" : "Prompt this agent…  (Enter to send · Esc to go back)";
+    ta.placeholder = k === "commander" ? "Ask what\u2019s going on, or give an order…" : k === "squad" ? `Message ${store.selection.length} selected agents…` : k.startsWith("side:planet") ? `Start an agent in ${pl?.name ?? "this team"}…  (Enter to start)` : k.startsWith("side:") ? "Ask the commander…  (Esc to go back)" : "Prompt this agent…  (Enter to send · Esc to go back)";
     render(); renderLog(true);
   }
 
@@ -101,28 +103,36 @@ export function createConsole(root: HTMLElement, store: Store) {
     const R = 44, C = 2 * Math.PI * R;
     const parent = u.parentId ? store.unit(u.parentId) : undefined;
     const mismatch = parent && parent.permissionMode !== u.permissionMode;
+    const kids = u.role === "mothership" ? s.units.filter((x) => x.parentId === u.id && x.status !== "dead") : [];
     left.set(`<div class="ag" style="--c:${col}"><div class="ctx" tabindex="0" aria-label="Context window ${Math.round(frac * 100)} percent used">
       <svg viewBox="0 0 110 110" class="ctx-ring"><circle cx="55" cy="55" r="${R}" class="ctx-track"/>
         <circle cx="55" cy="55" r="${R}" class="ctx-val" stroke="${col}" stroke-dasharray="${(C * frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 55 55)"/></svg>
-      <div class="ag-core">${tierGlyph(u.tier, 30)}<small class="num">${Math.round(frac * 100)}%</small></div></div>
-      <div class="ag-model">${esc(modelName(u))}</div><div class="ag-mode${mismatch ? " warn" : ""}" title="Permission mode${mismatch ? " (differs from mothership)" : ""}">${esc(MODE_LABEL[u.permissionMode])}</div></div>`);
-    const kids = u.role === "mothership" ? s.units.filter((x) => x.parentId === u.id && x.status !== "dead") : [];
-    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(statusWord(u))}</span>
-        ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}</div>
-`);
-    const eta = u.charted ? `known route${u.etaMs != null ? ` · ETA ${dur(Math.max(0, u.startedAt + u.etaMs - s.now))}` : ""}` : "first time · no known route";
+      <div class="ag-core">${tierSvg(u.tier, col, 15)}<small class="num">${Math.round(frac * 100)}%</small></div></div>
+      <div class="ag-model">${esc(modelName(u))}</div><div class="ag-mode${mismatch ? " warn" : ""}" title="Permission mode${mismatch ? " (differs from mothership)" : ""}">${esc(MODE_LABEL[u.permissionMode])}</div>
+      ${kids.length ? `<div class="ag-subs" aria-label="Subagents">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}">${tierSvg(k.tier, col, Math.max(4, Math.round(9 * SUBAGENT_SCALE * 1.6)))}<span class="trunc">${esc(k.label)}</span><em>${esc(statusWord(k))}</em></button>`).join("")}</div>` : ""}</div>`);
     const blk = u.blockedBy ? store.enemy(u.blockedBy) : undefined;
-    now.set(`<div class="now-row"><span class="lbl">Doing</span>${u.summary ? `<span class="now-sum">${esc(u.summary)}</span>` : u.task ? `<span class="now-sum">${esc(u.task)}</span>` : `<span class="shimmer">summarizing…</span>`}</div>
-      <div class="now-row"><span class="lbl">Heading to</span><span class="trunc">${esc(u.siteLabel ?? u.task ?? "—")}</span><span class="dim num${u.charted ? "" : " fog-t"}">· ${eta}</span>${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}</div>
-      ${kids.length ? `<div class="now-row"><span class="lbl">Subagents</span><span class="kids">${kids.map((k) => `<button class="kid" data-act="focus-unit" data-id="${esc(k.id)}" title="${esc(k.summary ?? k.task ?? "")}"><i class="dot" style="background:${col}"></i>${esc(k.label)}</button>`).join("")}</span></div>` : ""}`);
-    hint.textContent = `→ ${u.label}`;
+    const st = u.status === "blocked" ? "blocked" : (u.status === "working" || u.status === "acting" || u.status === "attacking") ? "working" : u.status === "done" ? "done" : "idle";
+    const sum = u.summary ?? u.task ?? "";
+    head.set(`<div class="c-name"><i class="dot" style="background:${col};color:${col}"></i><span class="c-title">${esc(u.label)}</span><span class="st-word" style="--c:${STATUS_COLOR[u.status === "acting" ? "working" : u.status]}">${esc(st)}</span>
+        ${sum ? `<span class="c-sum" title="${esc(sum)}">${esc(sum)}</span>` : `<span class="c-sum shimmer">summarizing…</span>`}
+        ${blk ? `<button class="chip bad" data-act="focus-enemy" data-id="${esc(blk.id)}">blocked by ${esc(blk.title)}</button>` : ""}
+        ${parent ? `<button class="chip dim" data-act="focus-unit" data-id="${esc(parent.id)}">subagent of ${esc(parent.label)}</button>` : ""}
+        <button class="btn sm ghost view-chip" data-act="help-agent" data-name="${esc(u.label)}" data-planet="${esc(u.planetId)}">+ Agent</button></div>`);
+    now.set(viewChip(s));
+    hint.textContent = helpFor ? `→ new agent in ${helpFor}` : `→ ${u.label}`;
+  }
+
+  function viewChip(s: WorldState) {
+    if (!s.activeViewId || s.activeViewId === "default") return "";
+    const v = s.views.find((x) => x.id === s.activeViewId);
+    return `<div class="now-row"><button class="chip dim" data-act="reset-view">Showing: ${esc(v?.name ?? s.activeViewId)} ✕</button></div>`;
   }
 
   function renderSide(s: WorldState) {
     const f = store.focus!;
     let icon = ""; let col = "#8A96A8"; let sub = "";
     if (f.kind === "planet") { const p = s.planets.find((x) => x.id === f.id); col = p?.color ?? col; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "team"; }
-    else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : e ? QUAD_COLOR[e.quadrant] : col; icon = e ? blockerGlyph(e.quadrant, e.humanOnly, 44) : ""; sub = e ? `${QUAD_LABEL[e.quadrant]} · blocking ${e.blocked.length}` : "blocker"; }
+    else if (f.kind === "enemy") { const e = store.enemy(f.id); col = e?.humanOnly ? GOLD : e ? QUAD_COLOR[e.quadrant] : col; icon = e ? blockerSvg(e.quadrant, e.humanOnly, 20) : ""; sub = e ? `${QUAD_LABEL[e.quadrant]} · blocking ${e.blocked.length}` : "blocker"; }
     else if (f.kind === "mine") { const m = s.mines.find((x) => x.id === f.id); col = m?.color ?? col; icon = `<span class="planet-orb rock" style="--c:${col}"></span>`; sub = "credits"; }
     else if (f.kind === "research") { col = "#40E0D0"; icon = tierGlyph("river", 40); sub = "research"; }
     else if (f.kind === "sun") { col = "#FFD166"; icon = `<span class="planet-orb" style="--c:${col}"></span>`; sub = "memory"; }
@@ -154,7 +164,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     const computed = `${working} agents working · ${ens.length} blocker${ens.length === 1 ? "" : "s"}${human.length ? ` · ${human.length} need${human.length === 1 ? "s" : ""} you` : ""}`;
     left.set(`<div class="cmdr-core">${CC_EMBLEM}<b>Company</b></div>`);
     head.set(`<div class="ov"><span class="ov-ai">${esc(s.overview ?? computed)}</span></div>`);
-    now.set(`<div class="depts">${teams.map((p) => `<button class="dept" data-act="focus-planet" data-id="${esc(p.id)}"><i class="dot" style="background:${p.color};color:${p.color}"></i><b>${esc(p.name)}</b><span class="trunc">${esc(p.summary ?? "")}</span></button>`).join("")}</div>`);
+    now.set(viewChip(s) + `<div class="depts">${teams.map((p) => `<button class="dept" data-act="focus-planet" data-id="${esc(p.id)}"><i class="dot" style="background:${p.color};color:${p.color}"></i><b>${esc(p.name)}</b><span class="trunc">${esc(p.summary ?? "")}</span></button>`).join("")}</div>`);
     hint.textContent = "→ commander";
   }
 
@@ -191,7 +201,7 @@ export function createConsole(root: HTMLElement, store: Store) {
     ta.value = ""; autosize();
     const k = modeKey();
     if (k === "commander") {
-      chat.push({ role: "me", text, at: Date.now() }); thinking = !store.fixture; renderLog(true); setTimeout(() => { if (thinking) { thinking = false; renderLog(); } }, 45000);
+      chat.push({ role: "me", text, at: Date.now() }); thinking = !store.fixture; renderLog(true); setTimeout(() => { if (thinking) { thinking = false; renderLog(); } }, 12000);
       const r = await store.command({ type: "commander", text });
       if (store.fixture) setTimeout(() => { chat.push({ role: "cmdr", text: `(fixture) Commander would act on: “${text}”`, at: Date.now() }); renderLog(true); }, 500);
       else if (r.ok && (typeof r.data === "string" || typeof (r.data as { reply?: unknown } | undefined)?.reply === "string")) {
@@ -205,6 +215,10 @@ export function createConsole(root: HTMLElement, store: Store) {
     } else if (k.startsWith("side:")) {
       chat.push({ role: "me", text, at: Date.now() });
       await store.command({ type: "commander", text });
+    } else if (helpPlanet) {
+      const pid = helpPlanet as DeptId; helpFor = ""; helpPlanet = "";
+      await store.command({ type: "spawn", planetId: pid, prompt: text });
+      render();
     } else {
       const id = consoleUnitId(); if (!id) return;
       if (detail) { detail.history.push({ ts: Date.now(), role: "user", kind: "prompt", text }); rows = pair(detail.history); renderLog(true); }
@@ -229,6 +243,9 @@ export function createConsole(root: HTMLElement, store: Store) {
     "focus-enemy": (t) => store.setFocus({ kind: "enemy", id: t.dataset.id! }),
     "focus-planet": (t) => store.setFocus({ kind: "planet", id: t.dataset.id as DeptId }),
     back: () => toCommander(),
+    "help-agent": (t) => { helpFor = t.dataset.name ?? ""; helpPlanet = t.dataset.planet ?? ""; ta.value = `Help ${helpFor} with: `; ta.focus(); autosize(); render(); },
+    "spawn-team": (t) => { const p = t.dataset.planet ?? ""; ta.value = ""; ta.placeholder = `Start a mothership in ${p}…  (Enter to start)`; ta.focus(); },
+    "reset-view": () => { if (store.fixture && store.state) { store.state.activeViewId = "default"; } store.command({ type: "set_view", viewId: "default" }); render(); },
     "open-row": (t) => {
       const r = rows[Number(t.dataset.i)]; if (!r) return;
       const parts = [`<div class="m-meta"><span class="badge">${esc(r.item.kind)}</span>${r.item.toolName ? `<b>${esc(r.item.toolName)}</b>` : ""}<time class="num dim">${new Date(r.item.ts).toLocaleTimeString()}</time></div><pre>${esc(r.item.text)}</pre>`];
