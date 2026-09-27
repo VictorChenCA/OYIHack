@@ -449,3 +449,6 @@ button.chip { font: inherit; font-size: 12px; color: inherit; cursor: pointer; }
 .console .dept .trunc { color: #B9C6D6; }
 .ulist li, .ulist li.ms, .ulist li.sub { grid-template-columns: 10px auto minmax(0, 1fr) auto; }
 .ulist li .st-word { font-size: 10.5px; }
+.c-side .deploy { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.c-side .deploy .deploy-btn { width: auto; }
+.c-side p.small { margin: 2px 0 6px; }

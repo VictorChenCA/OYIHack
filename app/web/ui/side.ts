@@ -55,21 +55,19 @@ export function createSide(root: HTMLElement, store: Store) {
           <div class="s-badges"><span class="st-word" style="--c:${col}">${e.humanOnly ? "needs you" : esc(QUAD_LABEL[e.quadrant].toLowerCase())}</span></div>
         </div></header>
       <p class="s-reason">${esc(e.reason)}</p>
-      <div class="s-kv num"><span><b>${e.blocked.length}</b> agents waiting</span><span><b>${e.attackers.length}</b> resolving</span><span>open <b>${dur(s.now - e.createdAt)}</b></span></div>
-      ${c ? `<section><h3>Classification <span class="badge src" style="--c:${c.source.startsWith("sentinel") ? "#40E0D0" : "#8A96A8"}">${esc(src)}${c.latencyMs != null ? ` · <span class="num">${c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms"}</span>` : ""}</span></h3>
-        ${conf("Kind", KIND_LABEL[c.kind.label] ?? c.kind.label, c.kind.p)}${conf("Quadrant", QUAD_LABEL[c.quadrant.label] ?? c.quadrant.label, c.quadrant.p)}${conf("Human", c.humanOnly.label ? "yes" : "no", c.humanOnly.p)}${conf("Team", deptName(s, c.department.label), c.department.p)}${conf("Tier", c.tier.label, c.tier.p)}</section>` : ""}
+      ${c ? `<p class="dim small">Classified by ${esc(src)}${c.latencyMs != null ? ` in <span class="num">${c.latencyMs >= 1000 ? (c.latencyMs / 1000).toFixed(1) + "s" : Math.round(c.latencyMs) + "ms"}</span>` : ""} · ${esc(KIND_LABEL[c.kind.label] ?? c.kind.label)} · ${esc(deptName(s, c.department.label))}</p>` : ""}
       ${e.dependsOnUnit && store.unit(e.dependsOnUnit) ? `<button class="blocked-by dep" data-act="focus-unit" data-id="${esc(e.dependsOnUnit)}"><span class="lbl">Waiting on</span> ${esc(store.unit(e.dependsOnUnit)!.label)}</button>` : ""}
-      ${blocked.length ? `<section><h3>Waiting <span class="num dim">${blocked.length}</span></h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
+      ${blocked.length ? `<section><h3>Waiting</h3><ul class="ulist">${blocked.map((u) => unitRow(u)).join("")}</ul></section>` : ""}
       ${e.humanOnly ? `<section class="gold-sec"><h3>Human only</h3><p class="dim small">Agents can't do this step (phone, CAPTCHA, payment, legal, secrets). Put secrets in <span class="mono">.env</span>; C&amp;C only tells agents "unblocked".</p></section>`
-        : `<section><h3>Who can resolve it <span class="dim small">${ranks.local ? "local estimate" : "ranked by Sentinel + Haiku"}</span></h3>
-        <ul class="rank">${ranks.entries.map((r) => { const u = store.unit(r.unitId)!; return `<li style="--c:${scoreColor(r.score)}">
+        : `<section><h3>Who can resolve it</h3>
+        <ul class="rank">${ranks.entries.slice(0, 4).map((r) => { const u = store.unit(r.unitId)!; return `<li style="--c:${scoreColor(r.score)}">
           <label class="rk-check"><input type="checkbox" data-act="rk-check" data-id="${esc(u.id)}" ${checked.has(u.id) ? "checked" : ""} aria-label="Select ${esc(u.label)}"></label>
           <span class="rk-score num">${Math.round(r.score)}</span>
-          <div class="rk-main"><div class="rk-name">${tierGlyph(u.tier, 14)}<b data-act="focus-unit" data-id="${esc(u.id)}">${esc(u.label)}</b><span class="status" style="--c:${STATUS_COLOR[u.status]}"><i></i>${esc(u.status)}</span></div><div class="rk-reason">${esc(r.reason)}</div></div>
+          <div class="rk-main"><div class="rk-name"><b data-act="focus-unit" data-id="${esc(u.id)}">${esc(u.label)}</b></div><div class="rk-reason">${esc(r.reason)}</div></div>
           <button class="btn sm" data-act="send" data-id="${esc(u.id)}" title="Shift-click to interrupt">Send</button></li>`; }).join("") || `<li class="dim pad">No free agents ranked yet.</li>`}
         </ul>
         <div class="rk-foot">${store.selection.length ? `<button class="btn" data-act="send-squad">Send squad (${store.selection.length})</button>` : ""}<button class="btn primary" data-act="send-sel" ${checked.size ? "" : "disabled"}>Send selected (${[...checked].filter((id) => store.unit(id)).length})</button></div>
-        <div class="deploy">${(["haiku", "sonnet", "opus", "fable"] as Tier[]).map((t) => `<button class="btn ghost deploy-btn" data-act="deploy" data-tier="${t}" style="--c:${TIER_COLOR[t]}">${tierGlyph(t, 14)} + Deploy new ${t[0]!.toUpperCase() + t.slice(1)}</button>`).join("")}</div>
+        <div class="deploy"><span class="dim small">Start a new agent</span>${(["haiku", "sonnet", "opus"] as Tier[]).map((t) => `<button class="btn sm ghost deploy-btn" data-act="deploy" data-tier="${t}" style="--c:${TIER_COLOR[t]}">${t[0]!.toUpperCase() + t.slice(1)}</button>`).join("")}</div>
       </section>`}`;
   }
 
