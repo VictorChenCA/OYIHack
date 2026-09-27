@@ -38,7 +38,16 @@ What the demo screenshots showed QM doing at YC (a sense of the product's "home 
   iterated from a Slack thread, are QM's signature move**, so a hack that builds on this lands well.
 
 ## Run options (ranked by speed)
-1. **Hosted instance from the sponsor / agent37.** Ask at kickoff. You get zero-infra access to the product.
+1. **Hosted QM on agent37 with the hackathon credit:** redeem at **https://www.agent37.com/redeem/QMHACK** (code `QMHACK`,
+   from the kickoff slide's QR code). The page is "Claim your credit | Agent37" and it's client-rendered,
+   so the credit amount isn't in the KB; check it after signing in. Then launch hosted QM at
+   https://www.agent37.com/qm (the 3rd-party host linked from QM's README). You get zero-infra access to the product.
+   - agent37 is also a **built-in QM sandbox backend**, so a *forked* QM (local dev-instance) can run its
+     per-scope sandbox computers on agent37 instead of local Docker:
+     `SANDBOX_BACKEND=agent37` + `AGENT37_API_KEY` (optional: `AGENT37_API_BASE_URL`, `AGENT37_TEMPLATE`,
+     `AGENT37_CPUS`, `AGENT37_MEMORY_GB`, `AGENT37_DISK_GB`, `AGENT37_EGRESS_PROXY_URL`, `AGENT37_NAME_PREFIX`).
+     Code: `kb/repos/qm/src/sandbox/agent37-sandbox.ts`, config in `src/config.ts` (`agent37SandboxEnv`).
+     Useful if Docker is the blocker. Unverified: whether the QMHACK credit covers API sandbox usage.
 2. **Local dev instance** (from a clone):
    ```bash
    cd kb/repos/qm   # or a fresh clone. REQUIRES Node >= 24.15 (repo pins 24.18.0), npm >= 11.10, Docker running

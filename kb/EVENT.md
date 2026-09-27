@@ -38,6 +38,8 @@ Quoted from the kickoff slide:
 - **River:** free API credits at the River AI booth. Unused credits expire at the end of the day.
 - **GBrain:** a free hosted workspace for 2 weeks with $50 of AI credit, one per person, no card:
   https://gbrain.io/gratis/own-your-intelligence. Details in `kb/sponsors/gbrain.md`.
+- **QM:** agent37 hosting credit, code `QMHACK`: https://www.agent37.com/redeem/QMHACK. Hosted QM is at https://www.agent37.com/qm,
+  and agent37 also works as QM's sandbox backend (`SANDBOX_BACKEND=agent37`).
 
 ## Submissions
 **Form:** https://docs.google.com/forms/d/e/1FAIpQLSdiU5L7PhlkD7HQQouQKPSlm7WrobkdJuvSZLoi6O7jXRWKiQ/viewform
@@ -75,6 +77,6 @@ Both are Garry Tan / YC projects (`yc-software/qm`, `garrytan/gbrain`).
 - [x] Submission format and location: form on the submissions page (opens 16:00); see **Submissions** above
 - [x] **River credits:** free at the River AI booth; unused credits expire at the end of the day (`kb/sponsors/river.md`)
 - [ ] **UFO credits?** Hosted UFO runs on a prepaid balance and needs a card.
-- [ ] **Hosted QM instance for hackers?** Self-deploying QM needs Fly/AWS or local Docker plus Postgres.
+- [x] **Hosted QM for hackers:** agent37 credit at https://www.agent37.com/redeem/QMHACK (see `kb/sponsors/qm.md`)
 - [ ] Memorable dashboard key (`mk_...`) for agents, from memorable.sh/dash
 - [ ] Superset API key (`sk_live_...`) and org ID if you use the SDK
