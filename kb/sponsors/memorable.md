@@ -67,6 +67,29 @@ Any custom agent loop (browser, voice, ops, or River-trained) can POST its trace
 procedures. Integration is one HTTP call, so it's a cheap extra sponsor to include.
 Recall output is **reference data, not instructions**; render it inertly.
 
+## C&C integration recipe (Sep 27, 14:55): record from C&C's hook stream, recall on spawn
+**Status:** consent is enabled (read-write, local store `~/.memorable/procedures.jsonl`). **The extraction API still needs the
+human to run `memorable login` in a browser**; until then, ingest fails.
+- **Record (the gap in PLAN.md S4, which only has recall):** on a unit's `Stop` with a successful last step, C&C builds a
+  trace from the PreToolUse/PostToolUse(+Failure) events it already has, and pipes it to `memorable ingest -`.
+  Any unit's success then becomes a charted lane for every unit, with no per-worktree hooks. This is the "Most Memorable" pitch.
+  ```json
+  {"session_id":"<claude session_id>","harness":"cnc","task_description":"<first line of the mothership prompt, ≤200 chars>",
+   "tool_calls":[{"name":"Bash","input":{"command":"Bash command=bun test"},"result":{"ok":true}}, ...]}
+  ```
+  Kit gotchas that make ingest silently store nothing:
+  1. **Only `input.command` reaches the extractor.** Encode every step as a `"Tool key=value"` string in `input.command`
+     (for example `"Edit file_path=src/x.ts"`, `"Read file_path=README.md"`, or the Bash command itself).
+  2. **The last step must be a command marked `ok: true`**, or the trace is refused as `no_postcondition`.
+  3. Identifiers only. No file text, summaries or timestamps in commands (they get truncated and split procedures).
+  4. Include `result` only when the outcome is known (PostToolUse → ok, PostToolUseFailure → not ok).
+  5. Never `memorable forget --yes` (it wipes consent for the whole machine).
+- **Recall (charted lane vs fog):** on spawn, run `memorable recall "<task>"`. A hit means charted (known ETA and a veteran badge),
+  a miss means frontier (fog). `memorable list --json` feeds a procedures counter. `memorable show` prints prose, so parse the step
+  lines with a regex if you need them.
+- **Demo seeding:** run the same small demo task twice before recording. The first run goes into the fog and gets ingested; the second
+  run recalls it and travels a charted lane.
+
 ## ★ Official hackathon kit: `kb/repos/memorable-hackathon-kit` (github.com/MemorableOrg/memorable-hackathon-kit, pushed Sep 27)
 - `PROMPT.md` is the ONE prompt to paste into the agent that builds your project. It adds recall,
   replay, and record. A headless Claude Code agent integrated it in 6 min / $0.69.
