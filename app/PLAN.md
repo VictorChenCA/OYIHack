@@ -47,10 +47,10 @@
 | Arts | Brand | "Create the C&C logo, palette and OG image (SVG) → `company/arts/`" | Violet: missing brand input |
 
 ## 4. Demo script (1–2 min; final framing: a founder tool, not a game)
-1. **System view:** "This is my company. The sun is our memory (GBrain). Each team sits at a distance that reflects how much the company knows about its work."
-   Real agents launched through Superset are working across Engineering, Product Design and Marketing.
-2. **Known vs new work:** repeat work flies toward the sun on known routes with an ETA. First-time work flies out into the fog.
-3. **Memory:** an agent remembers something, and the sun pulses once with a caption of what was added. Click the sun to open memory.
+1. **Galaxy view (C&C):** "This is my company: five teams around our memory (GBrain, the sun)." Real agents launched through Superset are working;
+   hull weight shows the model, moons are recurring jobs, and asteroids are credits. Open the Legend on the right once.
+2. **Time as distance:** agents drift outward and slow down. The dotted line is the expected length; first-time work fades into the fog.
+3. **Memory:** an agent remembers something, the sun pulses once, and a caption shows what was added. Click the sun for the memory review.
 4. **Blockers:** the four types (do now, schedule, delegate, drop), shown in the legend. A gold "needs you" blocker, such as an X signup
    needing a phone, sits at Marketing's frontier with tethers to the agents it's holding. The River-trained Sentinel classified it in about 4s
    (Research Center: base 0.545 → trained 0.916 on unseen blockers). Resolve it, and the agents continue.

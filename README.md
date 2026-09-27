@@ -9,12 +9,14 @@ At kickoff, QM's team said nobody has figured out how to visualize swarms. C&C i
 > _Demo video: **[link added at submission]**_
 
 ## How to read the screen
-- **System view** is the whole company. **Team view** is one team: Engineering, Product Design or Marketing.
-- **The sun is the company's memory (GBrain).** Distance from the sun is distance from what the company knows. Teams start
-  far out and move inward as their knowledge grows. The sun pulses once when a memory is written, with a caption of what was added.
-- **Agents** are Claude Code sessions. A main session (mothership) sends out subagents. Color = project; size = mothership vs subagent.
-- **Known vs new work:** work the company has done before flies toward the sun on a known route with an ETA. First-time work
-  flies outward into the fog, where we don't know yet how long it takes.
+- **Galaxy view (C&C)** is the whole company. **Team view** is one team: Engineering, Product, Design, Marketing or Operations. The C&C logo opens the home page, where you switch between companies.
+- **The sun is the company's memory (GBrain).** All teams sit the same distance from it. The sun pulses once when a memory is written,
+  with a caption of what was added, and clicking it opens a compact review of what the company has learned.
+- **Agents** are Claude Code sessions, drawn as sleek hulls: a lighter model is a lighter shape (Haiku → Sonnet → Opus → Fable). A main session (mothership)
+  sends out subagents with the same hull, drawn smaller. Color = project. The right-side Legend explains every shape.
+- **Time as distance:** agents explore outward from their team, slowing as they go (1s → 1 unit, 1 min → 1.5, very long → 2). The dotted
+  line is the task's expected length (known work has an ETA), and first-time work fades into the fog, where we don't know yet how long it takes.
+- **Moons are recurring jobs** (cron-style, e.g. the Daily Sync at 18:00). A moon's angle is its progress to the next run.
 - **Blockers come in four types**, the urgency/importance quadrants:
   - **Do now:** urgent and important.
   - **Schedule:** important, not urgent.
