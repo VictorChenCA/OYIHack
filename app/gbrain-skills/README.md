@@ -25,4 +25,15 @@ skill publisher"), so publish it through the workspace's skill publisher (gbrain
 paste `SKILL.md`). Until then any agent can run it directly: paste `SKILL.md` into the prompt with the department,
 e.g. `Run the sprint-retro skill for marketing` (the agent uses the `gbrain-cloud` MCP tools listed in the frontmatter).
 
-In C&C, factories on each planet can run it on a schedule ("Sprint retro", cadence = the planet's cycle).
+## Run it from C&C (headless Claude Code, no API key)
+
+```bash
+cd app
+bun scripts/retro.ts --dept marketing     # one department; omit --dept for all four in parallel
+bun scripts/retro.ts --dept arts --dry-run  # print the exact prompt + command
+```
+
+`retro.ts` pulls the department's open blockers (enemies) from `/api/state`, hands them plus `SKILL.md` to `claude -p`
+(allowed tools: the `gbrain-cloud` MCP tools and file read/write), and the run writes the retro to GBrain
+and to `company/<folder>/retros/<date>.md`. The run is itself an agent, so it shows up on the map as a unit.
+A planet's factory can run the same command on a schedule, with the cadence set to the planet's cycle.

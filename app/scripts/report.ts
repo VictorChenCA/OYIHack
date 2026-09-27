@@ -29,7 +29,7 @@ const events: HookEvent[] = existsSync(EVENTS)
   : [];
 events.sort((a, b) => (a._ts ?? 0) - (b._ts ?? 0));
 const readJson = (p: string) => { try { return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : null; } catch { return null; } };
-const card = readJson(resolve(APP, "river/card.json")) ?? live?.research?.card ?? null;
+const card = readJson(resolve(APP, opt("card") ?? "river/card.json")) ?? live?.research?.card ?? null;
 const evalJson = readJson(resolve(APP, "river/eval.json"));
 
 // ---------------- replay through the real reducer (clock patched to event time) ----------------
@@ -218,7 +218,8 @@ function riverSection(): string {
   if (!c) return `<section class="panel river"><h2>River Sentinel</h2><p class="muted">No <code>app/river/card.json</code> yet. When the River run finishes, re-run <code>bun scripts/report.ts</code> and the base-vs-trained table appears here.</p></section>`;
   const table = c.eval_table ?? c.evalTable ?? c.table ?? c.eval ?? evalJson;
   const skip = new Set(["eval_table", "evalTable", "table", "eval", "loss", "loss_curve", "lossCurve", "examples", "steps"]);
-  const meta = Object.fromEntries(Object.entries(c).filter(([k, v]) => !skip.has(k) && (typeof v !== "object" || v === null)));
+  const flat = (v: any) => v && typeof v === "object" && !Array.isArray(v) && Object.values(v).every((x) => typeof x !== "object") ? Object.entries(v).map(([k, x]) => `${k} ${x}`).join(" · ") : v;
+  const meta = Object.fromEntries(Object.entries(c).filter(([k, v]) => !skip.has(k)).map(([k, v]) => [k, flat(v)]).filter(([, v]) => typeof v !== "object" || v === null));
   const loss: number[] = (c.loss_curve ?? c.lossCurve ?? c.loss ?? c.steps ?? []).map((s: any) => typeof s === "number" ? s : s?.loss).filter((n: any) => typeof n === "number");
   let spark = "";
   if (loss.length > 1) { const mx = Math.max(...loss), mn = Math.min(...loss); spark = `<svg viewBox="0 0 300 60" class="spark"><polyline fill="none" stroke="#40E0D0" stroke-width="2" points="${loss.map((l, i) => `${(i / (loss.length - 1)) * 300},${56 - ((l - mn) / (mx - mn || 1)) * 52}`).join(" ")}"/></svg><div class="muted small">training loss · ${loss.length} points</div>`; }
