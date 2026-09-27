@@ -104,8 +104,8 @@ export class Sim {
     // anchors (sector pull) + core exclusion
     for (const n of N) {
       n.vx += (n.ax - n.x) * 0.004 * alpha; n.vy += (n.ay - n.y) * 0.004 * alpha;
-      const r = Math.hypot(n.x, n.y); const minR = CORE_R + 40;
-      if (r < minR && r > 0.01) { const push = (minR - r) * 0.08; n.vx += (n.x / r) * push; n.vy += (n.y / r) * push; }
+      const r = Math.hypot(n.x, n.y); const minR = CORE_R + 70;
+      if (r < minR && r > 0.01) { const push = (minR - r) * 0.25; n.vx += (n.x / r) * push; n.vy += (n.y / r) * push; }
     }
     for (const n of N) {
       if (n.pinned) { n.vx = n.vy = 0; continue; }

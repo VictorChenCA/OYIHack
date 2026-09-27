@@ -34,6 +34,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   const status = h("div", "mem-status"); root.appendChild(status);
   const hint = h("div", "mem-hint", "drag to pan · scroll to zoom · click a node to read · dbl-click to recenter"); root.appendChild(hint);
   const tip = h("div", "mem-tip"); root.appendChild(tip);
+  const feed = h("div", "mem-feed"); root.appendChild(feed);
 
   const drawer = h("aside", "mem-drawer"); root.appendChild(drawer);
   const dHead = h("div", "mem-dhead"); drawer.appendChild(dHead);
@@ -150,9 +151,23 @@ export function createMemory(root: HTMLElement, store: Store) {
   addEventListener("resize", () => { if (visible) resize(); });
 
   // ── pulses from live memory events ─────────────────────────────────────
+  let feedSig = "";
+  function renderFeed(recent: MemoryEvent[]) {
+    const items = [...recent].sort((a, b) => b.at - a.at).slice(0, 6);
+    const sig = items.map(evKey).join(",") + Math.floor(Date.now() / 10000);
+    if (sig === feedSig) return; feedSig = sig;
+    if (!items.length) { feed.innerHTML = ""; return; }
+    feed.innerHTML = `<div class="rh">MEMORY TRAFFIC</div>` + items.map((e) => {
+      const n = e.slug ? sim.byId.get(e.slug) : undefined;
+      const col = e.planetId ? PLANET_COLORS[e.planetId] : n?.color ?? "#8A96A8";
+      const what = e.slug ? escHtml(n?.n.title ?? e.slug) : `<span class="muted">${escHtml(e.unitId ?? "agent")}</span>`;
+      return `<a href="#" ${e.slug ? `data-slug="${escHtml(e.slug)}"` : ""} class="${e.kind}"><b>${e.kind === "write" ? "W" : "R"}</b><i style="--c:${col}"></i><span class="op">${escHtml(e.op)}</span><span class="what">${what}</span><em>${ago(new Date(e.at).toISOString())}</em></a>`;
+    }).join("");
+  }
+  feed.addEventListener("click", (e) => { const a = (e.target as HTMLElement).closest("a") as HTMLAnchorElement | null; if (!a) return; e.preventDefault(); if (a.dataset.slug) gotoSlug(a.dataset.slug); });
   function onState(s: WorldState) {
     if (!visible) { primeEvents(s.knowledge?.recent ?? []); return; }
-    renderStats();
+    renderStats(); renderFeed(store.fixture ? fakeRecent : s.knowledge?.recent ?? []);
     if (store.fixture) return; // fixture events are regenerated every tick; synthetic pulses are used instead
     const recent = s.knowledge?.recent ?? [];
     if (!primed) { primeEvents(recent); return; }
@@ -168,6 +183,7 @@ export function createMemory(root: HTMLElement, store: Store) {
   function primeEvents(recent: MemoryEvent[]) { for (const e of recent) seenEv.add(evKey(e)); primed = true; }
   store.on("state", onState);
   let fakeTimer: ReturnType<typeof setInterval> | null = null;
+  const fakeRecent: MemoryEvent[] = [];
 
   // ── render loop ────────────────────────────────────────────────────────
   const groupR = new Map<string, number>(); let groupRAt = 0;
@@ -459,7 +475,13 @@ export function createMemory(root: HTMLElement, store: Store) {
     if (store.fixture && !fakeTimer) fakeTimer = setInterval(() => {
       if (!sim.nodes.length) return;
       const n = Math.random() < 0.25 ? null : sim.nodes[Math.floor(Math.random() * sim.nodes.length)];
-      pulses.push({ node: n, t0: performance.now(), kind: Math.random() < 0.6 ? "read" : "write" });
+      const kind = Math.random() < 0.6 ? "read" : "write";
+      pulses.push({ node: n, t0: performance.now(), kind });
+      const units = store.state?.units ?? [];
+      const u = units[Math.floor(Math.random() * units.length)];
+      const op = n ? (kind === "write" ? (Math.random() < 0.5 ? "put_page" : "remember") : (Math.random() < 0.5 ? "get_page" : "search")) : kind === "write" ? "remember" : "recall";
+      fakeRecent.push({ at: Date.now(), op, kind, slug: n?.id, unitId: u?.label ?? u?.id, planetId: n?.n.planetId });
+      if (fakeRecent.length > 20) fakeRecent.shift();
     }, 900);
   }
   function hide() {

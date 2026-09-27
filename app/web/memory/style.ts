@@ -80,5 +80,16 @@ export const CSS = `
 #memory .rel .rh { padding-left: 0; }
 #memory .rel a { display: flex; gap: 8px; align-items: center; padding: 4px 0; color: #D7E0EA; text-decoration: none; font-size: 12.5px; }
 #memory .rel a:hover { color: #FFE3B0; }
-@media (max-width: 720px) { #memory .mem-stats { display: none; } #memory .mem-hint { display: none; } #memory .mem-legend { display: none; } }
+#memory .mem-feed { position: absolute; right: 16px; bottom: 16px; width: 330px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(6px); padding-bottom: 4px; transition: opacity .2s; }
+#memory .mem-feed:empty { display: none; }
+#memory .mem-drawer.open ~ .mem-feed, #memory .mem-feed.hide { opacity: 0; pointer-events: none; }
+#memory .mem-feed .rh { font: 500 9.5px var(--mono, monospace); letter-spacing: .14em; color: rgba(255,210,160,.55); padding: 8px 12px 4px; }
+#memory .mem-feed a { display: flex; gap: 7px; align-items: center; padding: 3px 12px; text-decoration: none; color: #D7E0EA; font-size: 11.5px; white-space: nowrap; }
+#memory .mem-feed a:hover { background: rgba(255,196,122,.08); }
+#memory .mem-feed b { font: 600 9px var(--mono, monospace); width: 14px; height: 14px; display: inline-grid; place-items: center; color: #05040A; background: #8CDCFF; flex: none; }
+#memory .mem-feed a.write b { background: #FFD278; }
+#memory .mem-feed .op { font: 500 10.5px var(--mono, monospace); color: rgba(255,210,160,.75); flex: none; }
+#memory .mem-feed .what { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+#memory .mem-feed em { font: 10px var(--mono, monospace); font-style: normal; color: rgba(215,224,234,.4); flex: none; }
+@media (max-width: 720px) { #memory .mem-stats { display: none; } #memory .mem-hint { display: none; } #memory .mem-legend { display: none; } #memory .mem-feed { display: none; } }
 `;
