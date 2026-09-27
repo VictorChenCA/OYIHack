@@ -1,12 +1,11 @@
 // S2 owns web/ui/** and web/style.css. DOM overlay above the Pixi canvas (SPEC §5–§8.1).
 import type { Store } from "../store";
-import { el, QUAD_LABEL } from "./util";
-import { blockerGlyph, QUAD_WHY } from "./glyphs";
-import type { Quadrant } from "../../shared/types";
+import { el } from "./util";
 import { createConsole } from "./console";
 import { createSide } from "./side";
 import { createTooltip, createTopBar, createToasts } from "./hud";
-import { applyFixtureOverrides, createOrders, createFilter, createViewTabs, createGroups } from "./command";
+import { applyFixtureOverrides, createOrders, createFilter } from "./command";
+import { createLegend } from "./legend";
 import { setModalHost } from "./modal";
 import { memGraph } from "../memory";
 
@@ -22,16 +21,8 @@ export function createUI(root: HTMLElement, store: Store) {
   const tab = el("button", "drawer-tab glass", `<span class="dt-l">Orders</span><b class="dt-n num" hidden></b>`); tab.setAttribute("aria-expanded", "false");
   const leftCol = el("div", "leftcol");
   drawer.append(leftCol, tab); root.appendChild(drawer);
-  createViewTabs(leftCol, store);
   createOrders(leftCol, store);
   createFilter(leftCol, store);
-  // Legend: the four blocker types (Eisenhower urgency x importance). Shape + color = type; nothing else varies.
-  const QS: Quadrant[] = ["do_now", "schedule", "delegate", "drop"];
-  leftCol.appendChild(el("section", "legend glass", `<header class="p-head"><span class="p-title">Blocker types</span></header>
-    <ul class="lg">${QS.map((q) => `<li>${blockerGlyph(q, false, 16)}<b>${QUAD_LABEL[q]}</b><span>${QUAD_WHY[q]}</span></li>`).join("")}
-      <li>${blockerGlyph("drop", true, 16)}<b>Gold ring</b><span>Needs a person: keys, signups, payment, approvals.</span></li>
-      <li><span class="lg-size"><i></i><i></i></span><b>Size</b><span>How many agents it's blocking.</span></li></ul>
-    <p class="lg-foot">Classified by River Sentinel (urgency x importance). Blockers sit at the edge of the team they concern.</p>`));
   let open = false; try { open = localStorage.getItem(DRAWER_KEY) === "1"; } catch { /* storage unavailable */ }
   const setOpen = (v: boolean) => { open = v; drawer.classList.toggle("open", v); tab.setAttribute("aria-expanded", String(v)); try { localStorage.setItem(DRAWER_KEY, v ? "1" : "0"); } catch { /* ignore */ } };
   setOpen(open);
@@ -41,7 +32,7 @@ export function createUI(root: HTMLElement, store: Store) {
 
   const con = createConsole(root, store);
   createSide(con.sideHost, store);
-  createGroups(root, store);
+  createLegend(root);
   createToasts(root, store);
   createTooltip(root, store);
   // Mode flag for CSS (memory explorer owns the screen: only top bar + console stay).
