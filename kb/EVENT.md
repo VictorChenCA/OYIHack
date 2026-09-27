@@ -34,6 +34,11 @@ Quoted from the kickoff slide:
 | UFO | "Best extension, Best business automation for startups." | A UFO extension, or a startup business automation built on UFO |
 | Superset | "Best Agent Swarm. The most impressive project built by running many coding agents in parallel with Superset. **Presented with Superset Pages.**" | Built with parallel Superset agents, **and the presentation is a Superset Page** |
 
+## Free credits and offers
+- **River:** free API credits at the River AI booth. Unused credits expire at the end of the day.
+- **GBrain:** a free hosted workspace for 2 weeks with $50 of AI credit, one per person, no card:
+  https://gbrain.io/gratis/own-your-intelligence. Details in `kb/sponsors/gbrain.md`.
+
 ## Submissions
 **Form:** https://docs.google.com/forms/d/e/1FAIpQLSdiU5L7PhlkD7HQQouQKPSlm7WrobkdJuvSZLoi6O7jXRWKiQ/viewform
 The page opens at 16:00. Submissions are due at **17:00**.

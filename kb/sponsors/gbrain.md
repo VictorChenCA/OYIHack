@@ -25,6 +25,24 @@ Garry Tan's production brain: 155K pages.
   `skills/<name>/SKILL.md` (frontmatter: name, version, description, triggers, mutating,
   writes_pages, writes_to) plus optional `routing-eval.jsonl`. There are 87 examples in `kb/repos/gbrain/skills/`.
 
+## Free hackathon workspace (hosted, https://gbrain.io/gratis/own-your-intelligence)
+Mirrored at `kb/raw/gbrain-hackathon.md`.
+- **Free hosted GBrain for 2 weeks, with $50 of AI credit. No card needed.** Sign in, and it's running in about 2 min.
+  **One per person**, so have one teammate create it and invite the others (no extra cost; they share
+  memory and the conversation). The offer ends Oct 5. After 2 weeks it pauses ($199/mo to keep), and
+  it's deleted 5 days later if nobody keeps it.
+- **Connect Claude Code (or any MCP client) with one URL:**
+  `claude mcp add gbrain https://gbrain.io/mcp --header "Authorization: Bearer <token>"`. Mint the token
+  on the client's page in the workspace; it's shown only once.
+- Beyond memory, it has a **tools plane**: Gmail, Calendar, Drive, web search, and page fetch, with key
+  custody, per-app permission levels, daily circuit breakers, and an activity log. CLI:
+  `gbrainio tool gmail search --unread --newer-than 2d`. Plus Anthropic/OpenAI model choice
+  (or your own key) and scheduled skills.
+- **When to use it instead of local PGLite:** when the demo is **multiplayer** (the team or several machines
+  share one brain), or when a cloud agent (QM, UFO, or a remote Superset host) must reach memory
+  without `gbrain serve --http` + a tunnel. The local path below is still the fastest for single-laptop dev.
+- Notes are plain markdown you can copy out, so the "own your intelligence" story still holds.
+
 ## Fastest path (keyless, no server, no Docker, about 2 min)
 ```bash
 bun upgrade                                  # NEEDS Bun >= 1.3.11

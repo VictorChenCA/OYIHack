@@ -12,6 +12,7 @@
 | Memorable docs (CLI, API, integrations) | `kb/raw/memorable-*.md` |
 | UFO docs | `kb/raw/ufo-docs*.md`, installer `kb/raw/ufo-install.sh` |
 | GBrain / River / QM landing pages | `kb/raw/{gbrain,river,qm}-*.md` |
+| GBrain free hackathon workspace (hosted, $50 credit, MCP URL) | `kb/raw/gbrain-hackathon.md` |
 | **Source code + in-repo docs** (gitignored; `kb/fetch.sh`) | `kb/repos/{gbrain,qm,superset,ufo-core,gstack}` |
 
 ## Sponsor developer surfaces (verified Sep 27)

@@ -11,7 +11,7 @@
 | # | Decision | Choice | Why (speed) | Fallback |
 |---|---|---|---|---|
 | D1 | Harness to extend | **QM if a hosted instance or a working local `dev-instance` exists by 13:45; otherwise UFO** | The brief names QM first. UFO self-hosts as one process on SQLite (lighter) | Claude Code + MCP as the "harness" |
-| D2 | Memory (facts) | `gbrain init --pglite --no-embedding` + `gbrain serve` (stdio) / `--http` (for QM/UFO) | 2-second init, zero infra, keyword search is enough for a demo | Add an embedding key later only if recall quality is bad |
+| D2 | Memory (facts) | `gbrain init --pglite --no-embedding` + `gbrain serve` (stdio) / `--http` (for QM/UFO) | 2-second init, zero infra, keyword search is enough for a demo | Add an embedding key later only if recall quality is bad. For multiplayer/remote agents, use the free hosted workspace (`https://gbrain.io/mcp`, see `kb/sponsors/gbrain.md`) |
 | D3 | Memory (procedures) | Memorable CLI (`init gbrain` or `init qm`), or raw `POST /v1/extract` from custom loops | Already wired into gbrain and QM; free 1,000/mo | Local store `memorable init` |
 | D4 | Glue language | **TypeScript/Bun** for glue and QM work; **Python only for River** (Python-only SDK) and UFO extensions | Match each sponsor's native SDK; no bindings | Shell out to CLIs |
 | D5 | Integration transport | MCP (stdio local, HTTP remote) > CLI subprocess > HTTP API > SDK | MCP gets agent tool use for free, with no UI code | — |
