@@ -39,10 +39,10 @@ export function fogTexture(inner: number): Texture {
   // Clear inside `inner` (charted space), then a clearly darker band: the fog is the unknown.
   gr.addColorStop(0, "rgba(8,12,24,0)");
   gr.addColorStop(Math.min(0.95, inner), "rgba(8,12,24,0)");
-  gr.addColorStop(Math.min(0.96, inner + 0.05), "rgba(8,12,24,0.38)");
-  gr.addColorStop(Math.min(0.97, inner + 0.16), "rgba(8,12,24,0.62)");
-  gr.addColorStop(Math.min(0.98, inner + 0.35), "rgba(8,12,24,0.8)");
-  gr.addColorStop(1, "rgba(8,12,24,0.88)");
+  gr.addColorStop(Math.min(0.96, inner + 0.05), "rgba(8,12,24,0.5)");
+  gr.addColorStop(Math.min(0.97, inner + 0.16), "rgba(8,12,24,0.74)");
+  gr.addColorStop(Math.min(0.98, inner + 0.35), "rgba(8,12,24,0.88)");
+  gr.addColorStop(1, "rgba(8,12,24,0.94)");
   x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
   return Texture.from(c);
 }

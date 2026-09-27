@@ -73,7 +73,7 @@ export function createScene(app: Application, store: Store) {
   /** System-view framing radius (x systemRadius): content (orbits + enemies) reaches ~0.9R; the band between HUD bars is short. */
   const SYS_FIT = 0.95;
   /** Fog of war: clear inside FOG_IN·R (charted space), darkening beyond it; the sprite reaches FOG_OUT·R. */
-  const FOG_IN = 0.78, FOG_OUT = 1.7;
+  const FOG_IN = 0.78, FOG_OUT = 4;
   const setPrio = <T extends Text>(t: T, p: number) => { prio.set(t, p); return t; };
   /** "Claude (subscription usage)" -> "CLAUDE", "River credits" -> "RIVER". */
   const shortMine = (s: string) => (s.replace(/\s*\(.*?\)\s*/g, " ").trim().split(/\s+/)[0] || s).toUpperCase();
@@ -222,6 +222,9 @@ export function createScene(app: Application, store: Store) {
 
   // ---------- helpers ----------
   const mode = () => store.mode;
+  const m0Kind = () => store.mode.kind;
+  let userMoved = false;
+  const planetK = () => Math.min(1.6, Math.max(1, cam.ui * 0.45));
   const isHot = (kind: string, id: string) => (store.hover?.kind === kind && store.hover.id === id) || (store.focus?.kind === kind && store.focus.id === id);
   const dimAlpha = (_planetId?: string) => 1; // planet view removes (not dims) other planets' things
   const projectColor = (s: WorldState, id: string) => hex(s.projects.find((p) => p.id === id)?.color, 0x9fe8ff);
@@ -238,7 +241,12 @@ export function createScene(app: Application, store: Store) {
     const s = store.state;
     if (!built || !s) return;
     if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); const f = systemFrame(s); cam.x = f.x; cam.y = f.y; cam.scale = f.s; cam.update(0); }
+    if (frame % 20 === 0 && !userMoved && (m0Kind() === "system" || m0Kind() === "planet")) {
+      const t0 = cam.insetTop, b0 = cam.insetBottom; measureInsets();
+      if (Math.abs(cam.insetTop - t0) > 8 || Math.abs(cam.insetBottom - b0) > 8) flyToMode();
+    }
     const R = s.systemRadius, ui = cam.ui;
+    const PK = planetK(), PR = PLANET_R * PK; // displayed planet radius
     const m0 = mode(); const pm: DeptId | null = m0.kind === "planet" ? m0.planetId : null;
     const inPm = (pid?: string) => !pm || pid === pm; // planet view REMOVES everything that is not this planet's
     bgFill.clear().rect(0, 0, app.screen.width, app.screen.height).fill({ color: 0x0c1528 });
@@ -292,7 +300,7 @@ export function createScene(app: Application, store: Store) {
       if (hidden) continue;
       const col = hex(p.color), da = dimAlpha(p.id);
       // planet body
-      v.c.position.set(p.pos.x, p.pos.y); v.c.alpha = da;
+      v.c.position.set(p.pos.x, p.pos.y); v.c.alpha = da; v.c.scale.set(PK);
       const stage = p.colonization ?? 0;
       v.dept.alpha = stage / 3; v.base.alpha = 1 - (stage / 3) * 0.6;
       v.dept.rotation += dt * 0.02; v.base.rotation = v.dept.rotation;
@@ -310,7 +318,7 @@ export function createScene(app: Application, store: Store) {
       const sunDir = away + Math.PI;
       v.dish.position.set(Math.cos(sunDir) * PLANET_R * 1.15, Math.sin(sunDir) * PLANET_R * 1.15); v.dish.rotation = sunDir + Math.PI / 2;
       v.dish.visible = stage >= 1;
-      v.name.position.set(p.pos.x, p.pos.y + PLANET_R + 20 * ui); v.name.scale.set(ui); v.name.alpha = da;
+      v.name.position.set(p.pos.x, p.pos.y + PR + 16 * ui); v.name.scale.set(ui); v.name.alpha = da;
     }
 
     // credit belt: per mine, a cluster of small spinning asteroids (one ≈ one credit chunk) close to the sun
@@ -398,7 +406,7 @@ export function createScene(app: Application, store: Store) {
     if (store.layerOn("beams")) for (const p of s.planets) {
       if (p.hidden || store.isHidden("planet", p.id) || !inPm(p.id) || (p.colonization ?? 0) < 1) continue;
       const d = Math.hypot(p.pos.x, p.pos.y) || 1, ux = p.pos.x / d, uy = p.pos.y / d;
-      const x0 = ux * SUN_R * 1.05, y0 = uy * SUN_R * 1.05, x1 = p.pos.x - ux * PLANET_R * 1.2, y1 = p.pos.y - uy * PLANET_R * 1.2;
+      const x0 = ux * SUN_R * 1.05, y0 = uy * SUN_R * 1.05, x1 = p.pos.x - ux * PR * 1.2, y1 = p.pos.y - uy * PR * 1.2;
       const k = (0.25 + 0.75 * (p.memTraffic ?? 0)) * dimAlpha(p.id), col = 0xffd27a;
       bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 5 * ui, color: col, alpha: 0.05 * k });
       bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 1.2 * ui, color: 0xfff3d6, alpha: 0.35 * k });
@@ -425,7 +433,7 @@ export function createScene(app: Application, store: Store) {
       const away = Math.atan2(p.pos.y, p.pos.x), per = 5;
       idle.forEach((u, i) => {
         const row = Math.floor(i / per), inRow = Math.min(per, idle.length - row * per), c = i % per;
-        const a = away + (c - (inRow - 1) / 2) * 0.36, r = PLANET_R * 1.9 + row * 46;
+        const a = away + (c - (inRow - 1) / 2) * 0.36, r = PR * 1.7 + row * 46;
         parked.set(u.id, { x: p.pos.x + Math.cos(a) * r, y: p.pos.y + Math.sin(a) * r, face: away });
       });
     }
@@ -476,8 +484,8 @@ export function createScene(app: Application, store: Store) {
       v.ship.texture = tex[v.texName]; setSize(v.ship, size); v.ship.position.set(v.x, v.y); v.ship.rotation = u.role === "sentinel" ? time * 0.4 : v.rot;
       v.ship.tint = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
       v.ship.alpha = (u.status === "idle" || u.status === "done" ? 0.6 : 1) * k;
-      v.glow.tint = u.status === "blocked" ? 0xff4d4d : col; setSize(v.glow, size * (u.role === "mothership" ? 2.8 : 2)); v.glow.position.set(v.x, v.y);
-      v.glow.alpha = (u.status === "acting" ? 0.3 + 0.25 * Math.sin(time * 12) : u.role === "mothership" ? 0.34 : 0.22) * k;
+      v.glow.tint = u.status === "blocked" ? 0xff4d4d : col; setSize(v.glow, size * (u.role === "mothership" ? 2 : 1.6)); v.glow.position.set(v.x, v.y);
+      v.glow.alpha = (u.status === "acting" ? 0.24 + 0.1 * Math.sin(time * 4) : u.role === "mothership" ? 0.24 : 0.16) * k;
       const moving = active(u);
       const back = v.rot + Math.PI / 2; // ships face up; exhaust sits behind the nose
       v.trail.visible = moving && u.role !== "sentinel";
@@ -621,7 +629,7 @@ export function createScene(app: Application, store: Store) {
             t.position.set((a.x + ep.x) / 2, (a.y + ep.y) / 2 - 10 * ui); t.scale.set(ui);
           }
         }
-        tg.stroke({ width: (hot ? 2.4 : 1.4) * ui, color: qc, alpha: hot ? 0.9 : 0.5 });
+        tg.stroke({ width: (hot ? 2.2 : 1.1) * ui, color: qc, alpha: hot ? 0.9 : 0.32 });
         if (e.kind === "dependency" && e.dependsOnUnit) {
           const d = disp.get(e.dependsOnUnit);
           if (d) { dashed(tg, ep.x, ep.y, d.x, d.y, 3 * ui, 7 * ui); tg.stroke({ width: 1.4 * ui, color: 0xa774ff, alpha: 0.7 }); }
@@ -646,8 +654,8 @@ export function createScene(app: Application, store: Store) {
     const sel = new Set(store.selection);
     for (const u of visUnits) {
       const p = disp.get(u.id)!; const r = unitSize(u) * 0.75; const da = emph(u.id);
-      if (u.role === "mothership") ov.circle(p.x, p.y, r * 1.12).stroke({ width: 3 * ui, color: projectColor(s, u.projectId), alpha: 0.16 * da });
-      if (u.role !== "subagent" || sel.has(u.id)) {
+      const look = sel.has(u.id) || (hov?.kind === "unit" && hov.id === u.id) || (store.focus?.kind === "unit" && store.focus.id === u.id);
+      if (look) {
         const hp = Math.max(0, Math.min(1, u.hp));
         arc(ov, p.x, p.y, r, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * hp);
         ov.stroke({ width: 1.6 * ui, color: hp > 0.5 ? 0x5cf2b0 : hp > 0.25 ? 0xffb020 : 0xff4d4d, alpha: 0.6 * da });
@@ -699,14 +707,14 @@ export function createScene(app: Application, store: Store) {
     if (hov) {
       const w = hov.kind === "unit" ? (() => { const d = disp.get(hov.id); const u = d && s.units.find((q) => q.id === hov.id); return d && u ? { ...d, r: unitSize(u) * 0.75 } : undefined; })()
         : hov.kind === "enemy" ? enemyPos.get(hov.id)
-        : hov.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === hov.id); return p ? { ...p.pos, r: PLANET_R * 1.1 } : undefined; })()
+        : hov.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === hov.id); return p ? { ...p.pos, r: PR * 1.1 } : undefined; })()
         : hov.kind === "sun" ? { x: 0, y: 0, r: SUN_R * (pm ? 0.6 : 1) * 1.05 } : undefined;
       if (w) ov.circle(w.x, w.y, w.r * 1.25 + 4 * ui).stroke({ width: 1.2 * ui, color: 0xe8f6ff, alpha: 0.55 });
     }
     // focus ring for non-unit focus
     const fo = store.focus;
     if (fo && fo.kind !== "unit") {
-      const w = fo.kind === "enemy" ? enemyPos.get(fo.id) : fo.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === fo.id); return p ? { ...p.pos, r: PLANET_R * 1.25 } : undefined; })() : undefined;
+      const w = fo.kind === "enemy" ? enemyPos.get(fo.id) : fo.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === fo.id); return p ? { ...p.pos, r: PR * 1.25 } : undefined; })() : undefined;
       if (w) { const r = w.r * 1.2; for (let k = 0; k < 4; k++) arc(ov, w.x, w.y, r, time * 0.8 + (k * Math.PI) / 2, time * 0.8 + (k * Math.PI) / 2 + 0.9); ov.stroke({ width: 2 * ui, color: 0xe8f6ff, alpha: 0.85 }); }
     }
 
@@ -783,7 +791,7 @@ export function createScene(app: Application, store: Store) {
       if (store.layerOn("units")) for (const u of s.units) { if (unitHidden(u) || !shown(u.id)) continue; const v = unitViews.get(u.id); consider({ kind: "unit", id: u.id }, v?.x ?? u.pos.x, v?.y ?? u.pos.y, unitSize(u) * 0.6); }
     };
     units(); if (best) return best;
-    for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * 1.8);
+    for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * planetK() * 1.8);
     if (best) return best;
     strict = false;
     if (store.layerOn("enemies")) for (const e of s.enemies) { if (enemyHidden(e) || enemyViews.get(e.id)?.seen !== frame) continue; const v = enemyViews.get(e.id); consider({ kind: "enemy", id: e.id }, v?.x ?? e.pos.x, v?.y ?? e.pos.y, (46 + 14 * Math.min(8, e.strength)) * cam.ui * 0.6); }
@@ -794,7 +802,7 @@ export function createScene(app: Application, store: Store) {
     if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 40);
     if (best) return best;
     consider({ kind: "sun", id: "sun" }, 0, 0, SUN_R * (pm ? 0.55 : 1.1));
-    for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * 1.1);
+    for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * planetK() * 1.1);
     return best;
   }
 
@@ -836,7 +844,7 @@ export function createScene(app: Application, store: Store) {
     else if (m.kind === "system" || m.kind === "galaxy") { const f = systemFrame(s); cam.flyTo(f.x, f.y, f.s); }
     else if (m.kind === "memory") cam.flyTo(0, 0, cam.fitScale(420));
   }
-  store.on("mode", flyToMode);
+  store.on("mode", () => { userMoved = false; flyToMode(); });
   (window as any).__scene = { cam, pick, store, shock }; // debug handle
 
   // ---------- input ----------
@@ -859,7 +867,7 @@ export function createScene(app: Application, store: Store) {
       if (down.box) {
         hud.clear();
         if (down.moved) hud.rect(Math.min(down.x, p.x), Math.min(down.y, p.y), Math.abs(p.x - down.x), Math.abs(p.y - down.y)).fill({ color: 0x7dffb2, alpha: 0.06 }).stroke({ width: 1, color: 0x7dffb2, alpha: 0.8 });
-      } else if (down.moved) { cam.panBy(p.x - last.x, p.y - last.y); cv.style.cursor = "grabbing"; }
+      } else if (down.moved) { userMoved = true; cam.panBy(p.x - last.x, p.y - last.y); cv.style.cursor = "grabbing"; }
       last = p;
       return;
     }
@@ -902,7 +910,7 @@ export function createScene(app: Application, store: Store) {
       if (en) spawnFx("circle_02", en.pos.x, en.pos.y, 0x7dffb2, 30, 180, 0.5, 0.9);
     }
   });
-  cv.addEventListener("wheel", (e) => { e.preventDefault(); const p = rel(e); cam.zoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+  cv.addEventListener("wheel", (e) => { e.preventDefault(); const p = rel(e); userMoved = true; cam.zoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
   window.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     const el = document.activeElement as HTMLElement | null;
