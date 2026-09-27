@@ -18,7 +18,18 @@ function firstPrompt(path: string): string | undefined {
   return undefined;
 }
 import { firstLine, taskSignature } from "../world";
-let lastRecover = 0;
+let lastRecover = 0, lastSentinel = 0;
+async function refreshSentinelInfo(ctx: Ctx) {
+  const w = ctx.world as any;
+  try { const h: any = await (await fetch(`${ctx.cfg.sentinelUrl}/health`, { signal: AbortSignal.timeout(2000) })).json(); w.sentinelInfo.model = h.model; w.sentinelInfo.checkpoint = h.checkpoint; ctx.world.research.sidecarUp = !!h.ok; }
+  catch { ctx.world.research.sidecarUp = false; }
+  try {
+    const ev = JSON.parse(await Bun.file(`${ctx.cfg.repoRoot}/app/river/eval.json`).text());
+    const b = ev?.base?.mean?.acc ?? ev?.base?.mean_acc ?? ev?.summary?.base_acc, t = ev?.trained?.mean?.acc ?? ev?.trained?.mean_acc ?? ev?.summary?.trained_acc;
+    if (typeof b === "number" && typeof t === "number") w.sentinelInfo.unseenAccuracy = `${b.toFixed(3)} → ${t.toFixed(3)}`;
+    else { const md = await Bun.file(`${ctx.cfg.repoRoot}/app/river/eval.md`).text(); const m = md.match(/\| mean \| ([\d.]+) \| \*\*([\d.]+)\*\*/); if (m) w.sentinelInfo.unseenAccuracy = `${m[1]} → ${m[2]}`; }
+  } catch {}
+}
 function recoverTasks(ctx: Ctx) {
   for (const u of ctx.world.units.values()) {
     if ((u.task && !/^(You are (a unit|an agent) in C&C|↻)/.test(u.task)) || u.simulated || u.role !== "mothership" || !u.transcriptPath) continue;
@@ -61,6 +72,7 @@ const plugin: Plugin = {
     memorableOnHook(ev, ctx);
   },
   onTick(ctx) {
+    if (Date.now() - lastSentinel > 10000) { lastSentinel = Date.now(); void refreshSentinelInfo(ctx); }
     if (Date.now() - lastRecover > 4000) { lastRecover = Date.now(); try { recoverTasks(ctx); } catch {} }
     const now = Date.now();
     if (now - lastUsage > 5_000) { lastUsage = now; try { pollUsage(ctx, now); } catch (e) { console.error("[ops] usage:", e); } }

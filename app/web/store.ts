@@ -5,7 +5,7 @@ import { makeFixture } from "./fixture";
 export type Mode = { kind: "system" } | { kind: "planet"; planetId: DeptId } | { kind: "memory" } | { kind: "galaxy" } | { kind: "home" }; // system = the company ("Galaxy view (C&C)"); home = company switcher
 export type Target =
   | { kind: "unit"; id: string } | { kind: "enemy"; id: string } | { kind: "planet"; id: DeptId } | { kind: "sun"; id: "sun" }
-  | { kind: "factory"; id: string } | { kind: "mine"; id: string } | { kind: "research"; id: "research" };
+  | { kind: "factory"; id: string } | { kind: "mine"; id: string } | { kind: "research"; id: "research" } | { kind: "sentinel"; id: "sentinel" };
 export interface Toast { id: number; text: string; level: "info" | "warn" | "alert"; at: number }
 
 type Events = { state: WorldState; mode: Mode; selection: string[]; focus: Target | null; hover: { target: Target | null; x: number; y: number }; rank: { enemyId: string; entries: RankEntry[] }; toast: Toast; commander: string };

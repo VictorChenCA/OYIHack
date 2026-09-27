@@ -216,6 +216,19 @@ export interface WorldState {
   simulated: boolean;
   systemRadius: number;     // world units to the frontier edge
   companies?: { id: string; name: string; agents: number; blockers: number; live: boolean }[]; // home page company switcher
+  sentinel?: SentinelNode;  // the deployed River-trained classifier, a node next to company memory
+}
+
+export interface SentinelNode {
+  pos: Vec;
+  up: boolean;              // sidecar reachable
+  engine: string;           // sentinel | sentinel-base | fast | haiku
+  model?: string;           // base model, e.g. Qwen/Qwen3.5-9B
+  checkpoint?: string;      // river://…
+  unseenAccuracy?: string;  // from app/river/eval.json, e.g. "0.545 → 0.916"
+  classified: number;       // live classifications since start
+  p50Ms?: number;           // live latency (recent)
+  recent: { at: number; title: string; kind: string; quadrant: string; humanOnly: boolean; p: number; ms?: number; source: string }[];
 }
 
 /** Claude Code hook payload (subset). Field names per code.claude.com/docs/en/hooks. */
