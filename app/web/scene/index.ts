@@ -63,7 +63,7 @@ export function createScene(app: Application, store: Store) {
   let nebula: TilingSprite, stars1: TilingSprite, stars2: TilingSprite;
   const bgFill = new Graphics();
   const sun = {} as { core: Sprite; l1: Sprite; l2: Sprite; halo: Sprite; ring: Sprite; flash: number };
-  const research = {} as { gem: Sprite; shards: Sprite[]; twinkle: Sprite; glow: Sprite; name: Text };
+  const research = {} as { gem: Graphics; glow: Sprite; name: Text };
   const planetViews = new Map<string, PlanetView>();
   const unitViews = new Map<string, UnitView>();
   const enemyViews = new Map<string, EnemyView>();
@@ -140,12 +140,25 @@ export function createScene(app: Application, store: Store) {
     L.labels.addChild(sunHint);
 
     // research station (River Sentinel)
-    research.glow = sprite("circle_05", { tint: 0x40e0d0, add: true, size: 150, alpha: 0.3 });
-    research.gem = sprite("meteor_squareLarge", { tint: 0x9fffef, size: 46 });
-    research.shards = [0, 1, 2].map(() => sprite("meteor_small", { tint: 0x7fe9ff, size: 14 }));
-    research.twinkle = sprite("star_08", { tint: 0xd8fffa, add: true, size: 70, alpha: 0.6 });
+    // where custom (River-trained) agents are made: a static, faceted crystal in a thin ring (no spin)
+    research.glow = sprite("circle_05", { tint: 0x40e0d0, add: true, size: 230, alpha: 0.18 });
+    research.gem = new Graphics();
+    {
+      const g = research.gem, H = 44, W = 30, Y = -H * 0.28, I = W * 0.42;
+      const f = (pts: number[], color: number, alpha = 1) => g.poly(pts).fill({ color, alpha });
+      f([0, -H, -W, Y, -I, Y], 0xbffff4, 0.95);           // crown, left
+      f([0, -H, -I, Y, I, Y], 0xeafffc, 0.98);            // table
+      f([0, -H, I, Y, W, Y], 0x86ece1, 0.95);             // crown, right
+      f([-W, Y, -I, Y, 0, H], 0x5fd8cc, 0.95);            // pavilion, left
+      f([-I, Y, I, Y, 0, H], 0x93f2e7, 0.95);             // pavilion, center
+      f([I, Y, W, Y, 0, H], 0x2aa99f, 0.95);              // pavilion, right
+      g.poly([0, -H, W, Y, 0, H, -W, Y]).stroke({ width: 1.6, color: 0xd8fffa, alpha: 0.85, join: "round" });
+      g.moveTo(-W, Y).lineTo(W, Y).stroke({ width: 1, color: 0xffffff, alpha: 0.5 });
+      g.circle(0, 0, 66).stroke({ width: 1.2, color: 0x7fe9df, alpha: 0.4 });
+      for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.PI / 4; g.circle(Math.cos(a) * 66, Math.sin(a) * 66, 2.4).fill({ color: 0xbffff4, alpha: 0.8 }); }
+    }
     research.name = setPrio(label("RESEARCH", 13, 0x9fffef), 2);
-    L.research.addChild(research.glow, research.gem, ...research.shards, research.twinkle);
+    L.research.addChild(research.glow, research.gem);
     L.labels.addChild(research.name);
 
     vignette.texture = vignetteTexture();
@@ -197,11 +210,15 @@ export function createScene(app: Application, store: Store) {
     return v;
   }
   /** Shared abstract hull (shapes.ts): same silhouette on the map, legend, hover and bottom bar. half = half-width in world units. */
-  function drawHull(g: Graphics, u: Unit, half: number, col: number, ui: number) {
+  function drawHull(g: Graphics, u: Unit, half: number, col: number, ui: number, border = false) {
     const pts = TIER_HULL[u.role === "sentinel" ? "river" : u.tier] ?? TIER_HULL.unknown;
     g.clear();
     g.poly(pts.flatMap(([x, y]) => [x * half + half * 0.12, y * half + half * 0.12])).fill({ color: 0x000000, alpha: 0.25 }); // faint shadow
-    g.poly(pts.flatMap(([x, y]) => [x * half, y * half])).fill({ color: col }).stroke({ width: Math.max(0.8, half * 0.08), color: 0xffffff, alpha: 0.28, join: "round" });
+    const body = g.poly(pts.flatMap(([x, y]) => [x * half, y * half])).fill({ color: col });
+    // mothership (has subagents): a thin black border, nothing else; otherwise a faint light edge
+    if (border) body.stroke({ width: Math.max(1.2, half * 0.14), color: 0x000000, alpha: 0.95, join: "round" });
+    else body.stroke({ width: Math.max(0.8, half * 0.08), color: 0xffffff, alpha: 0.28, join: "round" });
+    void ui;
   }
 
   function tmpText(key: string, text: string, size: number, color: number, font = "Rajdhani"): Text {
@@ -388,11 +405,9 @@ export function createScene(app: Application, store: Store) {
     const rpos = s.research?.pos ?? { x: 0, y: -200 };
     const running = s.research?.runs?.some((r) => r.status === "running") ?? false;
     L.research.position.set(rpos.x, rpos.y);
-    research.shards.forEach((sh) => { sh.visible = false; });
-    research.twinkle.alpha = 0;
-    research.glow.alpha = running ? 0.4 : 0.16;
+    research.glow.alpha = running ? 0.34 : 0.16;
     research.gem.filters = running && glowGem ? [glowGem] : null;
-    research.name.position.set(rpos.x, rpos.y + 44 * ui); research.name.scale.set(ui);
+    research.name.position.set(rpos.x, rpos.y + 66 + 14 * ui); research.name.scale.set(ui);
 
     // factories
     L.factories.visible = store.layerOn("factories");
@@ -502,7 +517,7 @@ export function createScene(app: Application, store: Store) {
       let dr = want - v.rot; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
       if (Math.hypot(tgt.x - v.x, tgt.y - v.y) > 1) v.rot += dr * lerpK;
       const hcol = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
-      drawHull(v.hull, u, size / 2, hcol, ui);
+      drawHull(v.hull, u, size / 2, hcol, ui, u.role !== "subagent" && kids.has(u.id));
       v.hull.position.set(v.x, v.y); v.hull.rotation = v.rot;
       v.hull.alpha = (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * (u.historical ? 0.85 : 1) * k;
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
@@ -790,7 +805,7 @@ export function createScene(app: Application, store: Store) {
     if (best) return best;
     if (store.layerOn("factories")) for (const f of s.factories) if (!f.hidden && !store.isHidden("factory", f.id, { planetId: f.planetId }) && (!pm || f.planetId === pm)) { const mp = moonPos.get(f.id); if (mp) consider({ kind: "factory", id: f.id }, mp.x, mp.y, 16 * cam.ui); }
     if (store.layerOn("mines")) for (const m of s.mines) { const c = minePos.get(m.id); if (c && mineViews.has(m.id)) consider({ kind: "mine", id: m.id }, c.x, c.y, 70); }
-    if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 40);
+    if (store.layerOn("research") && s.research && !pm) consider({ kind: "research", id: "research" }, s.research.pos.x, s.research.pos.y, 60);
     if (best) return best;
     consider({ kind: "sun", id: "sun" }, 0, 0, SUN_R * (pm ? 0.55 : 1.1));
     for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id) && (!pm || p.id === pm)) consider({ kind: "planet", id: p.id }, p.pos.x, p.pos.y, PLANET_R * planetK() * 1.1);
