@@ -48,8 +48,8 @@ export function createScene(app: Application, store: Store) {
   const L = {
     orbits: new Graphics(), belt: new Container(), beams: new Graphics(), packets: new Container(), paths: new Graphics(),
     sun: new Container(), research: new Container(), planets: new Container(), factories: new Container(), mines: new Container(),
-    tethers: new Graphics(), enemies: new Container(), unitGlow: new Container(), units: new Container(), overlay: new Graphics(),
-    fx: new Container(), fog: new Container(), labels: new Container(),
+    fog: new Container(), tethers: new Graphics(), enemies: new Container(), unitGlow: new Container(), units: new Container(), overlay: new Graphics(),
+    fx: new Container(), labels: new Container(),
   };
   for (const k of Object.keys(L) as (keyof typeof L)[]) (k === "labels" ? top : world).addChild(L[k]);
   L.beams.blendMode = "add"; L.unitGlow.blendMode = "add";
@@ -72,12 +72,18 @@ export function createScene(app: Application, store: Store) {
   const MINOR = 4;
   /** System-view framing radius (x systemRadius): content (orbits + enemies) reaches ~0.9R; the band between HUD bars is short. */
   const SYS_FIT = 0.95;
+  /** Fog of war: clear inside FOG_IN·R (charted space), darkening beyond it; the sprite reaches FOG_OUT·R. */
+  const FOG_IN = 0.78, FOG_OUT = 1.7;
   const setPrio = <T extends Text>(t: T, p: number) => { prio.set(t, p); return t; };
   /** "Claude (subscription usage)" -> "CLAUDE", "River credits" -> "RIVER". */
   const shortMine = (s: string) => (s.replace(/\s*\(.*?\)\s*/g, " ").trim().split(/\s+/)[0] || s).toUpperCase();
   const packets: Sprite[] = [];
   const fxs: Fx[] = [];
-  let lastWriteAt = 0;
+  /** Memory writes already shown (at|op|slug); the first state marks history as seen without pulsing. */
+  const seenWrites = new Set<string>();
+  let writesPrimed = false;
+  let sunCaption: Text, sunHint: Text, captionT = 99;
+  const lifts: Sprite[] = [];
   let frame = 0;
 
   let PF: typeof import("pixi-filters") | null = null;
@@ -120,6 +126,9 @@ export function createScene(app: Application, store: Store) {
     sun.ring = sprite("circle_02", { tint: 0xffd27a, add: true, size: SUN_R * 2.4, alpha: 0 });
     sun.flash = 0;
     L.sun.addChild(sun.halo, sun.l1, sun.l2, sun.core, sun.ring);
+    sunCaption = setPrio(label("", 12, 0xe9dcc0, "IBM Plex Sans", "500"), 0); sunCaption.visible = false;
+    sunHint = setPrio(label("Open memory", 11, 0xcdb88a, "IBM Plex Sans", "500"), 0); sunHint.visible = false;
+    L.labels.addChild(sunCaption, sunHint);
 
     // research station (River Sentinel)
     research.glow = sprite("circle_05", { tint: 0x40e0d0, add: true, size: 150, alpha: 0.3 });
@@ -131,25 +140,16 @@ export function createScene(app: Application, store: Store) {
     L.labels.addChild(research.name);
 
     // fog + frontier smoke
-    fog = new Sprite(fogTexture(0.3)); fog.anchor.set(0.5);
+    fog = new Sprite(fogTexture(FOG_IN / FOG_OUT)); fog.anchor.set(0.5);
     L.fog.addChild(fog);
-    for (let i = 0; i < 14; i++) { const s = sprite("smoke_04", { tint: 0x33405e, alpha: 0.22 }); smoke.push(s); L.fog.addChild(s); }
+    for (let i = 0; i < 10; i++) { const s = sprite("smoke_04", { tint: 0x2a344d, alpha: 0.18 }); smoke.push(s); L.fog.addChild(s); }
+    for (let i = 0; i < 24; i++) { const s = sprite("circle_05", { tint: 0x9fb8d8, add: true, alpha: 0 }); lifts.push(s); L.fog.addChild(s); }
 
     for (let i = 0; i < 64; i++) { const p = sprite("star_04", { tint: 0xffe2a0, add: true, size: 26, alpha: 0 }); packets.push(p); L.packets.addChild(p); }
     L.packets.blendMode = "add";
     built = true;
   }
 
-  function buildBelt(r: number) {
-    L.belt.removeChildren();
-    for (let i = 0; i < 110; i++) { // faint dust only: the credit clusters are THE belt
-      const a = Math.random() * Math.PI * 2, rr = r + (Math.random() - 0.5) * BELT_W * 0.9;
-      const s = sprite(Math.random() < 0.5 ? "meteor_small" : "meteor_detailedSmall", { tint: 0x5a6378, size: 2 + Math.random() * 4, alpha: 0.12 + Math.random() * 0.18 });
-      s.position.set(Math.cos(a) * rr, Math.sin(a) * rr); s.rotation = Math.random() * 6;
-      L.belt.addChild(s);
-    }
-  }
-  let beltR = -1;
 
   function planetView(p: Planet): PlanetView {
     let v = planetViews.get(p.id);
@@ -222,6 +222,7 @@ export function createScene(app: Application, store: Store) {
 
   // ---------- helpers ----------
   const mode = () => store.mode;
+  const isHot = (kind: string, id: string) => (store.hover?.kind === kind && store.hover.id === id) || (store.focus?.kind === kind && store.focus.id === id);
   const dimAlpha = (_planetId?: string) => 1; // planet view removes (not dims) other planets' things
   const projectColor = (s: WorldState, id: string) => hex(s.projects.find((p) => p.id === id)?.color, 0x9fe8ff);
   const unitHidden = (u: Unit) => u.hidden || u.status === "dead" || store.isHidden("unit", u.id, { planetId: u.planetId, projectId: u.projectId });
@@ -236,7 +237,7 @@ export function createScene(app: Application, store: Store) {
     top.position.copyFrom(world.position); top.scale.copyFrom(world.scale);
     const s = store.state;
     if (!built || !s) return;
-    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); cam.scale = cam.fitScale(s.systemRadius * SYS_FIT); cam.update(0); }
+    if (!fitted) { fitted = true; measureInsets(); cam.minScale = cam.fitScale(s.systemRadius * 2.2); const f = systemFrame(s); cam.x = f.x; cam.y = f.y; cam.scale = f.s; cam.update(0); }
     const R = s.systemRadius, ui = cam.ui;
     const m0 = mode(); const pm: DeptId | null = m0.kind === "planet" ? m0.planetId : null;
     const inPm = (pid?: string) => !pm || pid === pm; // planet view REMOVES everything that is not this planet's
@@ -248,57 +249,48 @@ export function createScene(app: Application, store: Store) {
     stars1.tilePosition.set(-cam.x * cam.scale * 0.08, -cam.y * cam.scale * 0.08);
     stars2.tilePosition.set(-cam.x * cam.scale * 0.16 + time * 2, -cam.y * cam.scale * 0.16);
 
-    // sun
-    const pulse = s.sunPulse ?? 0.5;
+    // sun = GBrain, the company memory. Static and calm; one clean pulse per memory WRITE (reads do nothing visible),
+    // with a one-line caption of what was just added.
     const writes = s.knowledge?.recent?.filter((m) => m.kind === "write") ?? [];
-    for (const w of writes) if (w.at > lastWriteAt) {
-      if (lastWriteAt > 0) {
-        sun.flash = 1; spawnFx("circle_02", 0, 0, 0xffd27a, SUN_R * 2, SUN_R * 9, 1.2, 0.8); shock(0, 0);
-        const pl = s.planets.find((p) => p.id === w.planetId); if (pl) spawnFx("circle_02", pl.pos.x, pl.pos.y, 0xffe2a0, PLANET_R * 1.5, PLANET_R * 4, 0.9, 0.7);
-      }
-      lastWriteAt = Math.max(lastWriteAt, w.at);
+    let fresh: (typeof writes)[number] | null = null;
+    for (const w of writes) {
+      const key = `${w.at}|${w.op}|${w.slug ?? ""}`;
+      if (seenWrites.has(key)) continue;
+      seenWrites.add(key);
+      if (writesPrimed && (!fresh || w.at >= fresh.at)) fresh = w;
     }
-    if (lastWriteAt === 0) lastWriteAt = 1;
-    sun.flash = Math.max(0, sun.flash - dt * 1.4);
-    sun.l1.rotation += dt * 0.05; sun.l2.rotation -= dt * 0.08;
-    sun.halo.alpha = 0.18 + 0.14 * pulse + 0.4 * sun.flash;
-    sun.l1.alpha = 0.28 + 0.2 * pulse + 0.3 * sun.flash; sun.l2.alpha = 0.3 + 0.15 * pulse;
-    const rp = (time * 0.45) % 1; setSize(sun.ring, SUN_R * (2.1 + rp * 2.2)); sun.ring.alpha = (1 - rp) * (0.25 + 0.5 * pulse);
-    sun.core.tint = sun.flash > 0.05 ? 0xffd890 : 0xffb444;
-    L.sun.alpha = 1; L.sun.scale.set(pm ? 0.5 : 1); // planet view: a small energy source at the edge
+    writesPrimed = true;
+    if (seenWrites.size > 400) { const keep = [...seenWrites].slice(-200); seenWrites.clear(); keep.forEach((k) => seenWrites.add(k)); }
+    if (fresh) {
+      sun.flash = 1; spawnFx("circle_02", 0, 0, 0xffd27a, SUN_R * 2.1, SUN_R * 4.2, 1.8, 0.45);
+      const txt = (fresh.text ?? fresh.slug ?? fresh.op ?? "").replace(/\s+/g, " ").trim();
+      sunCaption.text = "+ " + shortTxt(txt || "memory updated", 60); captionT = 0;
+    }
+    sun.flash = Math.max(0, sun.flash - dt * 0.9);
+    const breathe = 0.5 + 0.5 * Math.sin(time * 0.35); // barely visible
+    sun.l1.rotation += dt * 0.008; sun.l2.rotation -= dt * 0.012;
+    sun.halo.alpha = 0.26 + 0.03 * breathe + 0.12 * sun.flash;
+    sun.l1.alpha = 0.36 + 0.03 * breathe + 0.12 * sun.flash; sun.l2.alpha = 0.34;
+    sun.ring.alpha = 0;
+    sun.core.tint = 0xffb444;
+    L.sun.alpha = 1; L.sun.scale.set(pm ? 0.6 : 1); // team view: the sun stays (it is their memory), smaller
+    const sunR = SUN_R * (pm ? 0.6 : 1);
+    captionT += dt;
+    sunCaption.visible = captionT < 4.5;
+    if (sunCaption.visible) {
+      sunCaption.alpha = Math.min(1, captionT / 0.4) * Math.min(1, Math.max(0, (4.5 - captionT) / 0.8)) * 0.9;
+      sunCaption.scale.set(ui * 0.95); sunCaption.position.set(0, -sunR - 22 * ui);
+    }
+    sunHint.visible = store.hover?.kind === "sun"; sunHint.scale.set(ui * 0.9); sunHint.position.set(0, sunR + 20 * ui);
 
-    // orbits + cycle markers
-    const g = L.orbits; g.clear();
-    const showOrbits = store.layerOn("orbits");
+    // teams: server positions only (distance from the sun = distance from what the company knows). No orbit rings.
+    L.orbits.clear();
     for (const p of s.planets) {
       const v = planetView(p);
       const hidden = p.hidden || store.isHidden("planet", p.id) || !inPm(p.id);
       v.c.visible = !hidden; v.name.visible = !hidden && store.layerOn("labels"); v.cycle.visible = false; v.sum.visible = false;
       if (hidden) continue;
       const col = hex(p.color), da = dimAlpha(p.id);
-      if (showOrbits) {
-        g.circle(0, 0, p.orbitRadius).stroke({ width: 1.2 * ui, color: col, alpha: 0.16 * da });
-        const span = p.cycle.endAt - p.cycle.startAt;
-        const unit = span <= 2 * 86_400_000 ? 3_600_000 : 86_400_000;
-        const n = Math.min(90, Math.round(span / unit));
-        for (let k = 1; k < n; k++) {
-          const a = p.baseAngle + (2 * Math.PI * k) / n, r0 = p.orbitRadius - 5 * ui, r1 = p.orbitRadius + 5 * ui;
-          g.moveTo(Math.cos(a) * r0, Math.sin(a) * r0).lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
-        }
-        g.stroke({ width: 1 * ui, color: col, alpha: 0.3 * da });
-        // progress arc (traversed part of the cycle)
-        arc(g, 0, 0, p.orbitRadius, p.baseAngle, p.baseAngle + 2 * Math.PI * Math.max(0, Math.min(1, p.progress)));
-        g.stroke({ width: 2.2 * ui, color: col, alpha: 0.32 * da });
-        // cycle-end marker
-        const a = p.baseAngle, m0 = p.orbitRadius - 16 * ui, m1 = p.orbitRadius + 16 * ui;
-        g.moveTo(Math.cos(a) * m0, Math.sin(a) * m0).lineTo(Math.cos(a) * m1, Math.sin(a) * m1).stroke({ width: 3 * ui, color: 0xffffff, alpha: 0.75 * da });
-        g.circle(Math.cos(a) * p.orbitRadius, Math.sin(a) * p.orbitRadius, 4 * ui).fill({ color: col, alpha: da });
-        if (store.layerOn("labels") && pm) {
-          v.cycle.visible = true; v.cycle.text = p.cycle.label; v.cycle.scale.set(ui);
-          v.cycle.position.set(Math.cos(a) * (p.orbitRadius + 34 * ui), Math.sin(a) * (p.orbitRadius + 34 * ui)); v.cycle.alpha = 0.85 * da;
-        }
-      }
-
       // planet body
       v.c.position.set(p.pos.x, p.pos.y); v.c.alpha = da;
       const stage = p.colonization ?? 0;
@@ -315,21 +307,15 @@ export function createScene(app: Application, store: Store) {
         v.ring.ellipse(0, 0, PLANET_R * 1.55, PLANET_R * 0.42).stroke({ width: 3, color: col, alpha: 0.55 });
         v.ring.rotation = -0.35;
       }
-      v.ring.circle(0, 0, PLANET_R * 1.12).stroke({ width: 1.2 * ui, color: col, alpha: 0.25 });
       const sunDir = away + Math.PI;
       v.dish.position.set(Math.cos(sunDir) * PLANET_R * 1.15, Math.sin(sunDir) * PLANET_R * 1.15); v.dish.rotation = sunDir + Math.PI / 2;
       v.dish.visible = stage >= 1;
       v.name.position.set(p.pos.x, p.pos.y + PLANET_R + 20 * ui); v.name.scale.set(ui); v.name.alpha = da;
-      if (p.summary && store.layerOn("labels")) { // one-line "what is this dept doing" before you click
-        const st = shortTxt(p.summary, 54); if (v.sum.text !== st) v.sum.text = st;
-        v.sum.visible = true; v.sum.scale.set(ui * 0.85); v.sum.position.set(p.pos.x, p.pos.y + PLANET_R + 38 * ui);
-      }
     }
 
     // credit belt: per mine, a cluster of small spinning asteroids (one ≈ one credit chunk) close to the sun
     const mines = (s.mines ?? []).filter((m) => !m.hidden && !store.isHidden("mine", m.id));
-    if (beltR !== BELT_R) { beltR = BELT_R; buildBelt(BELT_R); }
-    L.belt.rotation += dt * 0.004; L.belt.visible = !pm;
+    L.belt.visible = false; // only the credit clusters, no decorative dust
     L.mines.visible = store.layerOn("mines");
     const seenMine = new Set<string>();
     const ordered = [...mines].sort((a, b) => Math.atan2(a.pos.y, a.pos.x) - Math.atan2(b.pos.y, b.pos.x));
@@ -361,8 +347,8 @@ export function createScene(app: Application, store: Store) {
         r.rotation += dt * (0.25 + h4 * 1.4) * (h1 < 0.5 ? -1 : 1);
         r.tint = col; r.alpha = 0.95;
       });
-      v.glow.tint = col; setSize(v.glow, BELT_R * CLUSTER_SPACING * 1.3); v.glow.position.set(c.x, c.y); v.glow.alpha = 0.08 + 0.1 * frac;
-      v.name.visible = store.layerOn("mines") && store.layerOn("labels");
+      v.glow.tint = col; setSize(v.glow, BELT_R * CLUSTER_SPACING * 1.1); v.glow.position.set(c.x, c.y); v.glow.alpha = 0.04 + 0.06 * frac;
+      v.name.visible = store.layerOn("mines") && store.layerOn("labels") && (isHot("mine", m.id));
       const nm = shortMine(m.label); const title = nm.charAt(0) + nm.slice(1).toLowerCase();
       const val = `${title} $${Math.round(m.remaining)}`; if (v.name.text !== val) v.name.text = val;
       v.name.tint = frac < 0.2 ? 0xff6b6b : col;
@@ -372,14 +358,14 @@ export function createScene(app: Application, store: Store) {
 
     // research station
     L.research.visible = store.layerOn("research") && !pm;
-    research.name.visible = L.research.visible && store.layerOn("labels");
+    research.name.visible = L.research.visible && store.layerOn("labels") && isHot("research", "research");
     const rpos = s.research?.pos ?? { x: 0, y: -200 };
     const running = s.research?.runs?.some((r) => r.status === "running") ?? false;
     L.research.position.set(rpos.x, rpos.y);
     research.gem.rotation += dt * 0.25;
     research.shards.forEach((sh, i) => { const a = -time * 0.6 + (i * Math.PI * 2) / 3; sh.position.set(Math.cos(a) * 36, Math.sin(a) * 36); sh.rotation -= dt; });
-    research.twinkle.alpha = 0.35 + 0.35 * Math.max(0, Math.sin(time * 3.1)); research.twinkle.rotation += dt * 0.4;
-    research.glow.alpha = running ? 0.45 + 0.3 * Math.sin(time * 5) : 0.22;
+    research.twinkle.alpha = running ? 0.35 + 0.35 * Math.max(0, Math.sin(time * 3.1)) : 0; research.twinkle.rotation += dt * 0.4; // twinkles only while training
+    research.glow.alpha = running ? 0.4 + 0.15 * Math.sin(time * 2) : 0.16;
     research.gem.filters = running && glowGem ? [glowGem] : null;
     research.name.position.set(rpos.x, rpos.y + 44 * ui); research.name.scale.set(ui);
 
@@ -396,7 +382,7 @@ export function createScene(app: Application, store: Store) {
       const da = dimAlpha(f.planetId);
       v.s.alpha = (f.paused ? 0.35 : 1) * da;
       v.name.text = f.label + (f.paused ? " · paused" : ""); v.name.scale.set(ui); v.name.position.set(f.pos.x, f.pos.y - 32 * ui);
-      v.name.visible = L.factories.visible && store.layerOn("labels"); v.name.alpha = da;
+      v.name.visible = L.factories.visible && store.layerOn("labels") && isHot("factory", f.id); v.name.alpha = da;
       if (L.factories.visible) {
         const frac = Math.max(0, Math.min(1, 1 - (f.nextRunAt - s.now) / Math.max(1, f.cadenceMs)));
         ov.circle(f.pos.x, f.pos.y, 22 * ui).stroke({ width: 1.5 * ui, color: 0x9fb3c8, alpha: 0.25 * da });
@@ -414,13 +400,12 @@ export function createScene(app: Application, store: Store) {
       const d = Math.hypot(p.pos.x, p.pos.y) || 1, ux = p.pos.x / d, uy = p.pos.y / d;
       const x0 = ux * SUN_R * 1.05, y0 = uy * SUN_R * 1.05, x1 = p.pos.x - ux * PLANET_R * 1.2, y1 = p.pos.y - uy * PLANET_R * 1.2;
       const k = (0.25 + 0.75 * (p.memTraffic ?? 0)) * dimAlpha(p.id), col = 0xffd27a;
-      bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 10 * ui, color: col, alpha: 0.08 * k });
-      bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 4 * ui, color: col, alpha: 0.25 * k });
-      bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 1.5 * ui, color: 0xfff3d6, alpha: 0.9 * k });
-      const n = 1 + Math.round(4 * (p.memTraffic ?? 0));
+      bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 5 * ui, color: col, alpha: 0.05 * k });
+      bm.moveTo(x0, y0).lineTo(x1, y1).stroke({ width: 1.2 * ui, color: 0xfff3d6, alpha: 0.35 * k });
+      const n = Math.round(3 * (p.memTraffic ?? 0)); // packets = actual memory traffic
       for (let i = 0; i < n && pk < packets.length; i++, pk++) {
-        const t = (time * (0.18 + 0.25 * (p.memTraffic ?? 0)) + i / n + hash(p.id)) % 1;
-        const q = packets[pk]; q.position.set(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t); q.alpha = Math.sin(Math.PI * t) * k; setSize(q, 22 * ui); q.rotation = time;
+        const t = (time * (0.06 + 0.1 * (p.memTraffic ?? 0)) + i / n + hash(p.id)) % 1;
+        const q = packets[pk]; q.position.set(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t); q.alpha = Math.sin(Math.PI * t) * k * 0.7; setSize(q, 16 * ui); q.rotation = 0;
       }
     }
     for (let i = pk; i < packets.length; i++) packets[i].alpha = 0;
@@ -499,7 +484,8 @@ export function createScene(app: Application, store: Store) {
       if (v.trail.visible) { v.trail.tint = col; setSize(v.trail, size * (0.9 + 0.25 * Math.sin(time * 30 + hash(u.id) * 9))); v.trail.position.set(v.x + Math.cos(back) * size * 0.55, v.y + Math.sin(back) * size * 0.55); v.trail.alpha = 0.55 * k; }
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
       v.ship.filters = focused && glowSel ? [glowSel] : null;
-      if (store.layerOn("labels") && (cam.scale > 0.45 || focused || sel0.has(u.id)) && u.role !== "subagent") {
+      const uHot = focused || sel0.has(u.id) || (store.hover?.kind === "unit" && store.hover.id === u.id);
+      if (store.layerOn("labels") && (uHot || (cam.scale > 0.9 && u.role !== "subagent"))) {
         const t = tmpText(`unit:${u.id}`, u.label, 12, col, "IBM Plex Sans"); t.position.set(v.x, v.y + size * 0.8); t.scale.set(ui * 0.9); t.alpha = k;
       }
     }
@@ -542,10 +528,10 @@ export function createScene(app: Application, store: Store) {
       if (nd) v.hull.alpha = 0.9;
       v.c.alpha = enemyEmph(e);
       if (e.resolved) v.c.alpha *= 0.4;
-      const tt = `${e.title}${e.strength > 1 ? `  · ${Math.round(e.strength)}` : ""}`;
+      const tt = e.title;
       if (v.title.text !== tt) v.title.text = tt;
       v.title.tint = e.humanOnly ? GOLD : qc; v.title.alpha = v.c.alpha;
-      v.title.visible = store.layerOn("labels"); v.title.scale.set(ui); v.title.position.set(v.c.x, v.c.y + size * 0.95 + 8 * ui);
+      v.title.visible = store.layerOn("labels") && isHot("enemy", e.id); v.title.scale.set(ui); v.title.position.set(v.c.x, v.c.y + size * 0.95 + 8 * ui);
     }
     for (const [id, v] of enemyViews) if (v.seen !== frame) {
       const stillThere = s.enemies.some((e) => e.id === id);
@@ -565,8 +551,8 @@ export function createScene(app: Application, store: Store) {
         const col = projectColor(s, u.projectId), k = emph(u.id);
         const hx = u.home.x, hy = u.home.y, tx = u.target.x, ty = u.target.y;
         if (u.charted) {
-          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 8 * ui, color: col, alpha: 0.07 * k });
-          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 1.6 * ui, color: col, alpha: 0.5 * k });
+          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 6 * ui, color: col, alpha: 0.05 * k });
+          pg.moveTo(hx, hy).lineTo(tx, ty).stroke({ width: 1.5 * ui, color: col, alpha: 0.55 * k });
         } else {
           const N = 6;
           for (let j = 0; j < N; j++) {
@@ -597,7 +583,7 @@ export function createScene(app: Application, store: Store) {
         pg.poly([st.x, st.y - d, st.x + d, st.y, st.x, st.y + d, st.x - d, st.y]).fill({ color: st.col, alpha: 0.16 * k }).stroke({ width: 1.6 * ui, color: st.col, alpha: (st.charted ? 0.9 : 0.55) * k });
         pg.circle(st.x, st.y, 2 * ui).fill({ color: 0xffffff, alpha: 0.9 * k });
         if (st.hot && st.k === 1) { const t = (time * 0.7) % 1; pg.circle(st.x, st.y, d * (1.2 + t * 2.2)).stroke({ width: 1.4 * ui, color: st.col, alpha: (1 - t) * 0.7 }); }
-        if (store.layerOn("labels") && (st.hot || cam.scale > 0.45)) {
+        if (store.layerOn("labels") && (st.hot || (pm && cam.scale > 0.3) || cam.scale > 0.9)) {
           const t = tmpText(`site:${key}`, `${st.text}  ${st.eta}`, 11, st.col, "IBM Plex Sans"); t.position.set(st.x, st.y - d - 11 * ui); t.scale.set(ui * 0.9); t.alpha = k;
         }
       }
@@ -608,9 +594,10 @@ export function createScene(app: Application, store: Store) {
         for (const u of visUnits) {
           if (n > 60) break;
           if (u.role !== "mothership" || !active(u)) continue;
+          if (!pm && !(focusSet?.has(u.id) || hoverSet?.has(u.id))) continue;
           const p = disp.get(u.id)!; n++;
           dashed(pg, p.x, p.y, cp.x, cp.y, 2.5 * ui, 16 * ui, -time * 40 * ui);
-          pg.stroke({ width: 2.2 * ui, color: hex(claude.color), alpha: 0.3 * emph(u.id), cap: "round" });
+          pg.stroke({ width: 1.6 * ui, color: hex(claude.color), alpha: 0.22 * emph(u.id), cap: "round" });
         }
       }
     }
@@ -713,7 +700,7 @@ export function createScene(app: Application, store: Store) {
       const w = hov.kind === "unit" ? (() => { const d = disp.get(hov.id); const u = d && s.units.find((q) => q.id === hov.id); return d && u ? { ...d, r: unitSize(u) * 0.75 } : undefined; })()
         : hov.kind === "enemy" ? enemyPos.get(hov.id)
         : hov.kind === "planet" ? (() => { const p = s.planets.find((q) => q.id === hov.id); return p ? { ...p.pos, r: PLANET_R * 1.1 } : undefined; })()
-        : hov.kind === "sun" ? { x: 0, y: 0, r: SUN_R * 1.1 } : undefined;
+        : hov.kind === "sun" ? { x: 0, y: 0, r: SUN_R * (pm ? 0.6 : 1) * 1.05 } : undefined;
       if (w) ov.circle(w.x, w.y, w.r * 1.25 + 4 * ui).stroke({ width: 1.2 * ui, color: 0xe8f6ff, alpha: 0.55 });
     }
     // focus ring for non-unit focus
@@ -737,11 +724,22 @@ export function createScene(app: Application, store: Store) {
 
     // fog of war
     L.fog.visible = store.layerOn("fog");
-    fog.width = fog.height = R * 2 * 2.5; // inner 0.3 of 2.5R → clear to 0.75R
+    fog.width = fog.height = R * 2 * FOG_OUT; // clear to FOG_IN·R (what the company has charted), darker beyond
     smoke.forEach((sm, i) => {
-      const a = (i / smoke.length) * Math.PI * 2 + time * 0.01 * (i % 2 ? 1 : -1), rr = R * (0.92 + 0.1 * Math.sin(time * 0.1 + i));
-      sm.position.set(Math.cos(a) * rr, Math.sin(a) * rr); setSize(sm, R * 0.6); sm.rotation += dt * 0.02 * (i % 2 ? 1 : -1);
+      const a = (i / smoke.length) * Math.PI * 2 + time * 0.004 * (i % 2 ? 1 : -1), rr = R * (1.02 + 0.06 * Math.sin(time * 0.05 + i));
+      sm.position.set(Math.cos(a) * rr, Math.sin(a) * rr); setSize(sm, R * 0.55); sm.rotation += dt * 0.01 * (i % 2 ? 1 : -1);
     });
+    // the fog lifts a little around places agents have already reached out there
+    let li = 0;
+    for (const u of visUnits) {
+      if (li >= lifts.length || u.role === "subagent") continue;
+      const d = disp.get(u.id); if (!d) continue;
+      for (const q of [d, u.target]) {
+        if (li >= lifts.length || Math.hypot(q.x, q.y) < R * (FOG_IN - 0.05)) continue;
+        const l = lifts[li++]; l.position.set(q.x, q.y); setSize(l, 360); l.alpha = 0.07;
+      }
+    }
+    for (let i = li; i < lifts.length; i++) lifts[i].alpha = 0;
 
     // gc transient labels
     for (const [k, e] of texts) if (e.seen !== frame) { if (frame - e.seen > 120) { e.t.destroy(); texts.delete(k); } else e.t.visible = false; }
@@ -801,7 +799,7 @@ export function createScene(app: Application, store: Store) {
   }
 
   /** Planet view frame: the planet, its agents' task sites, and the blockers holding its agents. */
-  function planetFrame(s: WorldState, pid: DeptId): { x: number; y: number; r: number } | null {
+  function planetFrame(s: WorldState, pid: DeptId): { x: number; y: number; s: number } | null {
     const p = s.planets.find((q) => q.id === pid); if (!p) return null;
     const pts: { x: number; y: number }[] = [p.pos];
     const mine = s.units.filter((u) => u.planetId === pid && !u.hidden && u.status !== "dead");
@@ -811,17 +809,31 @@ export function createScene(app: Application, store: Store) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const q of pts) { x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y); }
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-    const aspect = Math.max(1, cam.w / Math.max(1, cam.bandH));
-    const r = Math.max(420, (x1 - x0) / 2 / aspect + 120, (y1 - y0) / 2 + 140);
-    return { x: cx, y: cy, r };
+    const f = fitBox(x0, y0, x1, y1, 150);
+    return { x: cx, y: cy, s: Math.min(f.s, 0.75) };
+  }
+
+  /** Box → camera: center + scale that fits it in the free band between the HUD bars (uses the full width). */
+  function fitBox(x0: number, y0: number, x1: number, y1: number, pad: number) {
+    const hw = (x1 - x0) / 2 + pad, hh = (y1 - y0) / 2 + pad;
+    return { x: (x0 + x1) / 2, y: (y0 + y1) / 2, s: cam.clamp(Math.min(cam.w / (2 * hw), cam.bandH / (2 * hh))) };
+  }
+  /** System view: everything that means something (sun, teams, their sites, blockers at the edge), framed tight. */
+  function systemFrame(s: WorldState) {
+    let x0 = -SUN_R * 2, y0 = -SUN_R * 2, x1 = SUN_R * 2, y1 = SUN_R * 2;
+    const add = (x: number, y: number, r: number) => { x0 = Math.min(x0, x - r); y0 = Math.min(y0, y - r); x1 = Math.max(x1, x + r); y1 = Math.max(y1, y + r); };
+    for (const p of s.planets) if (!p.hidden && !store.isHidden("planet", p.id)) add(p.pos.x, p.pos.y, PLANET_R * 1.8);
+    for (const e of s.enemies) if (!enemyHidden(e)) add(e.pos.x, e.pos.y, 90);
+    for (const u of s.units) if (!unitHidden(u) && u.role === "mothership") add(u.target.x, u.target.y, 60);
+    return fitBox(x0, y0, x1, y1, 40);
   }
 
   function flyToMode() {
     const s = store.state; const m = store.mode;
     measureInsets();
     if (!s) return;
-    if (m.kind === "planet") { const f = planetFrame(s, m.planetId); if (f) cam.flyTo(f.x, f.y, cam.fitScale(f.r)); }
-    else if (m.kind === "system" || m.kind === "galaxy") cam.flyTo(0, 0, cam.fitScale(s.systemRadius * SYS_FIT));
+    if (m.kind === "planet") { const f = planetFrame(s, m.planetId); if (f) cam.flyTo(f.x, f.y, f.s); }
+    else if (m.kind === "system" || m.kind === "galaxy") { const f = systemFrame(s); cam.flyTo(f.x, f.y, f.s); }
     else if (m.kind === "memory") cam.flyTo(0, 0, cam.fitScale(420));
   }
   store.on("mode", flyToMode);
@@ -905,5 +917,5 @@ export function createScene(app: Application, store: Store) {
     cam.insetTop = tb ? Math.max(0, tb.bottom + 6) : 0;
     cam.insetBottom = con ? Math.max(0, cam.h - con.top + 6) : 0;
   }
-  window.addEventListener("resize", () => { measureInsets(); if (store.mode.kind === "system" && store.state) cam.flyTo(cam.x, cam.y, cam.fitScale(store.state.systemRadius * SYS_FIT), 0.2); });
+  window.addEventListener("resize", () => { measureInsets(); if (store.mode.kind === "system" && store.state) { const f = systemFrame(store.state); cam.flyTo(f.x, f.y, f.s, 0.2); } });
 }
