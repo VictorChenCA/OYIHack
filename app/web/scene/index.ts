@@ -5,9 +5,9 @@ import type { Store, Target } from "../store";
 import { loadTextures, tex, type TexName } from "./assets";
 import { Camera } from "./camera";
 import { GOLD, HOLO, QUAD_COLOR, arc, dashed, drawBlocker, fogTexture, hash, hex, label } from "./draw";
+import { MOTHERSHIP_SIZE, SUBAGENT_SCALE, TIER_HULL, TIER_SCALE } from "../shapes";
 
 const PLANET_TEX: Record<DeptId, TexName> = { engineering: "planet07", product: "planet01", design: "planet09", marketing: "planet02", operations: "planet04", product_design: "planet09", arts: "planet09" };
-const TIER_TEX: Record<string, TexName> = { haiku: "ship_A", sonnet: "ship_B", opus: "ship_E", fable: "ship_H", river: "meteor_squareLarge", unknown: "ship_B" };
 const PLANET_R = 70, SUN_R = 95;
 /** Credit belt: one small asteroid ≈ one credit chunk, clustered per mine in a tight arc south of the sun. */
 const BELT_R = 290, BELT_W = 80, ROCKS_PER_BUDGET = 40, CLUSTER_SPACING = 0.62;
@@ -29,7 +29,7 @@ const mix = (a: number, b: number, t: number) => {
   return ch(16) | ch(8) | ch(0);
 };
 
-interface UnitView { glow: Sprite; trail: Sprite; ship: Sprite; x: number; y: number; rot: number; texName: TexName; seen: number }
+interface UnitView { hull: Graphics; x: number; y: number; rot: number; seen: number }
 interface EnemyView { c: Container; g: Graphics; title: Text; x: number; y: number; seen: number; last: Enemy; born: number }
 interface PlanetView { c: Container; base: Sprite; dept: Sprite; lights: Sprite[]; ring: Graphics; dish: Sprite; name: Text; cycle: Text; sum: Text }
 interface Fx { s: Sprite; t: number; dur: number; from: number; to: number; alpha: number }
@@ -191,16 +191,20 @@ export function createScene(app: Application, store: Store) {
   }
 
   function unitView(u: Unit): UnitView {
-    const texName: TexName = u.role === "sentinel" ? "meteor_squareLarge" : u.role === "subagent" ? "ship_sidesC" : TIER_TEX[u.tier] ?? "ship_B";
     let v = unitViews.get(u.id);
-    if (v) { if (v.texName !== texName) { v.ship.texture = tex[texName]; v.texName = texName; } return v; }
-    const glow = sprite("circle_05", { alpha: 0.35 });
-    const trail = sprite("star_04", { alpha: 0 });
-    const ship = sprite(texName);
-    L.unitGlow.addChild(glow, trail); L.units.addChild(ship);
-    v = { glow, trail, ship, x: u.pos.x, y: u.pos.y, rot: 0, texName, seen: 0 };
+    if (v) return v;
+    const hull = new Graphics();
+    L.units.addChild(hull);
+    v = { hull, x: u.pos.x, y: u.pos.y, rot: Math.atan2(u.target.y - u.pos.y, u.target.x - u.pos.x), seen: 0 };
     unitViews.set(u.id, v);
     return v;
+  }
+  /** Shared abstract hull (shapes.ts): same silhouette on the map, legend, hover and bottom bar. half = half-width in world units. */
+  function drawHull(g: Graphics, u: Unit, half: number, col: number, ui: number) {
+    const pts = TIER_HULL[u.role === "sentinel" ? "river" : u.tier] ?? TIER_HULL.unknown;
+    g.clear();
+    g.poly(pts.flatMap(([x, y]) => [x * half + half * 0.12, y * half + half * 0.12])).fill({ color: 0x000000, alpha: 0.25 }); // faint shadow
+    g.poly(pts.flatMap(([x, y]) => [x * half, y * half])).fill({ color: col }).stroke({ width: Math.max(0.8, half * 0.08), color: 0xffffff, alpha: 0.28, join: "round" });
   }
 
   function tmpText(key: string, text: string, size: number, color: number, font = "Rajdhani"): Text {
@@ -229,7 +233,9 @@ export function createScene(app: Application, store: Store) {
   /** Motherships ~3x subagents: the hierarchy should read at a glance. */
   /** Blocker radius: grows with how many agents it blocks; DROP (neither urgent nor important) stays small. */
   const blockerR = (e: Enemy, ui: number) => (16 + 5 * Math.min(8, Math.max(1, e.blocked.length))) * ui * (e.quadrant === "drop" ? 0.7 : 1);
-  const unitSize = (u: Unit) => (u.role === "subagent" ? 15 : u.role === "sentinel" ? 30 : 46) * cam.ui;
+  /** Full width in world units: MOTHERSHIP_SIZE × TIER_SCALE (subagents: same hull × SUBAGENT_SCALE). */
+  const unitHalf = (u: Unit) => MOTHERSHIP_SIZE * 1.25 * (TIER_SCALE[u.tier] ?? 1) * (u.role === "subagent" ? SUBAGENT_SCALE : 1) * cam.ui;
+  const unitSize = (u: Unit) => unitHalf(u) * 2;
 
   // ---------- per-frame ----------
   app.ticker.add((ticker) => {
@@ -474,12 +480,7 @@ export function createScene(app: Application, store: Store) {
       const v = unitView(u); v.seen = frame;
       const pk = parked.get(u.id), ss = subSite.get(u.id), par = u.parentId ? disp.get(u.parentId) : undefined;
       let goal: { x: number; y: number } = pk ?? u.pos, heading: { x: number; y: number } = u.target;
-      if (u.role === "subagent" && par && ss) {
-        const ph = time * 0.45 + hash(u.id) * 6.28;
-        const t = active(u) ? 0.5 - 0.5 * Math.cos(ph) : 0.1;
-        goal = { x: par.x + (ss.x - par.x) * t, y: par.y + (ss.y - par.y) * t };
-        heading = active(u) && Math.sin(ph) < 0 ? par : ss;
-      }
+      void ss; void par; // subagents follow the server's outward law from their mothership (no shuttling)
       v.x += (goal.x - v.x) * lerpK; v.y += (goal.y - v.y) * lerpK;
       if (Math.hypot(goal.x - v.x, goal.y - v.y) > 800) { v.x = goal.x; v.y = goal.y; }
       disp.set(u.id, { x: v.x, y: v.y });
@@ -487,26 +488,20 @@ export function createScene(app: Application, store: Store) {
       const size = unitSize(u), k = emph(u.id);
       const en = u.attacking ? s.enemies.find((e) => e.id === u.attacking) : undefined;
       const tgt = en ? en.pos : pk ? { x: v.x + Math.cos(pk.face) * 10, y: v.y + Math.sin(pk.face) * 10 } : heading;
-      const want = Math.atan2(tgt.y - v.y, tgt.x - v.x) + Math.PI / 2;
+      const want = Math.atan2(tgt.y - v.y, tgt.x - v.x);
       let dr = want - v.rot; while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
-      v.rot += dr * lerpK;
-      v.ship.texture = tex[v.texName]; setSize(v.ship, size); v.ship.position.set(v.x, v.y); v.ship.rotation = u.role === "sentinel" ? time * 0.4 : v.rot;
-      v.ship.tint = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
-      v.ship.alpha = (u.status === "idle" || u.status === "done" ? 0.6 : 1) * k;
-      v.glow.tint = col; setSize(v.glow, size * (u.role === "mothership" ? 2 : 1.6)); v.glow.position.set(v.x, v.y);
-      v.glow.alpha = (u.role === "mothership" ? 0.2 : 0.12) * k;
-      const moving = active(u);
-      const back = v.rot + Math.PI / 2; // ships face up; exhaust sits behind the nose
-      v.trail.visible = moving && u.role !== "sentinel";
-      if (v.trail.visible) { v.trail.tint = col; setSize(v.trail, size * 0.7); v.trail.position.set(v.x + Math.cos(back) * size * 0.55, v.y + Math.sin(back) * size * 0.55); v.trail.alpha = 0.3 * k; }
+      if (Math.hypot(tgt.x - v.x, tgt.y - v.y) > 1) v.rot += dr * lerpK;
+      const hcol = u.role === "sentinel" ? 0x9fffef : u.status === "done" ? 0x8a8f98 : col;
+      drawHull(v.hull, u, size / 2, hcol, ui);
+      v.hull.position.set(v.x, v.y); v.hull.rotation = v.rot;
+      v.hull.alpha = (u.status === "done" ? (u.role === "subagent" ? 0.3 : 0.5) : u.status === "idle" ? 0.65 : 1) * k;
       const focused = store.focus?.kind === "unit" && store.focus.id === u.id;
-      v.ship.filters = focused && glowSel ? [glowSel] : null;
       const uHot = focused || sel0.has(u.id) || (store.hover?.kind === "unit" && store.hover.id === u.id);
       if (store.layerOn("labels") && (uHot || (cam.scale > 0.9 && u.role !== "subagent"))) {
         const t = tmpText(`unit:${u.id}`, u.label, 12, col, "IBM Plex Sans"); t.position.set(v.x, v.y + size * 0.8); t.scale.set(ui * 0.9); t.alpha = k;
       }
     }
-    for (const [id, v] of unitViews) if (v.seen !== frame) { v.ship.destroy(); v.glow.destroy(); v.trail.destroy(); unitViews.delete(id); }
+    for (const [id, v] of unitViews) if (v.seen !== frame) { v.hull.destroy(); unitViews.delete(id); }
 
     // enemies
     const showEnemies = store.layerOn("enemies");
