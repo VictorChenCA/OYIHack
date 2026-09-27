@@ -1,0 +1,10 @@
+// Routing eval fixtures for skills/sprint-retro. Each positive intent
+// contains at least one trigger substring from the frontmatter.
+{"intent": "run the sprint retro for marketing", "expected_skill": "sprint-retro"}
+{"intent": "it's the end of the cycle for engineering, write the retro", "expected_skill": "sprint-retro"}
+{"intent": "what did we ship this week on the arts planet?", "expected_skill": "sprint-retro"}
+{"intent": "make a cycle digest for product design: shipped, blocked, learned, next", "expected_skill": "sprint-retro"}
+{"intent": "department retro for engineering before the 17:00 deadline", "expected_skill": "sprint-retro"}
+{"intent": "weekly digest for marketing so the next agents know what's blocked", "expected_skill": "sprint-retro"}
+// Negative / ambiguous: a daily briefing across the whole brain routes to briefing, not here.
+{"intent": "give me my morning briefing for today's meetings", "expected_skill": "briefing"}
