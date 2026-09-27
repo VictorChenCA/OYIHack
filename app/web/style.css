@@ -532,3 +532,8 @@ button.brand { background: none; border: 0; cursor: pointer; padding: 0 4px; }
 .c-left { overflow-y: auto; overflow-x: hidden; place-items: start center; padding: 8px 0; }
 .c-left .ag { display: flex; flex-direction: column; align-items: center; width: 100%; padding: 0 8px; box-sizing: border-box; }
 .ag-core svg { display: block; }
+.side .ulist li.ms { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.side .ulist li.ms > .trunc { order: 5; flex: 1 1 100%; min-width: 0; }
+.side .ulist li.ms > .num { margin-left: auto; }
+.side .ulist li.plain { display: flex; align-items: center; gap: 8px; }
+.side .ulist li.plain > .trunc { flex: 1 1 auto; min-width: 0; }
