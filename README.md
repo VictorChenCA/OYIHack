@@ -6,7 +6,7 @@ games (see the whole field at once, select, dispatch) and builds on GBrain, Supe
 
 At kickoff, QM's team said nobody has figured out how to visualize swarms. C&C is our attempt.
 
-> _Demo video: **[link added at submission]**_
+> **Demo video:** https://www.youtube.com/watch?v=8xc9b_Gs4dM · **After-action report (Superset Page):** https://app.superset.sh/page/c-c-after-action-report-inxkbz
 
 ## How to read the screen
 - **Galaxy view (C&C)** is the whole company. **Team view** is one team: Engineering, Product, Design, Marketing or Operations. The C&C logo opens the home page, where you switch between companies.

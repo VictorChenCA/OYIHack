@@ -35,7 +35,7 @@ We used C&C to run its own launch: the agents on screen built and marketed C&C t
 (fill in: public repo)
 
 ## 6. Demo Video URL
-(fill in: 1–2 minutes, anyone with the link can view)
+https://www.youtube.com/watch?v=8xc9b_Gs4dM
 
 ## 7. Side Quests (tick only the ones that are real in the demo)
 - [ ] **Superset**, "Best Agent Swarm". Tick it if Command was built by parallel Superset workspaces **and** the

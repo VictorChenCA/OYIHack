@@ -72,7 +72,7 @@ function ingest(ev: HookEvent) {
 }
 
 /** Anyone not on this machine (e.g. via the ngrok link) is a read-only viewer. */
-const isRemote = (req: Request) => !!req.headers.get("x-forwarded-for") || !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(req.headers.get("host") ?? "");
+const isRemote = (req: Request) => !!(req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip")) || !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(req.headers.get("host") ?? "");
 const denied = () => Response.json({ ok: false, message: "View only: commands are disabled for remote viewers" }, { status: 403 });
 const routeTable = plugins.flatMap((p) => Object.entries(p.routes ?? {}).map(([k, fn]) => { const [method, path] = k.split(" "); return { method, path, fn, name: p.name }; }));
 
