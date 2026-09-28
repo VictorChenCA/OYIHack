@@ -71,6 +71,8 @@ Pixi.js map + contextual UI
 
 ## Run it
 
+Full setup, hosting and shutdown steps: [`RUNBOOK.md`](RUNBOOK.md).
+
 ```bash
 cd app && bun install
 bun run dev                      # C&C on http://localhost:7777 (hooks → POST /hook)

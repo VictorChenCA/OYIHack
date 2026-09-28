@@ -1,5 +1,8 @@
 # OYIHack: Own Your Intelligence Hackathon (YC, Sep 27 2026)
 
+> **The hackathon is over and everything is shut down (Sep 28 2026).** To run or host C&C again, follow
+> [`RUNBOOK.md`](RUNBOOK.md): prerequisites, `.env` keys, start order, what triggers or costs money, and the shutdown checklist.
+
 **Hacking 13:30 → 17:00 hard deadline.** Optimize for a working demo, not completeness.
 Submission (https://docs.google.com/forms/d/e/1FAIpQLSdiU5L7PhlkD7HQQouQKPSlm7WrobkdJuvSZLoi6O7jXRWKiQ/viewform, opens 16:00) needs a **public** GitHub URL, a **public** demo video,
 team name/emails/description, and side quest checkboxes (you can pick several).

@@ -7,7 +7,8 @@
     "start": "bun server/index.ts",
     "dev:web": "bun --hot server/dev-web.ts",
     "sim": "bun server/sim.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "tunnel": "cloudflared tunnel --no-autoupdate --url http://localhost:7777 --http-host-header localhost:7777"
   },
   "dependencies": {
     "pixi.js": "8.21.0",
